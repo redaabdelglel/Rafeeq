@@ -50,7 +50,7 @@ public partial class RafeeqContext : DbContext
         
         if (!optionsBuilder.IsConfigured)
         {
-            optionsBuilder.UseSqlServer("Data Source=DESKTOP-ODFNF5R\\LASTSQLSERVER;Initial Catalog=Rafeeq;Integrated Security=True;TrustServerCertificate=True");
+            optionsBuilder.UseSqlServer("Data Source=.;Initial Catalog=Rafeeq;Integrated Security=True;TrustServerCertificate=True");
         }
     }
 
