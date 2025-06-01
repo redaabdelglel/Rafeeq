@@ -13,7 +13,7 @@ namespace Rafeeq.Configurations
             // User mapping
             CreateMap<User, UserDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
-                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName));
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName)) .ReverseMap();
             // Skill mappings
             CreateMap<Skill, SkillDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.SkillId));
