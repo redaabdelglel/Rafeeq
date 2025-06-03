@@ -1,31 +1,31 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
 using Rafeeq.Models;
+using Rafeeq.Repositories.RepositoryBase;
 
 namespace Rafeeq.Repositories.Users
 {
-    public class UserRepository
+    public class UserRepository : RepositoryBase<User>, IUserRepository
     {
-        private readonly RafeeqContext _context;
-
-        public UserRepository(RafeeqContext context)
-        {
-            _context = context;
+        public UserRepository(RafeeqContext Context) : base(Context) { 
+        
         }
 
-        public async Task<User> GetByIdAsync(int id)
+        public async Task<User?> GetUserByEmailAsync(string email)
         {
-            return await _context.Users.FindAsync(id);
+            return await Context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        public async Task<IEnumerable<User>> GetAllAsync()
+        public async Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType)
         {
-            return await _context.Users.ToListAsync();
+            return await Context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.ExternalId == externalId && u.ExternalType == externalType);
         }
 
-        public async Task<User> GetByEmailAsync(string email)
+        public async Task<User?> GetUserWithRoleAsync(int userId)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            return await Context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == userId);
         }
     }
 }

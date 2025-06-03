@@ -6,25 +6,25 @@ using Rafeeq.Models;
 using Rafeeq.UnitOfWork;
 using Rafeeq.Configurations;
 using Rafeeq.Hubs;
+using Microsoft.AspNetCore.Authorization;
+using Rafeeq.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container
 builder.Services.AddControllers();
-
+builder.Services.AddEndpointsApiExplorer();  // For Swagger
 // Configure DbContext
-
 builder.Services.AddDbContext<RafeeqContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-    options.UseSqlServer(connectionString,
-        sqlServerOptionsAction: sqlOptions =>
-        {
-            sqlOptions.EnableRetryOnFailure(
-                maxRetryCount: 5,
-                maxRetryDelay: TimeSpan.FromSeconds(30),
-                errorNumbersToAdd: null);
-        });
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null);
+    });
 });
 
 // Add SignalR services
@@ -32,41 +32,66 @@ builder.Services.AddSignalRServices();
 
 // Configure AutoMapper
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
-
 builder.Services.AddApplicationServices();
+// Register repositories
+builder.Services.AddScoped<UnitOfWorkManager>();
 
 // Configure JWT Authentication
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
+var jwtSettings = builder.Configuration.GetSection("Jwt");
+var secretKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is not configured.");
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.SaveToken = true;
+    options.RequireHttpsMetadata = true;
+    options.TokenValidationParameters = new TokenValidationParameters
     {
-        options.TokenValidationParameters = new TokenValidationParameters
-        {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"],
-            ValidAudience = builder.Configuration["Jwt:Audience"],
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
-        };
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings["IssuerIP"] ?? throw new InvalidOperationException("JWT Issuer is not configured."),
+        ValidAudience = jwtSettings["AudienceIP"] ?? throw new InvalidOperationException("JWT Audience is not configured."),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
+        ClockSkew = TimeSpan.Zero
+    };
 
-        // Configure JWT Bearer to work with SignalR
-        options.Events = new JwtBearerEvents
+    // Allow token in query string for SignalR
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
         {
-            OnMessageReceived = context =>
+            var accessToken = context.Request.Query["access_token"];
+            var path = context.HttpContext.Request.Path;
+
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
             {
-                var accessToken = context.Request.Query["access_token"];
-                var path = context.HttpContext.Request.Path;
-
-                if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
-                {
-                    context.Token = accessToken;
-                }
-
-                return Task.CompletedTask;
+                context.Token = accessToken;
             }
-        };
-    });
+
+            return Task.CompletedTask;
+        }
+    };
+});
+
+// Configure Authorization
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("MentorPolicy", policy => policy.RequireRole("Mentor"));
+    options.AddPolicy("MenteePolicy", policy => policy.RequireRole("Mentee"));
+    options.AddPolicy("MentorOrMenteePolicy", policy => policy.RequireRole("Mentor", "Mentee"));
+    options.AddPolicy("AdminOrMentorPolicy", policy => policy.RequireRole("Admin", "Mentor"));
+    options.FallbackPolicy = new AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build();
+});
 
 // Configure Swagger
 builder.Services.AddSwaggerDocumentation();
@@ -74,40 +99,32 @@ builder.Services.AddSwaggerDocumentation();
 // Register UnitOfWork
 builder.Services.AddScoped<UnitOfWorkManager>();
 
-// Register CORS policy to allow frontend to connect
+// Register CORS policy
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("CorsPolicy", builder =>
+    options.AddPolicy("AllowSpecificOrigin", policy =>
     {
-        builder
-            .AllowAnyOrigin() // In production, specify your frontend origin
-            .AllowAnyMethod()
-            .AllowAnyHeader()
-            .WithExposedHeaders("Content-Disposition");
+        policy.WithOrigins(builder.Configuration["FrontendUrl"]!)
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
     });
 });
 
-
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// Configure middleware
 if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerDocumentation();
 }
 
-app.UseCors("CorsPolicy");
-
+app.UseCors("AllowSpecificOrigin");
 app.UseHttpsRedirection();
-
-// Add routing middleware before authentication/authorization
 app.UseRouting();
-
-// Authentication comes before authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Configure endpoints after middleware
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
@@ -115,4 +132,3 @@ app.UseEndpoints(endpoints =>
 });
 
 app.Run();
-
