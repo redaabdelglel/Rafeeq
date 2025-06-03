@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Rafeeq.DTOs.Users;
@@ -10,6 +11,7 @@ namespace Rafeeq.Controllers
 {
     [Route("api/admin")]
     [ApiController]
+    //[Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
     {
         private UnitOfWorkManager _unitOfWork;
