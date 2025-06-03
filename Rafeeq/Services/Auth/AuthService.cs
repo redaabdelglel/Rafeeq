@@ -55,8 +55,7 @@ namespace Rafeeq.Services.Auth
             }
             else
             {
-                // Existing user - update their external token if necessary
-                user.ExternalToken = dto.IdToken; // Or specific external token received
+                user.ExternalToken = dto.IdToken; 
                 _unitOfWork.UserRepository.Update(user);
                 await _unitOfWork.SaveAsync();
             }
@@ -220,6 +219,7 @@ namespace Rafeeq.Services.Auth
             if (existingUser != null)
             {
                 return null;
+
             }
             // 2. Get RoleId
             
@@ -230,10 +230,10 @@ namespace Rafeeq.Services.Auth
             }
             var user = _mapp.Map<User>(dto);
             user.PasswordHash = PasswordHasher.HashPassword(dto.Password);
-            user.RoleId = role!.RoleId; // Assign the RoleId
+            user.RoleId = role!.RoleId; 
             user.IsMentor = (dto.Role == "Mentor");
             user.IsInterviewer = (dto.Role == "Mentor");
-            user.IsEmailVerified = false;
+            user.IsEmailVerified = true;
             user.CreatedAt = DateTime.UtcNow;
 
             // 4. Add user

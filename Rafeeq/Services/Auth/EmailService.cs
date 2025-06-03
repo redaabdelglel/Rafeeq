@@ -20,6 +20,8 @@ namespace Rafeeq.Services.Auth
             var smtpPort = int.Parse(emailSettings["SmtpPort"] ?? "587");
             var senderEmail = emailSettings["SenderEmail"] ?? throw new InvalidOperationException("SenderEmail is not configured.");
             var senderPassword = emailSettings["SenderPassword"] ?? throw new InvalidOperationException("SenderPassword is not configured.");
+
+            var fromEmailAddress = emailSettings["FromEmailAddress"] ?? throw new InvalidOperationException("FromEmailAddress is not configured.");
             var enableSsl = bool.Parse(emailSettings["EnableSsl"] ?? "true");
 
             using (var client = new SmtpClient(smtpServer, smtpPort))
@@ -29,7 +31,8 @@ namespace Rafeeq.Services.Auth
 
                 var mailMessage = new MailMessage
                 {
-                    From = new MailAddress(senderEmail, "Rafeeq Platform"),
+                    From = new MailAddress(fromEmailAddress, "Rafeeq Platform"), 
+
                     Subject = subject,
                     Body = message,
                     IsBodyHtml = true,
