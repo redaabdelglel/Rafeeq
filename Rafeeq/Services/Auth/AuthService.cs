@@ -233,7 +233,7 @@ namespace Rafeeq.Services.Auth
             user.RoleId = role!.RoleId; 
             user.IsMentor = (dto.Role == "Mentor");
             user.IsInterviewer = (dto.Role == "Mentor");
-            user.IsEmailVerified = true;
+            user.IsEmailVerified = false;
             user.CreatedAt = DateTime.UtcNow;
 
             // 4. Add user

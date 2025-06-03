@@ -57,11 +57,6 @@ namespace Rafeeq.Services.Auth
             };
         }
 
-
-
-
-        
-
         public ClaimsPrincipal? GetPrincipalFromExpiredToken(string token)
         {
             var jwtSettings = _config.GetSection("Jwt");
