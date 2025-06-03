@@ -1,4 +1,5 @@
-﻿using Rafeeq.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using Rafeeq.Models;
 
 namespace Rafeeq.Repositories.Payments
 {
@@ -9,6 +10,12 @@ namespace Rafeeq.Repositories.Payments
         public PaymentRepository(RafeeqContext context)
         {
             _context = context;
+        }
+
+        // Get all payments
+        public async Task<IEnumerable<Payment>> GetAllAsync()
+        {
+            return await _context.Payments.ToListAsync();
         }
     }
 }

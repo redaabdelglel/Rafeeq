@@ -3,6 +3,8 @@ using AutoMapper;
 using Rafeeq.DTOs.Users;
 using Rafeeq.UnitOfWork;
 using Microsoft.EntityFrameworkCore;
+using Rafeeq.Repositories;
+using Rafeeq.Models;
 
 namespace Rafeeq.Controllers
 {
@@ -12,11 +14,12 @@ namespace Rafeeq.Controllers
     {
         private readonly UnitOfWorkManager _unitOfWork;
         private readonly IMapper _mapper;
-
+       
         public UsersController(UnitOfWorkManager unitOfWork, IMapper mapper)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+             
         }
 
         [HttpGet]
