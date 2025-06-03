@@ -6,6 +6,10 @@ using Rafeeq.Models;
 using Rafeeq.UnitOfWork;
 using Rafeeq.Configurations;
 using Rafeeq.Hubs;
+using Rafeeq.Repositories.Bookings;
+using Rafeeq.Repositories.CV;
+using Rafeeq.Repositories.Users;
+using Rafeeq.Services.Bookings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -74,6 +78,30 @@ builder.Services.AddSwaggerDocumentation();
 // Register UnitOfWork
 builder.Services.AddScoped<UnitOfWorkManager>();
 
+////
+// configuration for Google Meet settings
+builder.Services.Configure<GoogleMeetSettings>(builder.Configuration.GetSection("GoogleMeetSettings"));
+
+// Register Google Meet service
+builder.Services.AddScoped<IGoogleMeetService, GoogleMeetService>();
+
+// Register repositories
+builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+builder.Services.AddScoped<ICVRepository, CVRepository>();
+builder.Services.AddScoped<IMentorRepository, MentorRepository>();
+
+// Register Unit of Work
+builder.Services.AddScoped<IUnitOfWork, CVBookingUnitOfWork>();
+
+// Register BookingService (after all its dependencies are registered)
+builder.Services.AddScoped<IBookingService, BookingService>();
+
+//  AutoMapper
+builder.Services.AddAutoMapper(typeof(Program));
+
+//  HttpContextAccessor
+builder.Services.AddHttpContextAccessor();
+//////
 // Register CORS policy to allow frontend to connect
 builder.Services.AddCors(options =>
 {

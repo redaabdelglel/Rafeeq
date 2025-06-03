@@ -2,5 +2,12 @@
 {
     public class MentorDto
     {
+        public int UserId { get; set; }
+        public string FullName { get; set; }
+        public string Email { get; set; }
+        public string ProfilePicture { get; set; }
+        public string Bio { get; set; }
+        public decimal? HourlyRate { get; set; }
+        public List<string> Skills { get; set; }
     }
 }
