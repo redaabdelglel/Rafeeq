@@ -96,6 +96,9 @@ builder.Services.AddAuthorization(options =>
 // Configure Swagger
 builder.Services.AddSwaggerDocumentation();
 
+// Add HttpClientFactory
+builder.Services.AddHttpClient();
+
 // Register UnitOfWork
 builder.Services.AddScoped<UnitOfWorkManager>();
 

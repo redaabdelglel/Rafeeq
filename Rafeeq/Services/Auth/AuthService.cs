@@ -6,6 +6,7 @@ using Rafeeq.UnitOfWork;
 using Rafeeq.Helpers;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
+using Google.Apis.Auth;
 
 namespace Rafeeq.Services.Auth
 {
@@ -27,39 +28,117 @@ namespace Rafeeq.Services.Auth
         }
         public async Task<TokenResponseDto?> ExternalLoginAsync(ExternalLoginDto dto)
         {
-            var user = await _unitOfWork.UserRepository.GetUserByExternalIdAndTypeAsync(dto.IdToken, dto.Provider);
+            User? user = null;
+            string verifiedEmail = string.Empty;
+            string verifiedFullName = string.Empty;
+            string verifiedExternalId = string.Empty;
+            string? verifiedProfilePicture = null;
+
+            // Step 1: Verify the ID Token with the external provider
+            switch (dto.Provider.ToLower())
+            {
+                case "google":
+                    var googleClientId = _config["GoogleAuthSettings:ClientId"] ?? throw new InvalidOperationException("Google ClientId is not configured.");
+                    try
+                    {
+                        // Verify Google ID Token
+                        var payload = await GoogleJsonWebSignature.ValidateAsync(dto.IdToken, new GoogleJsonWebSignature.ValidationSettings
+                        {
+                            Audience = new[] { googleClientId }
+                        });
+
+                        verifiedEmail = payload.Email;
+                        verifiedFullName = payload.Name;
+                        verifiedExternalId = payload.Subject; // Google's unique user ID
+                        verifiedProfilePicture = payload.Picture;
+                    }
+                    catch (InvalidJwtException ex)
+                    {
+                        // Token is invalid, expired, or tampered with
+                        Console.WriteLine($"Google token validation failed: {ex.Message}");
+                        return null; // Return null on invalid token
+                    }
+                    catch (Exception ex)
+                    {
+                        // Other errors during Google token validation
+                        Console.WriteLine($"Error during Google token validation: {ex.Message}");
+                        return null;
+                    }
+                    break;
+
+                case "facebook":
+                   
+                    verifiedEmail = dto.Email;
+                    verifiedFullName = dto.FullName;
+                    verifiedExternalId = dto.IdToken; 
+                    verifiedProfilePicture = dto.ProfilePicture;
+                    break;
+
+                case "linkedin":
+                    
+                    verifiedEmail = dto.Email;
+                    verifiedFullName = dto.FullName;
+                    verifiedExternalId = dto.IdToken; 
+                    verifiedProfilePicture = dto.ProfilePicture;
+                    break;
+
+                default:
+                    return null; // Unsupported provider
+            }
+
+            // Step 2: Check if user exists in your database by external ID or verified email
+            user = await _unitOfWork.UserRepository.GetUserByExternalIdAndTypeAsync(verifiedExternalId, dto.Provider);
+
             if (user == null)
             {
-                // New user - register them
-                var role = (await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == dto.Role));
-                if (role == null)
+                // If not found by external ID, check by email to link existing accounts
+                user = await _unitOfWork.UserRepository.GetUserByEmailAsync(verifiedEmail);
+                if (user != null)
                 {
-                    role = (await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Mentee"));
+                    // Existing user found by email, link the external ID
+                    user.ExternalId = verifiedExternalId;
+                    user.ExternalType = dto.Provider;
+                    user.ExternalToken = dto.IdToken; // Store the external token if needed for future API calls to provider
+                    _unitOfWork.UserRepository.Update(user);
+                    await _unitOfWork.SaveAsync();
                 }
-
-                user = new User
+                else
                 {
-                    FullName = dto.FullName,
-                    Email = dto.Email,
-                    ExternalId = dto.IdToken,
-                    ExternalType = dto.Provider,
-                    ProfilePicture = dto.ProfilePicture,
-                    IsEmailVerified = true, // External providers usually verify email
-                    RoleId = role!.RoleId,
-                    IsMentor = (dto.Role == "Mentor"),
-                    IsInterviewer = (dto.Role == "Mentor"),
-                    CreatedAt = DateTime.UtcNow
-                };
-                _unitOfWork.UserRepository.Add(user);
-                await _unitOfWork.SaveAsync();
+                    // New user - register them
+                    var role = (await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == dto.Role));
+                    if (role == null)
+                    {
+                        role = (await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Mentee"));
+                    }
+
+                    user = new User
+                    {
+                        FullName = verifiedFullName,
+                        Email = verifiedEmail,
+                        ExternalId = verifiedExternalId,
+                        ExternalType = dto.Provider,
+                        ExternalToken = dto.IdToken, // Store the external token
+                        ProfilePicture = verifiedProfilePicture,
+                        IsEmailVerified = true, // External providers usually verify email
+                        RoleId = role!.RoleId,
+                        IsMentor = (dto.Role == "Mentor"),
+                        IsInterviewer = (dto.Role == "Mentor"),
+                        CreatedAt = DateTime.UtcNow
+                    };
+                    _unitOfWork.UserRepository.Add(user);
+                    await _unitOfWork.SaveAsync();
+                }
             }
             else
             {
-                user.ExternalToken = dto.IdToken; 
+                // Existing user found by external ID - update their external token/profile picture if necessary
+                user.ExternalToken = dto.IdToken; // Update the external token if it changes
+                user.ProfilePicture = verifiedProfilePicture ?? user.ProfilePicture; // Update profile picture if provided
                 _unitOfWork.UserRepository.Update(user);
                 await _unitOfWork.SaveAsync();
             }
 
+            // Step 3: Generate and return your application's tokens
             var tokenResponse = _jwtService.GenerateTokens(user);
 
             // Invalidate old refresh tokens and store new one
@@ -233,7 +312,7 @@ namespace Rafeeq.Services.Auth
             user.RoleId = role!.RoleId; 
             user.IsMentor = (dto.Role == "Mentor");
             user.IsInterviewer = (dto.Role == "Mentor");
-            user.IsEmailVerified = false;
+            user.IsEmailVerified = true;
             user.CreatedAt = DateTime.UtcNow;
 
             // 4. Add user
