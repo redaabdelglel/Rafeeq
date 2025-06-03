@@ -1,4 +1,5 @@
-﻿using Rafeeq.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using Rafeeq.Models;
 
 namespace Rafeeq.Repositories.Reviews
 {
@@ -9,6 +10,30 @@ namespace Rafeeq.Repositories.Reviews
         public ReviewRepository(RafeeqContext context)
         {
             _context = context;
+        }
+        public async Task<IEnumerable<Review>> GetReviewsByMentorIdAsync(int mentorId)
+        {
+            if (mentorId <= 0)
+            {
+                throw new ArgumentException("Invalid mentor ID.", nameof(mentorId));
+            }
+            return await _context.Reviews
+                .Include(r => r.Reviewer)
+                .Include(r => r.ReviewedUser)
+                .Where(r => r.ReviewedUser.Role.RoleName == "Mentor")
+                .ToListAsync();
+        }
+        public async Task<IEnumerable<Review>> GetReviewsByMenteeIdAsync(int menteeId)
+        {
+            if (menteeId <= 0)
+            {
+                throw new ArgumentException("Invalid mentee ID.", nameof(menteeId));
+            }
+            return await _context.Reviews
+                .Include(r => r.Reviewer)
+                .Include(r => r.ReviewedUser)
+                .Where(r => r.ReviewedUser.Role.RoleName == "Mentee")
+                .ToListAsync();
         }
     }
 }
