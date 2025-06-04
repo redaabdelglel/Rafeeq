@@ -34,7 +34,7 @@ namespace Rafeeq.Services.Auth
             string verifiedExternalId = string.Empty;
             string? verifiedProfilePicture = null;
 
-            // Step 1: Verify the ID Token with the external provider
+            // Step 1: Verify the ID Token with the external provider like google or any external login
             switch (dto.Provider.ToLower())
             {
                 case "google":
@@ -312,7 +312,10 @@ namespace Rafeeq.Services.Auth
             user.RoleId = role!.RoleId; 
             user.IsMentor = (dto.Role == "Mentor");
             user.IsInterviewer = (dto.Role == "Mentor");
-            user.IsEmailVerified = true;
+            user.IsEmailVerified = false; // when the user rgister first one he have to verfiy his registertion in his account 
+
+            //user.IsEmailVerified = true;
+
             user.CreatedAt = DateTime.UtcNow;
 
             // 4. Add user

@@ -49,7 +49,7 @@ namespace Rafeeq.Controllers
             var tokenResponse = await _authService.LoginAsync(dto);
             if (tokenResponse == null)
             {
-                return Unauthorized("Invalid credentials.");
+                return Unauthorized("Invalid credentials or unverified email.");
             }
             return Ok(new { Message = "Login successful.", TokenData = tokenResponse }); // Success message with token data
         }
@@ -95,7 +95,7 @@ namespace Rafeeq.Controllers
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
         {
             await _authService.ForgotPasswordAsync(dto.Email);
-            return Ok("If an account with that email exists, a password reset link has been sent.");
+            return Ok("check your account , a password reset link has been sent.");
         }
 
         [HttpPost("ResetPassword")]
@@ -136,7 +136,7 @@ namespace Rafeeq.Controllers
                 return BadRequest(ModelState);
             }
             await _authService.ResendVerificationEmailAsync(email);
-            return Ok("If an account with that email exists, a new verification link has been sent.");
+            return Ok("Check you  account , a new verification link has been sent.");
         }
 
         [HttpPost("logout")]
@@ -146,7 +146,7 @@ namespace Rafeeq.Controllers
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
             if (userIdClaim != null && int.TryParse(userIdClaim.Value, out int userId))
             {
-                await _authService.InvalidateRefreshTokenAsync(userId); // Assuming this method truly invalidates on server.
+                await _authService.InvalidateRefreshTokenAsync(userId); 
             }
             return Ok("Logged out successfully.");
         }

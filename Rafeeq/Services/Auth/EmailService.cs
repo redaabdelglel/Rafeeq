@@ -46,8 +46,8 @@ namespace Rafeeq.Services.Auth
         public async Task SendPasswordResetEmailAsync(string toEmail, string token)
         {
             var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:4200";
-            var resetLink = $"{frontendUrl}/reset-password?token={token}";
-            var subject = "Rafeeq: Password Reset Request"; 
+            var resetLink = $"{frontendUrl}/reset-password?token={token}"; // الرابط الصحيح
+            var subject = "Rafeeq: Password Reset Request"; // الموضوع الصحيح
             var message = $"You have requested a password reset. Please click on this link to reset your password: <a href=\"{resetLink}\">{resetLink}</a>";
             await SendEmailAsync(toEmail, subject, message);
         }
@@ -55,8 +55,8 @@ namespace Rafeeq.Services.Auth
         public async Task SendVerificationEmailAsync(string toEmail, string token)
         {
             var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:4200";
-            var verificationLink = $"{frontendUrl}/verify-email?token={token}";
-            var subject = "Rafeeq: Verify Your Email Address"; 
+            var verificationLink = $"{frontendUrl}/verify-email?token={token}"; // الرابط الصحيح
+            var subject = "Rafeeq: Verify Your Email Address"; // الموضوع الصحيح
             var message = $"Please verify your email address by clicking on this link: <a href=\"{verificationLink}\">{verificationLink}</a>";
             await SendEmailAsync(toEmail, subject, message);
         }
