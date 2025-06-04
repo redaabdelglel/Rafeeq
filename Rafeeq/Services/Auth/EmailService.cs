@@ -13,6 +13,7 @@ namespace Rafeeq.Services.Auth
         {
             this._config = config;
         }
+
         public async Task SendEmailAsync(string toEmail, string subject, string message)
         {
             var emailSettings = _config.GetSection("EmailSettings");
@@ -31,8 +32,7 @@ namespace Rafeeq.Services.Auth
 
                 var mailMessage = new MailMessage
                 {
-                    From = new MailAddress(fromEmailAddress, "Rafeeq Platform"), 
-
+                    From = new MailAddress(fromEmailAddress, "Rafeeq Platform"),
                     Subject = subject,
                     Body = message,
                     IsBodyHtml = true,
@@ -45,19 +45,19 @@ namespace Rafeeq.Services.Auth
 
         public async Task SendPasswordResetEmailAsync(string toEmail, string token)
         {
-            var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:4200"; 
-            var verificationLink = $"{frontendUrl}/verify-email?token={token}";
-            var subject = "Rafeeq: Verify Your Email Address";
-            var message = $"Please verify your email address by clicking on this link: <a href=\"{verificationLink}\">{verificationLink}</a>";
+            var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:4200";
+            var resetLink = $"{frontendUrl}/reset-password?token={token}";
+            var subject = "Rafeeq: Password Reset Request"; 
+            var message = $"You have requested a password reset. Please click on this link to reset your password: <a href=\"{resetLink}\">{resetLink}</a>";
             await SendEmailAsync(toEmail, subject, message);
         }
 
         public async Task SendVerificationEmailAsync(string toEmail, string token)
         {
-            var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:4200"; 
-            var resetLink = $"{frontendUrl}/reset-password?token={token}";
-            var subject = "Rafeeq: Password Reset Request";
-            var message = $"You have requested a password reset. Please click on this link to reset your password: <a href=\"{resetLink}\">{resetLink}</a>";
+            var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:4200";
+            var verificationLink = $"{frontendUrl}/verify-email?token={token}";
+            var subject = "Rafeeq: Verify Your Email Address"; 
+            var message = $"Please verify your email address by clicking on this link: <a href=\"{verificationLink}\">{verificationLink}</a>";
             await SendEmailAsync(toEmail, subject, message);
         }
     }

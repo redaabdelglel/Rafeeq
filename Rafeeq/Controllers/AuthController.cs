@@ -75,7 +75,9 @@ namespace Rafeeq.Controllers
 
 
         [HttpPost("RefreshToken")]
-       
+
+        [AllowAnonymous]
+
         public async Task<ActionResult<TokenResponseDto>> RefreshToken([FromBody] string refreshToken)
         {
             var tokenResponse = await _authService.RefreshTokenAsync(refreshToken);
