@@ -28,6 +28,7 @@ namespace Rafeeq.UnitOfWork
         private NotificationRepository _notificationRepository;
         private MenteeCVRepository _menteeCVRepository;
         private CVCommentRepository _cvCommentRepository;
+        private RoleRepository _roleRepository;
 
         public UnitOfWorkManager(RafeeqContext context)
         {
@@ -164,6 +165,17 @@ namespace Rafeeq.UnitOfWork
                     _cvCommentRepository = new CVCommentRepository(context);
                 }
                 return _cvCommentRepository;
+            }
+        }
+        public RoleRepository RoleRepository
+        {
+            get
+            {
+                if (_roleRepository == null)
+                {
+                    _roleRepository = new RoleRepository(context);
+                }
+                return _roleRepository;
             }
         }
 

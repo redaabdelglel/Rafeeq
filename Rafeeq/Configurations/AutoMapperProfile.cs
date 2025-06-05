@@ -14,7 +14,21 @@ namespace Rafeeq.Configurations
             // User mapping
             CreateMap<User, UserDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
-                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName)) .ReverseMap();
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName))
+            .ReverseMap();
+
+
+            // for create/update user
+
+            CreateMap<CreateUserDto, User>()
+            .ForMember(dest => dest.Role, opt => opt.Ignore())
+            .ForMember(dest => dest.RoleId, opt => opt.Ignore())
+            .ForMember(dest => dest.UserId, opt => opt.Ignore())
+            .ForMember(dest => dest.IsEmailVerified, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.MapFrom(src => true)) // Default to active
+            .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+            .ForMember(dest => dest.PasswordHash, opt => opt.Ignore());
+
             // Skill mappings
             CreateMap<Skill, SkillDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.SkillId));
