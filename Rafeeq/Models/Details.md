@@ -1045,7 +1045,6 @@ Overall Folder Structure
     └── NotificationRepository.cs        # Notification data access implementation
 │
 ├── /UnitOfWork           <-- Unit of Work to coordinate repository commits
-│      ├── IUnitOfWork.cs                       # UoW interface with all repositories
 │      └── UnitOfWork.cs                        # UoW implementation
 │
 ├── /Entities             <-- EF Core entities mapping to DB tables

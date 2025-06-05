@@ -2,7 +2,7 @@
 
 namespace Rafeeq.DTOs.Auth
 {
-    public class ForgotPasswordDto
+    public class ResendVerificationDto
     {
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Invalid email format.")]
