@@ -27,9 +27,9 @@ public partial class User
     public string PasswordHash { get; set; }
 
     [StringLength(255)]
-    public string ProfilePicture { get; set; }
+    public string ?ProfilePicture { get; set; }
 
-    public string Bio { get; set; }
+    public string? Bio { get; set; }
 
     public bool? IsEmailVerified { get; set; }
 
@@ -41,12 +41,12 @@ public partial class User
     public DateTime? CreatedAt { get; set; }
 
     [StringLength(100)]
-    public string ExternalId { get; set; }
+    public string? ExternalId { get; set; }
 
     [StringLength(50)]
-    public string ExternalType { get; set; }
+    public string? ExternalType { get; set; }
 
-    public string ExternalToken { get; set; }
+    public string? ExternalToken { get; set; }
 
     public bool? IsMentor { get; set; }
 
