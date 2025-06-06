@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Rafeeq.Models;
 using Rafeeq.Repositories;
+using Rafeeq.Repositories.Auth;
 using Rafeeq.Repositories.Availability;
 using Rafeeq.Repositories.Bookings;
 using Rafeeq.Repositories.Chat;
@@ -20,6 +21,8 @@ namespace Rafeeq.UnitOfWork
 
         // Repository fields
         private UserRepository _userRepository;
+        private UserTokenRepository? _userTokenRepository; 
+
         private SkillRepository _skillRepository;
         private AvailabilityRepository _availabilityRepository;
         private BookingRepository _bookingRepository;
@@ -31,6 +34,8 @@ namespace Rafeeq.UnitOfWork
         private MenteeCVRepository _menteeCVRepository;
         private CVCommentRepository _cvCommentRepository;   
         private IMenteeRepository _menteeRepository;
+        private CVCommentRepository _cvCommentRepository;
+        private RoleRepository _roleRepository;
 
 
         public UnitOfWorkManager(RafeeqContext context)
@@ -48,6 +53,17 @@ namespace Rafeeq.UnitOfWork
                     _userRepository = new UserRepository(context);
                 }
                 return _userRepository;
+            }
+        }
+        public UserTokenRepository UserTokenRepository // Added for Auth
+        {
+            get
+            {
+                if (_userTokenRepository == null)
+                {
+                    _userTokenRepository = new UserTokenRepository(context);
+                }
+                return _userTokenRepository;
             }
         }
 
@@ -181,6 +197,17 @@ namespace Rafeeq.UnitOfWork
                     _cvCommentRepository = new CVCommentRepository(context);
                 }
                 return _cvCommentRepository;
+            }
+        }
+        public RoleRepository RoleRepository
+        {
+            get
+            {
+                if (_roleRepository == null)
+                {
+                    _roleRepository = new RoleRepository(context);
+                }
+                return _roleRepository;
             }
         }
 
