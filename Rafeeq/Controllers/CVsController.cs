@@ -34,7 +34,9 @@ namespace Rafeeq.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CVDTO>>> GetMenteeCVs()
         {
-            var userId = GetCurrentUserId();
+            //var userId = GetCurrentUserId();
+            var userId = 2;
+
             var cvs = await _unitOfWork.CVs.GetMenteeCVsAsync(userId);
             return Ok(_mapper.Map<IEnumerable<CVDTO>>(cvs));
         }
@@ -43,7 +45,9 @@ namespace Rafeeq.Controllers
         [HttpPost]
         public async Task<ActionResult<CVDTO>> UploadCV([FromForm] UploadCVDTO uploadCVDTO)
         {
-            var userId = GetCurrentUserId();
+            //var userId = GetCurrentUserId();
+            var userId = 2;
+
 
             if (uploadCVDTO.File == null || uploadCVDTO.File.Length == 0)
             {
@@ -109,7 +113,9 @@ namespace Rafeeq.Controllers
         [HttpGet("users/cv")]
         public async Task<ActionResult<CVDTO>> GetCurrentCV()
         {
-            var userId = GetCurrentUserId();
+            //var userId = GetCurrentUserId();
+            var userId = 2;
+
             var cv = await _unitOfWork.CVs.GetCurrentCVAsync(userId);
             if (cv == null)
             {

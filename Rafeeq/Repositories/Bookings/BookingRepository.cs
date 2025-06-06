@@ -13,7 +13,10 @@ namespace Rafeeq.Repositories.Bookings
             Task<Booking> CreateBookingAsync(Booking booking);
             Task<string> GetGoogleMeetLinkAsync(int bookingId);
             Task<Booking> UpdateBookingAsync(Booking booking);
-            Task<bool> DeleteBookingAsync(int id);  
+            Task<bool> DeleteBookingAsync(int id);
+            Task<bool> SoftDeleteBookingAsync(int id);
+
+
     }
 
     public class BookingRepository : IBookingRepository
@@ -138,6 +141,29 @@ namespace Rafeeq.Repositories.Bookings
             await _context.SaveChangesAsync();
             return true;
         }
+        public async Task<bool> SoftDeleteBookingAsync(int id)
+        {
+            try
+            {
+                var booking = await _context.Bookings.FindAsync(id);
+                if (booking == null || booking.IsDeleted.GetValueOrDefault())
+                {
+                    return false;
+                }
 
+                // Perform soft delete
+                booking.IsDeleted = true;
+                booking.UpdatedAt = DateTime.UtcNow;
+                booking.Status = "Cancelled"; // Optionally update status
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error soft deleting booking {BookingId}", id);
+                throw;
+            }
+        }
     }
  }

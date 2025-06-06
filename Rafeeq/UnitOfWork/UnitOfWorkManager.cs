@@ -1,9 +1,11 @@
-﻿using Rafeeq.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using Rafeeq.Models;
 using Rafeeq.Repositories;
 using Rafeeq.Repositories.Availability;
 using Rafeeq.Repositories.Bookings;
 using Rafeeq.Repositories.Chat;
 using Rafeeq.Repositories.CV;
+using Rafeeq.Repositories.Mentee;
 using Rafeeq.Repositories.Notifications;
 using Rafeeq.Repositories.Payments;
 using Rafeeq.Repositories.Reviews;
@@ -27,7 +29,9 @@ namespace Rafeeq.UnitOfWork
         private ReviewRepository _reviewRepository;
         private NotificationRepository _notificationRepository;
         private MenteeCVRepository _menteeCVRepository;
-        private CVCommentRepository _cvCommentRepository;
+        private CVCommentRepository _cvCommentRepository;   
+        private IMenteeRepository _menteeRepository;
+
 
         public UnitOfWorkManager(RafeeqContext context)
         {
@@ -44,6 +48,19 @@ namespace Rafeeq.UnitOfWork
                     _userRepository = new UserRepository(context);
                 }
                 return _userRepository;
+            }
+        }
+
+
+        public IMenteeRepository Mentees
+        {
+            get
+            {
+                if (_menteeRepository == null)
+                {
+                    _menteeRepository = new MenteeRepository(context);
+                }
+                return _menteeRepository;
             }
         }
 

@@ -1,12 +1,16 @@
-﻿using AutoMapper;
+﻿// Controllers/MenteeMentorsController.cs
 using Microsoft.AspNetCore.Mvc;
 using Rafeeq.DTOs.Users;
 using Rafeeq.UnitOfWork;
+using AutoMapper;
+using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Rafeeq.Controllers
 {
-    // Controllers/MenteeMentorsController.cs
-    [Route("api/mentee-mentors")]
+    [Route("api/mentors")]
     [ApiController]
     public class MenteeMentorsController : ControllerBase
     {
@@ -22,6 +26,28 @@ namespace Rafeeq.Controllers
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        /// <summary>
+        /// Gets all mentors
+        /// </summary>
+        /// <returns>List of all mentors</returns>
+        [HttpGet("all")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<MentorDto>>> GetAllMentors()
+        {
+            try
+            {
+                _logger.LogInformation("Fetching all mentors");
+                var mentors = await _unitOfWork.Mentors.GetAllMentorsAsync();
+                return Ok(_mapper.Map<IEnumerable<MentorDto>>(mentors));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching all mentors");
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request");
+            }
         }
 
         /// <summary>

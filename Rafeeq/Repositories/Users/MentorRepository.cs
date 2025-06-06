@@ -1,6 +1,10 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿// Repositories/Users/MentorRepository.cs
+using Microsoft.EntityFrameworkCore;
 using Rafeeq.DTOs.Users;
 using Rafeeq.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Rafeeq.Repositories.Users
 {
@@ -8,6 +12,7 @@ namespace Rafeeq.Repositories.Users
     {
         Task<IEnumerable<User>> GetMentorsAsync(MentorFilterDTO filter);
         Task<User> GetMentorProfileAsync(int id);
+        Task<IEnumerable<User>> GetAllMentorsAsync();
     }
 
     public class MentorRepository : IMentorRepository
@@ -17,8 +22,16 @@ namespace Rafeeq.Repositories.Users
         public MentorRepository(RafeeqContext context)
         {
             _context = context;
-            
+        }
 
+        public async Task<IEnumerable<User>> GetAllMentorsAsync()
+        {
+            return await _context.Users
+                .Include(u => u.MentorSkills)
+                .ThenInclude(ms => ms.Skill)
+                .Include(u => u.Availabilities)
+                .Where(u => u.IsMentor == true && !(u.IsDeleted ?? false))
+                .ToListAsync();
         }
 
         public async Task<IEnumerable<User>> GetMentorsAsync(MentorFilterDTO filter)
@@ -26,7 +39,8 @@ namespace Rafeeq.Repositories.Users
             var query = _context.Users
                 .Include(u => u.MentorSkills)
                 .ThenInclude(ms => ms.Skill)
-                .Where(u => u.IsMentor == true && !u.IsDeleted.Value);
+                .Include(u => u.Availabilities)
+                .Where(u => u.IsMentor == true && !(u.IsDeleted ?? false));
 
             if (!string.IsNullOrEmpty(filter.Skill))
             {
@@ -53,7 +67,8 @@ namespace Rafeeq.Repositories.Users
                 .Include(u => u.MentorSkills)
                 .ThenInclude(ms => ms.Skill)
                 .Include(u => u.Availabilities)
-                .FirstOrDefaultAsync(u => u.UserId == id && u.IsMentor == true && !u.IsDeleted.Value);
+              //  .Include(u => u.Reviews)
+                .FirstOrDefaultAsync(u => u.UserId == id && u.IsMentor == true && !(u.IsDeleted ?? false));
         }
     }
 }

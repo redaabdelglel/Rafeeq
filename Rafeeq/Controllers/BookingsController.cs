@@ -12,7 +12,7 @@ namespace Rafeeq.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-   // [Authorize]
+    //[Authorize]
     public class BookingsController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -37,12 +37,20 @@ namespace Rafeeq.Controllers
             return int.Parse(_httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
         }
 
-        // GET: api/bookings/mentee/{menteeId}
-        [HttpGet("mentee/{menteeId}")]
+        // GET: api/bookings/mentee/{menteeId}/all
+        [HttpGet("mentee/{menteeId}/all")]
         public async Task<ActionResult<IEnumerable<BookingDTO>>> GetMenteeBookings(int menteeId)
         {
             try
             {
+                // Verify the requested menteeId matches the authenticated user
+                var currentUserId = 2; // For testing
+                // var currentUserId = GetCurrentUserId();
+                if (currentUserId != menteeId)
+                {
+                    return Forbid();
+                }
+
                 var bookings = await _unitOfWork.Bookings.GetMenteeBookingsAsync(menteeId);
                 return Ok(_mapper.Map<IEnumerable<BookingDTO>>(bookings));
             }
@@ -53,38 +61,50 @@ namespace Rafeeq.Controllers
             }
         }
 
-        // GET: api/bookings/upcoming
-        [HttpGet("upcoming")]
-        public async Task<ActionResult<IEnumerable<BookingDTO>>> GetUpcomingBookings()
+        // GET: api/bookings/mentee/{menteeId}/upcoming
+        [HttpGet("mentee/{menteeId}/upcoming")]
+        public async Task<ActionResult<IEnumerable<BookingDTO>>> GetUpcomingBookings(int menteeId)
         {
             try
             {
-                //var userId = GetCurrentUserId();
-                var userId = 1;
-                var bookings = await _unitOfWork.Bookings.GetUpcomingBookingsAsync(userId);
+                // Verify the requested menteeId matches the authenticated user
+                var currentUserId = 2; // For testing
+                // var currentUserId = GetCurrentUserId();
+                if (currentUserId != menteeId)
+                {
+                    return Forbid();
+                }
+
+                var bookings = await _unitOfWork.Bookings.GetUpcomingBookingsAsync(menteeId);
                 return Ok(_mapper.Map<IEnumerable<BookingDTO>>(bookings));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting upcoming bookings");
+                _logger.LogError(ex, "Error getting upcoming bookings for mentee {MenteeId}", menteeId);
                 return StatusCode(500, "An error occurred while retrieving upcoming bookings");
             }
         }
 
-        // GET: api/bookings/completed
-        [HttpGet("completed")]
-        public async Task<ActionResult<IEnumerable<BookingDTO>>> GetCompletedBookings()
+        // GET: api/bookings/mentee/{menteeId}/completed
+        [HttpGet("mentee/{menteeId}/completed")]
+        public async Task<ActionResult<IEnumerable<BookingDTO>>> GetCompletedBookings(int menteeId)
         {
             try
             {
-                //var userId = GetCurrentUserId();
-                var userId = 1;
-                var bookings = await _unitOfWork.Bookings.GetCompletedBookingsAsync(userId);
+                // Verify the requested menteeId matches the authenticated user
+                var currentUserId = 2; // For testing
+                // var currentUserId = GetCurrentUserId();
+                if (currentUserId != menteeId)
+                {
+                    return Forbid();
+                }
+
+                var bookings = await _unitOfWork.Bookings.GetCompletedBookingsAsync(menteeId);
                 return Ok(_mapper.Map<IEnumerable<BookingDTO>>(bookings));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting completed bookings");
+                _logger.LogError(ex, "Error getting completed bookings for mentee {MenteeId}", menteeId);
                 return StatusCode(500, "An error occurred while retrieving completed bookings");
             }
         }
@@ -95,8 +115,9 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                //var userId = GetCurrentUserId();
-                var userId = 1;
+                var userId = 2; // For testing
+                // var userId = GetCurrentUserId();
+
                 var booking = _mapper.Map<Booking>(createBookingDTO);
                 booking.MenteeId = userId;
 
@@ -125,6 +146,13 @@ namespace Rafeeq.Controllers
                     return NotFound();
                 }
 
+                // Verify the current user is either the mentee or mentor of this booking
+                var currentUserId = GetCurrentUserId();
+                if (currentUserId != booking.MenteeId && currentUserId != booking.MentorId)
+                {
+                    return Forbid();
+                }
+
                 return Ok(_mapper.Map<BookingDetailsDTO>(booking));
             }
             catch (Exception ex)
@@ -144,6 +172,13 @@ namespace Rafeeq.Controllers
                 if (booking == null)
                 {
                     return NotFound();
+                }
+
+                // Verify the current user is either the mentee or mentor of this booking
+                var currentUserId = GetCurrentUserId();
+                if (currentUserId != booking.MenteeId && currentUserId != booking.MentorId)
+                {
+                    return Forbid();
                 }
 
                 _mapper.Map(updateBookingDTO, booking);
@@ -166,6 +201,20 @@ namespace Rafeeq.Controllers
         {
             try
             {
+                var booking = await _unitOfWork.Bookings.GetBookingDetailsAsync(id);
+                if (booking == null)
+                {
+                    return NotFound("Booking not found");
+                }
+
+                // Verify the current user is either the mentee or mentor of this booking
+                var currentUserId = 2; // For testing
+                // var currentUserId = GetCurrentUserId();
+                if (currentUserId != booking.MenteeId && currentUserId != booking.MentorId)
+                {
+                    return Forbid();
+                }
+
                 var meetLink = await _unitOfWork.Bookings.GetGoogleMeetLinkAsync(id);
                 if (string.IsNullOrEmpty(meetLink))
                 {
@@ -180,34 +229,43 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, "An error occurred while joining the meeting");
             }
         }
-    }
-    [ApiController]
-    [Route("api/test")]
-    public class TestController : ControllerBase
-    {
-        private readonly IGoogleMeetService _meetService;
 
-        public TestController(IGoogleMeetService meetService)
-        {
-            _meetService = meetService;
-        }
-
-        [HttpGet("meet")]
-        public async Task<IActionResult> TestMeet()
+        // DELETE: api/bookings/{id} (Soft Delete)
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> SoftDeleteBooking(int id)
         {
             try
             {
-                var link = await _meetService.CreateMeetingAsync(
-                    "Test Meeting",
-                    DateTime.Now.AddHours(1),
-                    DateTime.Now.AddHours(2),
-                    "Test Description");
+                var booking = await _unitOfWork.Bookings.GetBookingDetailsAsync(id);
+                if (booking == null || booking.IsDeleted.GetValueOrDefault())
+                {
+                    return NotFound();
+                }
 
-                return Ok(new { meetLink = link });
+                // Verify the current user is either the mentee or mentor of this booking
+                var currentUserId = GetCurrentUserId();
+                if (currentUserId != booking.MenteeId && currentUserId != booking.MentorId)
+                {
+                    return Forbid();
+                }
+
+                var result = await _unitOfWork.Bookings.SoftDeleteBookingAsync(id);
+                if (!result)
+                {
+                    return NotFound();
+                }
+
+                await _unitOfWork.CompleteAsync();
+                return NoContent();
             }
             catch (Exception ex)
             {
-                return StatusCode(500, new { error = ex.Message });
+                _logger.LogError(ex, "Error soft deleting booking {BookingId}", id);
+                return StatusCode(500, "An error occurred while deleting the booking");
             }
         }
     }

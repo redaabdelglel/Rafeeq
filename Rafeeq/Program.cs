@@ -10,6 +10,7 @@ using Rafeeq.Repositories.Bookings;
 using Rafeeq.Repositories.CV;
 using Rafeeq.Repositories.Users;
 using Rafeeq.Services.Bookings;
+using Rafeeq.Repositories.Mentee;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -89,6 +90,7 @@ builder.Services.AddScoped<IGoogleMeetService, GoogleMeetService>();
 builder.Services.AddScoped<IBookingRepository, BookingRepository>();
 builder.Services.AddScoped<ICVRepository, CVRepository>();
 builder.Services.AddScoped<IMentorRepository, MentorRepository>();
+builder.Services.AddScoped<IMenteeRepository, MenteeRepository>();
 
 // Register Unit of Work
 builder.Services.AddScoped<IUnitOfWork, CVBookingUnitOfWork>();

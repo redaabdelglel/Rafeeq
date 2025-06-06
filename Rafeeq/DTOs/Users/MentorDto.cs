@@ -1,4 +1,6 @@
-﻿namespace Rafeeq.DTOs.Users
+﻿using Rafeeq.DTOs.Availability;
+
+namespace Rafeeq.DTOs.Users
 {
     public class MentorDto
     {
@@ -9,5 +11,7 @@
         public string Bio { get; set; }
         public decimal? HourlyRate { get; set; }
         public List<string> Skills { get; set; }
+        public List<AvailabilityDto> Availabilities { get; set; } = new List<AvailabilityDto>();
+
     }
 }
