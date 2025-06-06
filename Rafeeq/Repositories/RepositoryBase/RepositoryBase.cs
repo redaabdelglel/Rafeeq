@@ -37,6 +37,11 @@ namespace Rafeeq.Repositories.RepositoryBase
              return await Context.Set<T>().FindAsync(id);
         }
 
+        public Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType)
+        {
+            throw new NotImplementedException();
+        }
+
         public void Remove(T entity)
         {
           Context.Set<T>().Remove(entity);

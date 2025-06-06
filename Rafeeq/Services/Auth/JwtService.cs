@@ -15,6 +15,13 @@ namespace Rafeeq.Services.Auth
         {
             this._config = config;
         }
+
+        public object GenerateToken(User admin)
+        {
+            return GenerateTokens(admin).AccessToken;
+        }
+
+
         public TokenResponseDto GenerateTokens(User user)
         {
             var jwtSettings = _config.GetSection("Jwt");

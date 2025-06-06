@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Rafeeq.Models;
+using System.Linq.Expressions;
 
 namespace Rafeeq.Repositories.RepositoryBase
 {
@@ -12,5 +13,6 @@ namespace Rafeeq.Repositories.RepositoryBase
         void Remove(T entity);
         void RemoveRange(IEnumerable<T> entities);
         void Update(T entity);
+        Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType);
     }
 }

@@ -150,7 +150,7 @@ namespace Rafeeq.Controllers
             }
             return Ok("Logged out successfully.");
         }
-
+     
 
 
     }

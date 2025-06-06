@@ -27,30 +27,31 @@ namespace Rafeeq.Controllers
         }
 
         // get all users
-        //[HttpGet("users")]
-        //public async Task<IActionResult> GetAllUsers()
-        //{
-        //   var users = await _unitOfWork.UserRepository.GetAllAsync();
-        //    if (users == null || !users.Any())
-        //    {
-        //        return NotFound("No users found.");
-        //    }
-        //    var userDtos = _map.Map<IEnumerable<UserDto>>(users);
-        //    return Ok(userDtos);
-        //}
+        [HttpGet("users")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _unitOfWork.UserRepository.GetAllAsync();
+            if (users == null || !users.Any())
+            {
+                return NotFound("No users found.");
+            }
+            var userDtos = _map.Map<IEnumerable<UserDto>>(users);
+            return Ok(userDtos);
+        }
 
-        // get user by id
-        //[HttpGet("{id}")]
-        //public async Task<IActionResult> GetUserById(int id) { 
-        //var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
-        //    if (user == null)
-        //    {
-        //        return NotFound($"User with ID {id} not found.");
-        //    }
-        //    var userDto = _map.Map<UserDto>(user);
-        //    return Ok(userDto);
+        //get user by id
+       [HttpGet("{id}")]
+        public async Task<IActionResult> GetUserById(int id)
+        {
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
+            if (user == null)
+            {
+                return NotFound($"User with ID {id} not found.");
+            }
+            var userDto = _map.Map<UserDto>(user);
+            return Ok(userDto);
 
-        //}
+        }
 
         // change user state
         [HttpPut("users/{id}/status")]
@@ -108,7 +109,7 @@ namespace Rafeeq.Controllers
                 return BadRequest(ModelState);
             }
             // Check if email already exists
-            var existingUser = await _unitOfWork.UserRepository.GetByEmailAsync(createdto.Email);
+            var existingUser = await _unitOfWork.UserRepository.GetUserByEmailAsync(createdto.Email);
             if (existingUser != null)
             {
                 return BadRequest("Email already exists.");
