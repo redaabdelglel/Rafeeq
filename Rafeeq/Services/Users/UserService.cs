@@ -22,7 +22,7 @@ namespace Rafeeq.Services.Users
         }
         public async Task<bool> ChangePasswordAsync(int userId, string oldPassword, string newPassword)
         {
-            var user = await _unitOfWork.UserRepository.GetById(userId);
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
             if (user == null)
             {
                 return false;
@@ -65,7 +65,7 @@ namespace Rafeeq.Services.Users
 
         public async Task<bool> UpdateUserProfileAsync(int userId, UpdateProfileDto dto)
         {
-            var user = await _unitOfWork.UserRepository.GetById(userId);
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
             if (user == null)
             {
                 return false;

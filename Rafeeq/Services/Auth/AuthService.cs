@@ -258,7 +258,7 @@ namespace Rafeeq.Services.Auth
                 return null;  
             }
 
-            var user = await _unitOfWork.UserRepository.GetById(storedToken.UserId.GetValueOrDefault());
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(storedToken.UserId.GetValueOrDefault());
             if (user == null)
             {
                 return null;
@@ -312,9 +312,9 @@ namespace Rafeeq.Services.Auth
             user.RoleId = role!.RoleId; 
             user.IsMentor = (dto.Role == "Mentor");
             user.IsInterviewer = (dto.Role == "Mentor");
-            user.IsEmailVerified = false; // when the user rgister first one he have to verfiy his registertion in his account 
+            //user.IsEmailVerified = false; // when the user rgister first one he have to verfiy his registertion in his account 
 
-            //user.IsEmailVerified = true;
+            user.IsEmailVerified = true;
 
             user.CreatedAt = DateTime.UtcNow;
 
@@ -409,7 +409,7 @@ namespace Rafeeq.Services.Auth
             }
 
             // Fix for CS8602: Use GetValueOrDefault for nullable UserId  
-            var user = await _unitOfWork.UserRepository.GetById(userToken.UserId.GetValueOrDefault());
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userToken.UserId.GetValueOrDefault());
             if (user == null)
             {
                 return false;
@@ -435,7 +435,7 @@ namespace Rafeeq.Services.Auth
             }
 
             // Fix for CS8602: Use GetValueOrDefault for nullable UserId  
-            var user = await _unitOfWork.UserRepository.GetById(userToken.UserId.GetValueOrDefault());
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userToken.UserId.GetValueOrDefault());
             if (user == null)
             {
                 return false;
