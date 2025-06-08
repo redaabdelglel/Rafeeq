@@ -5,8 +5,8 @@ namespace Rafeeq.Repositories.RepositoryBase
 {
     public interface IRepositoryBase<T> where T : class
     {
-        Task<T?> GetById(int id);
-        Task<IEnumerable<T>> GetAll();
+        Task<T?> GetByIdAsync(int id);
+        Task<IEnumerable<T>> GetAllAsync();
         IEnumerable<T> Find(Expression<Func<T, bool>> expression);
         void Add(T entity);
         void AddRange(IEnumerable<T> entities);
