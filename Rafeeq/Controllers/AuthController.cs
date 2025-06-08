@@ -27,12 +27,20 @@ namespace Rafeeq.Controllers
                 return BadRequest(ModelState);
             }
 
-            var result = await _authService.RegisterAsync(dto);
-            if (result == null)
+            var response = await _authService.RegisterAsync(dto); // Get the structured response
+
+            if (!response.IsSuccess)
             {
-                return BadRequest("Registration failed. Email might already be in use.");
+                // Return specific error messages based on the response
+                if (response.IsEmailAlreadyRegistered)
+                {
+                    return BadRequest(new { Message = response.Message });
+                }
+                return StatusCode(500, new { Message = response.Message }); // For other internal errors
             }
-            return Ok(new { Message = "Registration successful. Please check your email to verify your account.", TokenData = result });
+
+            // Return success message. No TokenData is included here.
+            return Ok(new { Message = response.Message });
         }
 
         [HttpPost("login")]
@@ -44,10 +52,11 @@ namespace Rafeeq.Controllers
                 return BadRequest(ModelState);
             }
 
-            var loginResult = await _authService.LoginAsync(dto); 
+            var loginResult = await _authService.LoginAsync(dto);
 
             if (!loginResult.IsSuccess)
             {
+                // Use Unauthorized for authentication/authorization failures, BadRequest for bad input
                 return Unauthorized(loginResult.ErrorMessage);
             }
 
@@ -87,8 +96,9 @@ namespace Rafeeq.Controllers
         [AllowAnonymous]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordDto dto)
         {
+            // The service handles email enumeration prevention, so always return success to the client
             await _authService.ForgotPasswordAsync(dto.Email);
-            return Ok("Check your account, a password reset link has been sent.");
+            return Ok("If an account with that email exists, a password reset link has been sent."); // More generic message
         }
 
         [HttpPost("ResetPassword")]
@@ -105,35 +115,36 @@ namespace Rafeeq.Controllers
             {
                 return BadRequest("Invalid or expired token, or password update failed.");
             }
-            return Ok("Password has been reset successfully.");
+            return Ok("Password has been reset successfully. You can now log in."); // Added message for clarity
         }
 
-        [HttpGet("verify-email/{token}")] 
+        [HttpGet("verify-email/{token}")]
         [AllowAnonymous]
         public async Task<IActionResult> VerifyEmail(string token)
         {
             var success = await _authService.VerifyEmailAsync(token);
             if (!success)
             {
-                return BadRequest("Email verification failed. Invalid or expired token.");
+                return BadRequest("Email verification failed. Invalid or expired token. Please try resending the verification email."); // More helpful message
             }
-            return Ok("Email verified successfully."); 
+            return Ok("Email verified successfully! You can now log in.");
         }
 
         [HttpPost("ResendVerificationEmail")]
         [AllowAnonymous]
         public async Task<IActionResult> ResendVerification([FromBody] string email)
         {
-            if (!ModelState.IsValid) 
+            if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState); 
+                return BadRequest(ModelState);
             }
+            // Again, for security, always return a success message if the email format is valid
             await _authService.ResendVerificationEmailAsync(email);
-            return Ok("Check your account, a new verification link has been sent.");
+            return Ok("If an account with that email exists and is not verified, a new verification link has been sent."); // More generic message
         }
 
         [HttpPost("logout")]
-        [AllowAnonymous] 
+        [AllowAnonymous]
         public async Task<IActionResult> Logout([FromBody] LogoutDto dto)
         {
             if (!ModelState.IsValid)
@@ -145,8 +156,9 @@ namespace Rafeeq.Controllers
 
             if (!success)
             {
-               
                 Console.WriteLine($"Logout: Could not invalidate refresh token: {dto.RefreshToken}");
+                // Even if token invalidation fails, we tell the user they are logged out.
+                // The client will clear the token anyway.
             }
 
             return Ok(new { Message = "Logged out successfully." });

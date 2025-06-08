@@ -4,7 +4,8 @@ namespace Rafeeq.Services.Auth
 {
     public interface IAuthService
     {
-        Task<TokenResponseDto?> RegisterAsync(RegisterDto dto);
+        // Changed return type
+        Task<RegisterResponseDto> RegisterAsync(RegisterDto dto);
         Task<LoginResult> LoginAsync(LoginDto dto);
         Task<TokenResponseDto?> ExternalLoginAsync(ExternalLoginDto dto);
         Task<TokenResponseDto?> RefreshTokenAsync(string refreshToken);
@@ -13,7 +14,6 @@ namespace Rafeeq.Services.Auth
         Task<bool> VerifyEmailAsync(string token);
         Task ResendVerificationEmailAsync(string email);
         Task<bool> InvalidateRefreshTokenAsync(int userId);
-
         Task<bool> InvalidateRefreshTokenByValueAsync(string refreshTokenValue);
     }
 }
