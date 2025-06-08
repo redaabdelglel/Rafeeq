@@ -21,30 +21,33 @@ namespace Rafeeq.Controllers
             _logger = logger;
         }
 
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                throw new UnauthorizedAccessException("User ID claim is missing or invalid.");
+            }
+            return userId;
+        }
+
         [HttpGet("{menteeId}/dashboard")]
-        public async Task<ActionResult<MenteeDashboardDto>> GetDashboardData(int menteeId)
+        public async Task<ActionResult<MenteeDashboardDto>> GetDashboardData()
         {
             try
             {
-                if (menteeId <= 0)
-                {
-                    _logger.LogWarning("Invalid mentee ID: {MenteeId}", menteeId);
-                    return BadRequest("Invalid mentee ID");
-                }
-
+                var menteeId = GetCurrentUserId();
                 var dashboardData = await _unitOfWork.Mentees.GetDashboardDataAsync(menteeId);
-
                 if (dashboardData == null)
                 {
                     _logger.LogWarning("Mentee not found with ID: {MenteeId}", menteeId);
                     return NotFound();
                 }
-
                 return Ok(dashboardData);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error fetching dashboard data for mentee {MenteeId}", menteeId);
+                _logger.LogError(ex, "Error fetching dashboard data for mentee");
                 return StatusCode(500, "An error occurred while processing your request");
             }
         }

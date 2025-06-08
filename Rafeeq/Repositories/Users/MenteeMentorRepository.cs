@@ -15,11 +15,11 @@ namespace Rafeeq.Repositories.Users
         Task<IEnumerable<User>> GetAllMentorsAsync();
     }
 
-    public class MentorRepository : IMentorRepository
+    public class MenteeMentorRepository : IMentorRepository
     {
         private readonly RafeeqContext _context;
 
-        public MentorRepository(RafeeqContext context)
+        public MenteeMentorRepository(RafeeqContext context)
         {
             _context = context;
         }
@@ -63,12 +63,21 @@ namespace Rafeeq.Repositories.Users
 
         public async Task<User> GetMentorProfileAsync(int id)
         {
-            return await _context.Users
+            var mentor = await _context.Users
                 .Include(u => u.MentorSkills)
                 .ThenInclude(ms => ms.Skill)
                 .Include(u => u.Availabilities)
-              //  .Include(u => u.Reviews)
                 .FirstOrDefaultAsync(u => u.UserId == id && u.IsMentor == true && !(u.IsDeleted ?? false));
+
+            // DEBUG: Verify loaded data
+            foreach (var a in mentor.Availabilities)
+            {
+                Console.WriteLine($"DB Values - ID: {a.AvailabilityId}, " +
+                                 $"DayOfWeek: {a.DayOfWeek}, " +
+                                 $"Type: {a.DayOfWeek?.GetType()}");
+            }
+
+            return mentor;
         }
     }
 }

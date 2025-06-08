@@ -1,26 +1,24 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Rafeeq.DTOs.Bookings;
 using Rafeeq.Models;
 using Rafeeq.UnitOfWork;
-using Rafeeq.Services.Bookings;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Rafeeq.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    //[Authorize]
-    public class BookingsController : ControllerBase
+    [Authorize]
+    public class MenteeBookingsController : Controller
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly ILogger<BookingsController> _logger;
 
-        public BookingsController(
+        public MenteeBookingsController(
             IUnitOfWork unitOfWork,
             IMapper mapper,
             IHttpContextAccessor httpContextAccessor,
@@ -44,8 +42,8 @@ namespace Rafeeq.Controllers
             try
             {
                 // Verify the requested menteeId matches the authenticated user
-               
-                 var currentUserId = GetCurrentUserId();
+
+                var currentUserId = GetCurrentUserId();
                 if (currentUserId != menteeId)
                 {
                     return Forbid();
@@ -68,7 +66,7 @@ namespace Rafeeq.Controllers
             try
             {
                 // Verify the requested menteeId matches the authenticated user
-                
+
                 var currentUserId = GetCurrentUserId();
                 if (currentUserId != menteeId)
                 {
@@ -93,7 +91,7 @@ namespace Rafeeq.Controllers
             {
                 // Verify the requested menteeId matches the authenticated user
                 var currentUserId = GetCurrentUserId(); // For testing
-                
+
                 if (currentUserId != menteeId)
                 {
                     return Forbid();
@@ -115,7 +113,7 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                 var userId = GetCurrentUserId();
+                var userId = GetCurrentUserId();
 
                 var booking = _mapper.Map<Booking>(createBookingDTO);
                 booking.MenteeId = userId;
@@ -207,8 +205,8 @@ namespace Rafeeq.Controllers
                 }
 
                 // Verify the current user is either the mentee or mentor of this booking
-                
-                 var currentUserId = GetCurrentUserId();
+
+                var currentUserId = GetCurrentUserId();
                 if (currentUserId != booking.MenteeId && currentUserId != booking.MentorId)
                 {
                     return Forbid();

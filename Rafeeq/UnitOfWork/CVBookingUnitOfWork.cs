@@ -33,9 +33,9 @@ namespace Rafeeq.UnitOfWork
             _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
 
             // Initialize repositories with their respective loggers
-            Bookings = new BookingRepository(_context, _loggerFactory.CreateLogger<BookingRepository>());
-            CVs = new CVRepository(_context, _environment);
-            Mentors = new MentorRepository(_context);
+            Bookings = new MenteeBookingRepository(_context, _loggerFactory.CreateLogger<MenteeBookingRepository>());
+            CVs = new MenteeCVRepository(_context, _environment);
+            Mentors = new MenteeMentorRepository(_context);
         }
 
 

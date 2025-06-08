@@ -21,17 +21,17 @@ namespace Rafeeq.Repositories.Bookings
 
     }
 
-    public class BookingRepository : IBookingRepository
+    public class MenteeBookingRepository : IBookingRepository
         {
             private readonly RafeeqContext _context;
-            private readonly ILogger<BookingRepository> _logger;  // Add logging
+            private readonly ILogger<MenteeBookingRepository> _logger;  // Add logging
 
-        public BookingRepository(RafeeqContext context)
+        public MenteeBookingRepository(RafeeqContext context)
         {
             _context = context;
 
         }
-        public BookingRepository(RafeeqContext context, ILogger<BookingRepository> logger)
+        public MenteeBookingRepository(RafeeqContext context, ILogger<MenteeBookingRepository> logger)
             {
                 _context = context;
                 _logger = logger;
