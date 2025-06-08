@@ -22,41 +22,46 @@ namespace Rafeeq.Services.Auth
         }
 
 
+
         public TokenResponseDto GenerateTokens(User user)
         {
             var jwtSettings = _config.GetSection("Jwt");
             var secretKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is not configured.");
-            var issuer = jwtSettings["IssuerIP"] ?? throw new InvalidOperationException("JWT Issuer is not configured.");
-            var audience = jwtSettings["AudienceIP"] ?? throw new InvalidOperationException("JWT Audience is not configured.");
-            var tokenExpiresInMinutes = double.Parse(jwtSettings["TokenExpiresInMinutes"] ?? "60");
+            var issuer = jwtSettings["AudienceIP"] ?? throw new InvalidOperationException("JWT Issuer is not configured."); // API URL
+            var audience = jwtSettings["IssuerIP"] ?? throw new InvalidOperationException("JWT Audience is not configured."); // Frontend URL
+            var accessTokenExpirationMinutes = double.Parse(jwtSettings["AccessTokenExpirationMinutes"] ?? "60");
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.FullName),
                 new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "Mentee")
-
             };
+
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(claims),
-                Expires = DateTime.UtcNow.AddMinutes(tokenExpiresInMinutes),
+                Expires = DateTime.UtcNow.AddMinutes(accessTokenExpirationMinutes),
                 Issuer = issuer,
                 Audience = audience,
                 SigningCredentials = credentials
             };
+
             var tokenHandler = new JwtSecurityTokenHandler();
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var accessToken = tokenHandler.WriteToken(token);
-            var refreshToken = Guid.NewGuid().ToString();
+
+            var refreshToken = Guid.NewGuid().ToString(); 
 
             return new TokenResponseDto
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
-                ExpiresIn = (int)tokenExpiresInMinutes * 60, // Convert minutes to seconds
+                ExpiresIn = (int)TimeSpan.FromMinutes(accessTokenExpirationMinutes).TotalSeconds, 
                 UserId = user.UserId,
                 FullName = user.FullName,
                 Email = user.Email,
@@ -68,8 +73,8 @@ namespace Rafeeq.Services.Auth
         {
             var jwtSettings = _config.GetSection("Jwt");
             var secretKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is not configured.");
-            var issuer = jwtSettings["IssuerIP"] ?? throw new InvalidOperationException("JWT Issuer is not configured.");
-            var audience = jwtSettings["AudienceIP"] ?? throw new InvalidOperationException("JWT Audience is not configured.");
+            var issuer = jwtSettings["AudienceIP"] ?? throw new InvalidOperationException("JWT Issuer is not configured.");
+            var audience = jwtSettings["IssuerIP"] ?? throw new InvalidOperationException("JWT Audience is not configured.");
 
             var tokenValidationParameters = new TokenValidationParameters
             {

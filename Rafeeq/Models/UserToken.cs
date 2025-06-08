@@ -17,11 +17,11 @@ public partial class UserToken
 
     [Required]
     [StringLength(50)]
-    public string TokenType { get; set; }
+    public string TokenType { get; set; } = string.Empty;
 
     [Required]
     [StringLength(255)]
-    public string TokenValue { get; set; }
+    public string TokenValue { get; set; } = string.Empty;
 
     [Column(TypeName = "datetime")]
     public DateTime ExpiryDate { get; set; }

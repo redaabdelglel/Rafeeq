@@ -4,7 +4,7 @@
     {
         public static string HashPassword(string password)
         {
-            return BCrypt.Net.BCrypt.HashPassword(password, 12);
+            return BCrypt.Net.BCrypt.HashPassword(password, BCrypt.Net.BCrypt.GenerateSalt(10));
         }
         public static bool VerifyPassword(string password, string hashedPassword)
         {
