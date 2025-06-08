@@ -7,6 +7,7 @@ using Rafeeq.DTOs.Auth;
 using BCrypt.Net;
 using Rafeeq.DTOs.Bookings;
 using Rafeeq.DTOs.Availability;
+using Rafeeq.DTOs.CV;
 
 namespace Rafeeq.Configurations
 {
@@ -105,7 +106,7 @@ namespace Rafeeq.Configurations
 
 
             // Availability mappings
-           
+
             CreateMap<Models.Availability, AvailabilityDto>();
             CreateMap<CreateAvailabilityDto, Models.Availability>();
             CreateMap<UpdateAvailabilityDto, Models.Availability>();
@@ -114,6 +115,12 @@ namespace Rafeeq.Configurations
             CreateMap<UpdateBookingStatusDto, Booking>()
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.UtcNow));
+
+
+            // cvcomments mapping
+            CreateMap<CVComment, CVCommentDto>()
+                .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName));
+            CreateMap<AddCVCommentDto, CVComment>();
 
         }
     }
