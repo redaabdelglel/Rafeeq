@@ -56,6 +56,11 @@ namespace Rafeeq.Configurations
             // CV Services
             services.AddScoped<CVService>();
 
+
+            // Chat  services 
+            services.AddScoped<SignalRService>();
+       
+
             return services;
         }
     }
