@@ -83,5 +83,33 @@ namespace Rafeeq.Services.Users
         {
             throw new NotImplementedException();
         }
+        public async Task<bool> UpdateHourlyRateAsync(int userId, decimal hourlyRate)
+        {
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+            if (user == null || !user.IsMentor.GetValueOrDefault())
+            {
+                return false; // User not found or not a mentor
+            }
+
+            user.HourlyRate = hourlyRate;
+            _unitOfWork.UserRepository.Update(user);
+            await _unitOfWork.SaveAsync();
+            return true;
+        }
+
+        public async Task<bool> ToggleMentorStatusAsync(int userId, bool isInterviewer)
+        {
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+            if (user == null || !user.IsMentor.GetValueOrDefault())
+            {
+                return false; // User not found or not a mentor
+            }
+
+            user.IsInterviewer = isInterviewer;
+            _unitOfWork.UserRepository.Update(user);
+            await _unitOfWork.SaveAsync();
+            return true;
+        }
+
     }
 }
