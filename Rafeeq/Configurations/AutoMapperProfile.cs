@@ -9,6 +9,7 @@ using Rafeeq.DTOs.Bookings;
 using Rafeeq.DTOs.Availability;
 using Rafeeq.DTOs.CV;
 using Rafeeq.DTOs.Chat;
+using Rafeeq.DTOs.Notifications;
 
 namespace Rafeeq.Configurations
 {
@@ -136,6 +137,8 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.SentAt, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.IsRead, opt => opt.MapFrom(src => false));
 
+            // Notification mappings
+            CreateMap<Notification, NotificationDto>();
 
         }
     }
