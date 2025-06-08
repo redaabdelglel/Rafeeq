@@ -46,7 +46,7 @@ namespace Rafeeq.Repositories.Bookings
                 .Where(b => b.Status == "Completed")
                 .SumAsync(b => b.TotalAmount ?? 0);
         }
-      
+
         public async Task<bool> HasBookingsForAvailabilityAsync(int mentorId, int dayOfWeek, TimeSpan startTime, TimeSpan endTime)
         {
             // Get the current date
@@ -80,6 +80,46 @@ namespace Rafeeq.Repositories.Bookings
 
             return false;
         }
+        // Get bookings for a specific mentor
+        public async Task<IEnumerable<BookingDto>> GetBookingsByMentorIdAsync(int mentorId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Mentor)
+                .Include(b => b.Mentee)
+                .Where(b => b.MentorId == mentorId && b.IsDeleted == false)
+                .Select(b => new BookingDto
+                {
+                    BookingId = b.BookingId,
+                    SessionType = b.SessionType,
+                    StartDateTime = b.StartDateTime,
+                    EndDateTime = b.EndDateTime,
+                    Status = b.Status,
+                    GoogleMeetLink = b.GoogleMeetLink,
+                    PaymentStatus = b.PaymentStatus,
+                    TotalAmount = b.TotalAmount ?? 0,
+                    Commission = b.Commission ?? 0,
+                    MentorName = b.Mentor.FullName,
+                    MenteeName = b.Mentee.FullName
+                })
+                .ToListAsync();
+        }
+
+        // Get booking by ID
+        public async Task<Booking> GetByIdAsync(int id)
+        {
+            return await _context.Bookings
+                .Include(b => b.Mentor)
+                .Include(b => b.Mentee)
+                .FirstOrDefaultAsync(b => b.BookingId == id);
+        }
+
+        // Update booking status
+        public void UpdateStatus(Booking booking)
+        {
+            booking.UpdatedAt = DateTime.UtcNow;
+            _context.Bookings.Update(booking);
+        }
+
 
 
 

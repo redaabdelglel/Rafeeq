@@ -110,6 +110,10 @@ namespace Rafeeq.Configurations
             CreateMap<CreateAvailabilityDto, Models.Availability>();
             CreateMap<UpdateAvailabilityDto, Models.Availability>();
 
+            // UpdateBookingStatusDto mapping
+            CreateMap<UpdateBookingStatusDto, Booking>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.UtcNow));
 
         }
     }
