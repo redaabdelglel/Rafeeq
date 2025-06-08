@@ -6,6 +6,7 @@ using Rafeeq.DTOs.Skills;
 using Rafeeq.DTOs.Auth;
 using BCrypt.Net;
 using Rafeeq.DTOs.Bookings;
+using Rafeeq.DTOs.Availability;
 
 namespace Rafeeq.Configurations
 {
@@ -43,7 +44,7 @@ namespace Rafeeq.Configurations
             // UpdateProfileDto to User
             CreateMap<UpdateProfileDto, User>()
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
-                .ForMember(dest => dest.Email, opt => opt.Ignore()) 
+                .ForMember(dest => dest.Email, opt => opt.Ignore())
                 .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
                 .ForMember(dest => dest.IsEmailVerified, opt => opt.Ignore())
                 .ForMember(dest => dest.RoleId, opt => opt.Ignore())
@@ -99,6 +100,16 @@ namespace Rafeeq.Configurations
             CreateMap<Booking, BookingDto>()
     .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName))
     .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Mentee.FullName));
+
+
+
+
+            // Availability mappings
+           
+            CreateMap<Models.Availability, AvailabilityDto>();
+            CreateMap<CreateAvailabilityDto, Models.Availability>();
+            CreateMap<UpdateAvailabilityDto, Models.Availability>();
+
 
         }
     }
