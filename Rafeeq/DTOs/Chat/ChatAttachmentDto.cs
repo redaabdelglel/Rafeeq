@@ -2,5 +2,12 @@
 {
     public class ChatAttachmentDto
     {
+        public int AttachmentId { get; set; }
+        public int MessageId { get; set; }
+        public string FilePath { get; set; }
+        public string FileName { get; set; }
+        public int FileSize { get; set; }
+        public string ContentType { get; set; }
+        public string FullUrl { get; set; } // Complete URL to access the file
     }
 }
