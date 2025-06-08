@@ -24,22 +24,21 @@ namespace Rafeeq.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState);
+                return BadRequest(ModelState); 
             }
 
-            var response = await _authService.RegisterAsync(dto); // Get the structured response
+            var response = await _authService.RegisterAsync(dto);
 
             if (!response.IsSuccess)
             {
-                // Return specific error messages based on the response
                 if (response.IsEmailAlreadyRegistered)
                 {
-                    return BadRequest(new { Message = response.Message });
+                    return BadRequest(new { Message = response.Message }); 
                 }
-                return StatusCode(500, new { Message = response.Message }); // For other internal errors
+                return StatusCode(500, new { Message = response.Message ?? "An unexpected server error occurred during registration." });
             }
 
-            // Return success message. No TokenData is included here.
+           
             return Ok(new { Message = response.Message });
         }
 
@@ -125,7 +124,7 @@ namespace Rafeeq.Controllers
             var success = await _authService.VerifyEmailAsync(token);
             if (!success)
             {
-                return BadRequest("Email verification failed. Invalid or expired token. Please try resending the verification email."); // More helpful message
+                return BadRequest("Email verification failed. The link may be invalid, expired, or already used. Please try resending the verification email from the login page.");
             }
             return Ok("Email verified successfully! You can now log in.");
         }
@@ -157,8 +156,7 @@ namespace Rafeeq.Controllers
             if (!success)
             {
                 Console.WriteLine($"Logout: Could not invalidate refresh token: {dto.RefreshToken}");
-                // Even if token invalidation fails, we tell the user they are logged out.
-                // The client will clear the token anyway.
+              
             }
 
             return Ok(new { Message = "Logged out successfully." });
