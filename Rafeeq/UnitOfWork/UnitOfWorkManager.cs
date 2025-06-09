@@ -1,5 +1,6 @@
 ﻿using Rafeeq.Models;
 using Rafeeq.Repositories;
+using Rafeeq.Repositories.admin;
 using Rafeeq.Repositories.Auth;
 using Rafeeq.Repositories.Availability;
 using Rafeeq.Repositories.Bookings;
@@ -32,7 +33,7 @@ namespace Rafeeq.UnitOfWork
         private MenteeCVRepository _menteeCVRepository;
         private CVCommentRepository _cvCommentRepository;
         private RoleRepository _roleRepository;
-
+        private AdminRepositary _adminRepositary;
         public UnitOfWorkManager(RafeeqContext context)
         {
             this.context = context;
@@ -192,7 +193,7 @@ namespace Rafeeq.UnitOfWork
                 return _roleRepository;
             }
         }
-
+      
         public void Save()
         {
             context.SaveChanges();
@@ -201,6 +202,17 @@ namespace Rafeeq.UnitOfWork
         public async Task<int> SaveAsync()
         {
             return await context.SaveChangesAsync();
+        }
+        public AdminRepositary AdminRepositary
+        {
+            get
+            {
+                if (_adminRepositary == null)
+                {
+                    _adminRepositary = new AdminRepositary(context);
+                }
+                return _adminRepositary;
+            }
         }
     }
 }

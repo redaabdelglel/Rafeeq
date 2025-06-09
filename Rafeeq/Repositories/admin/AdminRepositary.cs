@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Rafeeq.DTOs.Skills;
 using Rafeeq.Models;
 
 namespace Rafeeq.Repositories.admin
@@ -100,6 +101,23 @@ namespace Rafeeq.Repositories.admin
             _context.Reviews.Remove(review);
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        // get all skills and mentores count of using skill
+        public async Task<IEnumerable<SkillDto>> GetSkillsWithMentorCountAsync()
+        {
+            return await _context.Skills
+                .Include(s => s.MentorSkills)
+                .Select(s => new SkillDto
+                {
+                    Id = s.SkillId,
+                    Name = s.Name,
+                    MentorsCount = s.MentorSkills
+                        .Select(ms => ms.UserId)
+                        .Distinct()
+                        .Count()
+                })
+                .ToListAsync();
         }
 
 
