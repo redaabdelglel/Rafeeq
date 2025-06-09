@@ -45,7 +45,9 @@ namespace Rafeeq.Services.Auth
         public async Task SendPasswordResetEmailAsync(string toEmail, string token)
         {
             var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:4200";
-            var resetLink = $"{frontendUrl}/reset-password?token={token}"; 
+            var resetLink = $"{frontendUrl}/reset-password?token={token}";
+            //var resetLink = $"{frontendUrl}/reset-password/{token}";
+
             var subject = "Rafeeq: Password Reset Request";
             var message = $"You have requested a password reset. Please click on this link to reset your password: <a href=\"{resetLink}\">{resetLink}</a>";
             await SendEmailAsync(toEmail, subject, message);

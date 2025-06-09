@@ -12,9 +12,9 @@ namespace Rafeeq.DTOs.Auth
         [DataType(DataType.Password)]
         public string NewPassword { get; set; } = string.Empty;
 
-        [Required(ErrorMessage = "Confirm new password is required.")]
-        [Compare("NewPassword", ErrorMessage = "Password and confirmation password do not match.")]
-        [DataType(DataType.Password)]
-        public string ConfirmNewPassword { get; set; } = string.Empty;
+        //[Required(ErrorMessage = "Confirm new password is required.")]
+        //[Compare("NewPassword", ErrorMessage = "Password and confirmation password do not match.")]
+        //[DataType(DataType.Password)]
+        //public string ConfirmNewPassword { get; set; } = string.Empty;
     }
 }

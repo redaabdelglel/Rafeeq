@@ -325,16 +325,22 @@ namespace Rafeeq.Services.Auth
                 Console.WriteLine("Error: 'FrontendUrl' is not configured in appsettings.json for password reset.");
                 return;
             }
-            var resetLink = $"{frontendUrl}/reset-password/{resetToken}";
+            //  var resetLink = $"{frontendUrl}/reset-password/{resetToken}";
 
-            await _emailService.SendPasswordResetEmailAsync(user.Email, resetLink);
+            await _emailService.SendPasswordResetEmailAsync(user.Email, resetToken);
         }
 
         public async Task<bool> ResetPasswordAsync(string token, string newPassword)
         {
-            var userToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(token, "PasswordReset");
+           
+            var userToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(token.Trim(), "PasswordReset");
 
-            if (userToken == null || userToken.IsUsed.GetValueOrDefault() || userToken.ExpiryDate < DateTime.UtcNow)
+            if (userToken == null)
+            {
+                return false;
+            }
+
+            if (userToken.IsUsed.GetValueOrDefault() || userToken.ExpiryDate < DateTime.UtcNow)
             {
                 return false;
             }
@@ -348,7 +354,7 @@ namespace Rafeeq.Services.Auth
             user.PasswordHash = PasswordHasher.HashPassword(newPassword);
             _unitOfWork.UserRepository.Update(user);
 
-            userToken.IsUsed = true;
+            userToken.IsUsed = true; 
             _unitOfWork.UserTokenRepository.Update(userToken);
 
             await _unitOfWork.SaveAsync();
