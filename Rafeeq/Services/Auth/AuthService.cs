@@ -90,9 +90,9 @@ namespace Rafeeq.Services.Auth
                     IsEmailAlreadyRegistered = false
                 };
             }
-            var verificationLink = $"{frontendUrl}/verify-email/{token}";
+            //var verificationLink = $"{frontendUrl}/verify-email/{token}";
 
-            await _emailService.SendVerificationEmailAsync(user.Email, verificationLink);
+            await _emailService.SendVerificationEmailAsync(user.Email, token);
 
             return new RegisterResponseDto
             {
@@ -410,9 +410,9 @@ namespace Rafeeq.Services.Auth
                 Console.WriteLine("Error: 'FrontendUrl' is not configured in appsettings.json for resending verification email.");
                 return;
             }
-            var verificationLink = $"{frontendUrl}/verify-email/{newToken}";
+            //var verificationLink = $"{frontendUrl}/verify-email/{newToken}";
 
-            await _emailService.SendVerificationEmailAsync(user.Email, verificationLink);
+            await _emailService.SendVerificationEmailAsync(user.Email, newToken);
         }
 
         public async Task<bool> InvalidateRefreshTokenAsync(int userId)
