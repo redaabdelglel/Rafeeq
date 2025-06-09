@@ -82,7 +82,6 @@ namespace Rafeeq.Services.Auth
             var frontendUrl = _config.GetSection("FrontendUrl").Value;
             if (string.IsNullOrEmpty(frontendUrl))
             {
-                Console.WriteLine("Error: 'FrontendUrl' is not configured in appsettings.json.");
                 return new RegisterResponseDto
                 {
                     IsSuccess = true,
@@ -111,7 +110,7 @@ namespace Rafeeq.Services.Auth
             }
             if (!user.IsEmailVerified.GetValueOrDefault())
             {
-                return new LoginResult { ErrorMessage = "Email not verified. Please check your email for a verification link or resend it from the login page." };
+                return new LoginResult { ErrorMessage = "Email not verified. Please check your email for a verification" };
             }
             // ... rest of login logic ...
             var tokenResponse = _jwtService.GenerateTokens(user);
@@ -322,7 +321,6 @@ namespace Rafeeq.Services.Auth
             var frontendUrl = _config.GetSection("FrontendUrl").Value;
             if (string.IsNullOrEmpty(frontendUrl))
             {
-                Console.WriteLine("Error: 'FrontendUrl' is not configured in appsettings.json for password reset.");
                 return;
             }
             //  var resetLink = $"{frontendUrl}/reset-password/{resetToken}";
@@ -413,7 +411,6 @@ namespace Rafeeq.Services.Auth
             var frontendUrl = _config.GetSection("FrontendUrl").Value;
             if (string.IsNullOrEmpty(frontendUrl))
             {
-                Console.WriteLine("Error: 'FrontendUrl' is not configured in appsettings.json for resending verification email.");
                 return;
             }
             //var verificationLink = $"{frontendUrl}/verify-email/{newToken}";
