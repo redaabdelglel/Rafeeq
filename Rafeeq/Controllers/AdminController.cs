@@ -232,23 +232,17 @@ namespace Rafeeq.Controllers
 
 
 
-        // Updated GetAllMentors method to fix the CS1061 error
+  
         [HttpGet("mentors")]
         public async Task<IActionResult> GetAllMentors()
         {
-            var mentors = await _unitOfWork.UserRepository.GetAllMentors(); // Await the Task to get the result
-            if (mentors == null || !mentors.Any()) // Check the result for null or empty
+            var mentors = await _unitOfWork.UserRepository.GetAllMentors(); 
+            if (mentors == null || !mentors.Any()) 
             {
                 return NotFound("No mentors found.");
             }
             return Ok(mentors);
         }
-
-
-
-
-
-
 
 
 

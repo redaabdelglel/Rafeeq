@@ -105,7 +105,6 @@ namespace Rafeeq.Repositories.admin
             return true;
         }
 
-
         // get all skills and mentores count of using skill
         public async Task<IEnumerable<SkillDto>> GetSkillsWithMentorCountAsync()
         {
@@ -122,6 +121,9 @@ namespace Rafeeq.Repositories.admin
                 })
                 .ToListAsync();
         }
+
+
+      
 
 
 
