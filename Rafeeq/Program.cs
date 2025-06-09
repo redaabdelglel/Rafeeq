@@ -120,6 +120,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerDocumentation();
+    
 }
 
 app.UseCors("AllowSpecificOrigin");

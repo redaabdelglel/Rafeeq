@@ -5,6 +5,8 @@ namespace Rafeeq.DTOs.Skills
     {
         public int Id { get; set; }
         public string Name { get; set; }
+        public int MentorsCount { get; set; }
+       
     }
 
     public class CreateSkillDto
