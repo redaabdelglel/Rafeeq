@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Rafeeq.DTOs.Skills;
+using Rafeeq.DTOs.Users;
 using Rafeeq.Models;
 
 namespace Rafeeq.Repositories.admin
