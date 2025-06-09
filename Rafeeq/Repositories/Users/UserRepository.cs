@@ -75,6 +75,7 @@ namespace Rafeeq.Repositories.Users
             return true;
 
         }
+       
         //get all mentors with their skills
         public async Task<IEnumerable<MentorDto>> GetAllMentors()
         {
@@ -100,7 +101,6 @@ namespace Rafeeq.Repositories.Users
             return mentors;
         }
 
-       
 
 
 

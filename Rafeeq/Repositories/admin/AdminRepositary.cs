@@ -105,26 +105,47 @@ namespace Rafeeq.Repositories.admin
             return true;
         }
 
-        // get all skills and mentores count of using skill
-        public async Task<IEnumerable<SkillDto>> GetSkillsWithMentorCountAsync()
-        {
-            return await _context.Skills
-                .Include(s => s.MentorSkills)
-                .Select(s => new SkillDto
-                {
-                    Id = s.SkillId,
-                    Name = s.Name,
-                    MentorsCount = s.MentorSkills
-                        .Select(ms => ms.UserId)
-                        .Distinct()
-                        .Count()
-                })
-                .ToListAsync();
-        }
+        //get all mentors with their skills
+ public async Task<IEnumerable<MentorDto>> GetAllMentors()
+ {
+     var mentors = await _context.Users
+         .Where(u => u.IsMentor == true && u.IsDeleted == false)
+         .Include(u => u.MentorSkills)
+         .ThenInclude(ms => ms.Skill)
+         .Select(u => new MentorDto
+         {
+             Id = u.UserId,
+             FullName = u.FullName,
+             Email = u.Email,
+             role = u.Role.RoleName,
+             HourlyRate = u.HourlyRate ?? 0,
+             MentorSkills = u.MentorSkills.Select(ms => new SkillDto
+             {
+                 Id = ms.Skill.SkillId,
+                 Name = ms.Skill.Name
+             }).ToList()
+         })
+         .ToListAsync();
 
+     return mentors;
+ }
 
-      
-
+ // get all skills and mentores count of using skill
+ public async Task<IEnumerable<SkillDto>> GetSkillsWithMentorCountAsync()
+ {
+     return await _context.Skills
+         .Include(s => s.MentorSkills)
+         .Select(s => new SkillDto
+         {
+             Id = s.SkillId,
+             Name = s.Name,
+             MentorsCount = s.MentorSkills
+                 .Select(ms => ms.UserId)
+                 .Distinct()
+                 .Count()
+         })
+         .ToListAsync();
+ }
 
 
 
