@@ -10,6 +10,7 @@ using Rafeeq.DTOs.Availability;
 using Rafeeq.DTOs.CV;
 using Rafeeq.DTOs.Chat;
 using Rafeeq.DTOs.Notifications;
+using Rafeeq.DTOs.Payments;
 
 namespace Rafeeq.Configurations
 {
@@ -139,6 +140,16 @@ namespace Rafeeq.Configurations
 
             // Notification mappings
             CreateMap<Notification, NotificationDto>();
+
+            // Payment mappings
+            CreateMap<Payment, PaymentDto>()
+                .ForMember(dest => dest.MentorName, opt => opt.Ignore())
+                .ForMember(dest => dest.MenteeName, opt => opt.Ignore())
+                .ForMember(dest => dest.SessionType, opt => opt.Ignore())
+                .ForMember(dest => dest.SessionDateTime, opt => opt.Ignore())
+                .ForMember(dest => dest.Commission, opt => opt.Ignore())
+                .ForMember(dest => dest.MentorAmount, opt => opt.Ignore());
+
 
         }
     }
