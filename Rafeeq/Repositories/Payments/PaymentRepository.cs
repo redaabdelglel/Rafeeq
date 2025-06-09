@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Rafeeq.DTOs.Payments;
 using Rafeeq.Models;
 using System;
 using System.Collections.Generic;
@@ -17,15 +18,33 @@ namespace Rafeeq.Repositories.Payments
         }
 
         // Get all payments
-        public async Task<IEnumerable<Payment>> GetAllAsync()
+        public async Task<IEnumerable<PaymentDto>> GetAllAsync()
         {
             return await _context.Payments
                 .Include(p => p.Booking)
                     .ThenInclude(b => b.Mentor)
                 .Include(p => p.Booking)
                     .ThenInclude(b => b.Mentee)
+                .Select(p => new PaymentDto
+                {
+                    PaymentId = p.PaymentId,
+                    BookingId = p.BookingId ?? 0,
+                    AmountPaid = p.AmountPaid ?? 0,
+                    PaymentMethod = p.PaymentMethod,
+                    TransactionId = p.TransactionId,
+                    PaymentDate = p.PaymentDate ?? DateTime.MinValue,
+                    MentorName = p.Booking.Mentor.FullName,
+                    MenteeName = p.Booking.Mentee.FullName,
+
+                   
+                    SessionType = p.Booking.SessionType,
+                    SessionDateTime = p.Booking.StartDateTime ?? DateTime.MinValue,
+                    Commission = p.Booking.Commission ?? 0,
+                    MentorAmount = (p.AmountPaid ?? 0) - (p.Booking.Commission ?? 0)
+                })
                 .ToListAsync();
         }
+
 
         // Get payment by ID
         public async Task<Payment> GetByIdAsync(int id)

@@ -4,6 +4,7 @@ using Rafeeq.DTOs.Skills;
 using Rafeeq.DTOs.Users;
 using Rafeeq.Models;
 using Rafeeq.Repositories.RepositoryBase;
+using System.Threading.Tasks;
 
 namespace Rafeeq.Repositories.Users
 {
@@ -18,7 +19,7 @@ namespace Rafeeq.Repositories.Users
             return await Context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        //get by id
+        //get user by id
         public async Task<User> GetByIdAsync(int id)
         {
             return await Context.Users.Include(d => d.Role).FirstOrDefaultAsync(u => u.UserId == id);
@@ -47,6 +48,7 @@ namespace Rafeeq.Repositories.Users
         {
             return await Context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == userId);
         }
+       
 
         //update user
         public void Update(User user)
@@ -97,6 +99,33 @@ namespace Rafeeq.Repositories.Users
 
             return mentors;
         }
+
+        //get all mentors with their skills
+        public async Task<IEnumerable<MentorDto>> GetAllMentors()
+        {
+            var mentors = await Context.Users
+                .Where(u => u.IsMentor == true && u.IsDeleted == false)
+                .Include(u => u.MentorSkills)
+                .ThenInclude(ms => ms.Skill)
+                .Select(u => new MentorDto
+                {
+                    Id = u.UserId,
+                    FullName = u.FullName,
+                    Email = u.Email,
+                    role = u.Role.RoleName,
+                    HourlyRate = u.HourlyRate ?? 0,
+                    MentorSkills = u.MentorSkills.Select(ms => new SkillDto
+                    {
+                        Id = ms.Skill.SkillId,
+                        Name = ms.Skill.Name
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return mentors;
+        }
+
+
 
 
     }

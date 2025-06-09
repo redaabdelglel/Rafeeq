@@ -18,5 +18,7 @@ namespace Rafeeq.DTOs.Payments
         public DateTime SessionDateTime { get; set; }
         public decimal Commission { get; set; }
         public decimal MentorAmount { get; set; } // After commission
+       
+    
     }
 }

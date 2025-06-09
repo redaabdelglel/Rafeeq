@@ -35,10 +35,6 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.ExpiresIn, opt => opt.Ignore()); // ExpiresIn set by JwtService
 
 
-            // User mapping
-            CreateMap<User, UserDto>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
-                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName));
 
             // UserProfileDto mapping
             CreateMap<User, UserProfileDto>()
@@ -97,8 +93,8 @@ namespace Rafeeq.Configurations
             CreateMap<Skill, SkillDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.SkillId));
 
-            CreateMap<CreateSkillDto, Skill>();
-            CreateMap<UpdateSkillDto, Skill>();
+            CreateMap<CreateSkillDto, Skill>().ReverseMap();
+            CreateMap<UpdateSkillDto, Skill>().ReverseMap();
 
             // bookings mapping
             CreateMap<Booking, BookingDto>()
@@ -149,6 +145,21 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.SessionDateTime, opt => opt.Ignore())
                 .ForMember(dest => dest.Commission, opt => opt.Ignore())
                 .ForMember(dest => dest.MentorAmount, opt => opt.Ignore());
+
+
+            //mentor skill mapping
+            CreateMap<Skill, UserSkillDto>()
+                .ForMember(dest => dest.SkillId, opt => opt.MapFrom(src => src.SkillId))
+                .ForMember(dest => dest.SkillName, opt => opt.MapFrom(src => src.Name));
+
+            // MentorDto mapping
+            CreateMap<User, MentorDto>()
+    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
+    .ForMember(dest => dest.MentorSkills, opt => opt.MapFrom(src => src.MentorSkills.Select(ms => ms.Skill)))
+    .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+    .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+    .ForMember(dest => dest.HourlyRate, opt => opt.MapFrom(src => src.HourlyRate));
+
 
 
         }

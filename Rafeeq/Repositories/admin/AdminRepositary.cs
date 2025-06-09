@@ -10,7 +10,7 @@ namespace Rafeeq.Repositories.admin
 
         public AdminRepositary(RafeeqContext context)
         {
-            context = _context;
+            _context = context;
 
         }
         // get all users
@@ -62,15 +62,17 @@ namespace Rafeeq.Repositories.admin
             return await _context.MentorSkills.ToListAsync();
         }
         // get all chat messages
-        public async Task<IEnumerable<ChatMessage>> GetAllChatMessagesAsync()
-        {
-            return await _context.ChatMessages.ToListAsync();
-        }
-        // get all chat attachments
-        public async Task<IEnumerable<ChatAttachment>> GetAllChatAttachmentsAsync()
-        {
-            return await _context.ChatAttachments.ToListAsync();
-        }
+        //public async Task<IEnumerable<ChatMessage>> GetAllChatMessagesAsync()
+        //{
+        //    return await _context.ChatMessages.ToListAsync();
+        //}
+        //// get all chat attachments
+        //public async Task<IEnumerable<ChatAttachment>> GetAllChatAttachmentsAsync()
+        //{
+        //    return await _context.ChatAttachments.ToListAsync();
+        //}
+
+
         // toogle user block status
         public async Task ToggleUserBlockStatusAsync(int userId)
         {
@@ -119,6 +121,30 @@ namespace Rafeeq.Repositories.admin
                 })
                 .ToListAsync();
         }
+
+
+        // get all skills and mentores count of using skill
+        public async Task<IEnumerable<SkillDto>> GetSkillsWithMentorCountAsync()
+        {
+            return await _context.Skills
+                .Include(s => s.MentorSkills)
+                .Select(s => new SkillDto
+                {
+                    Id = s.SkillId,
+                    Name = s.Name,
+                    MentorsCount = s.MentorSkills
+                        .Select(ms => ms.UserId)
+                        .Distinct()
+                        .Count()
+                })
+                .ToListAsync();
+        }
+
+
+
+
+
+       
 
 
     }

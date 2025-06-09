@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Rafeeq.Controllers
 {
     [Route("api/admin")]
-   //[AllowAnonymous]
+   [AllowAnonymous]
     [ApiController]
     //[Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
@@ -236,7 +236,7 @@ namespace Rafeeq.Controllers
         [HttpGet("mentors")]
         public async Task<IActionResult> GetAllMentors()
         {
-            var mentors = await _unitOfWork.UserRepository.GetAllMentors(); 
+            var mentors = await _unitOfWork.UserRepository.GetAllMentors(); // Await the Task to get the result
             if (mentors == null || !mentors.Any()) // Check the result for null or empty
             {
                 return NotFound("No mentors found.");
