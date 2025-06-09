@@ -4,18 +4,18 @@ using Rafeeq.Models;
 using Stripe;
 using System;
 using System.Threading.Tasks;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Collections.Generic;
 
 namespace Rafeeq.Services.Payments
 {
     public class StripeService
     {
-        private readonly StripeConfiguration _stripeConfig;
+        private readonly StripeSettings _stripeConfig;
 
-        public StripeService(IOptions<StripeConfiguration> stripeConfig)
+        public StripeService(IOptions<StripeSettings> stripeConfig)
         {
             _stripeConfig = stripeConfig.Value;
-            StripeConfiguration.ApiKey = _stripeConfig.SecretKey;
+            Stripe.StripeConfiguration.ApiKey = _stripeConfig.SecretKey;
         }
 
         // Create a payment intent
@@ -30,7 +30,7 @@ namespace Rafeeq.Services.Payments
                     Enabled = true,
                 },
                 Description = description,
-                Metadata = new Stripe.Checkout.SessionMetadataOptions
+                Metadata = new Dictionary<string, string>
                 {
                     ["platform"] = "Rafeeq Mentorship Platform"
                 }

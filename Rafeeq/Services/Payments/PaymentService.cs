@@ -3,7 +3,6 @@ using Rafeeq.DTOs.Payments;
 using Rafeeq.Models;
 using Rafeeq.Repositories.Notifications;
 using Rafeeq.Services.Auth;
-using Rafeeq.Services.Emails;
 using Rafeeq.UnitOfWork;
 using System;
 using System.Collections.Generic;
@@ -161,7 +160,7 @@ namespace Rafeeq.Services.Payments
                 paymentDto.SessionType = booking.SessionType;
                 paymentDto.SessionDateTime = booking.StartDateTime ?? DateTime.UtcNow;
                 paymentDto.Commission = booking.Commission ?? 0;
-                paymentDto.MentorAmount = payment.AmountPaid - (booking.Commission ?? 0);
+                paymentDto.MentorAmount = payment.AmountPaid.Value - (booking.Commission ?? 0);
 
                 return (true, "Payment confirmed successfully", paymentDto);
             }
@@ -190,7 +189,7 @@ namespace Rafeeq.Services.Payments
                         dto.SessionType = payment.Booking?.SessionType;
                         dto.SessionDateTime = payment.Booking?.StartDateTime ?? DateTime.UtcNow;
                         dto.Commission = payment.Booking?.Commission ?? 0;
-                        dto.MentorAmount = payment.AmountPaid - (payment.Booking?.Commission ?? 0);
+                        dto.MentorAmount = payment.AmountPaid.Value - (payment.Booking?.Commission ?? 0);
                     }
                 }
 
@@ -227,7 +226,7 @@ namespace Rafeeq.Services.Payments
                 paymentDto.SessionType = payment.Booking?.SessionType;
                 paymentDto.SessionDateTime = payment.Booking?.StartDateTime ?? DateTime.UtcNow;
                 paymentDto.Commission = payment.Booking?.Commission ?? 0;
-                paymentDto.MentorAmount = payment.AmountPaid - (payment.Booking?.Commission ?? 0);
+                paymentDto.MentorAmount = payment.AmountPaid.Value - (payment.Booking?.Commission ?? 0);
 
                 return (true, "Payment details retrieved successfully", paymentDto);
             }
@@ -311,7 +310,7 @@ namespace Rafeeq.Services.Payments
                         booking.Mentor.Email,
                         booking.Mentor.FullName,
                         booking.BookingId,
-                        payment.AmountPaid - (booking.Commission ?? 0),
+                        payment.AmountPaid.Value - (booking.Commission ?? 0),
                         booking.StartDateTime ?? DateTime.UtcNow,
                         "mentor");
                 }
@@ -335,7 +334,7 @@ namespace Rafeeq.Services.Payments
                         booking.Mentee.Email,
                         booking.Mentee.FullName,
                         booking.BookingId,
-                        payment.AmountPaid,
+                        payment.AmountPaid.Value,
                         booking.StartDateTime ?? DateTime.UtcNow,
                         "mentee");
                 }

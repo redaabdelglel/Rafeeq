@@ -13,6 +13,8 @@ using Rafeeq.Services.CV;
 using Rafeeq.Repositories.Auth;
 using Rafeeq.Repositories.RepositoryBase;
 using Rafeeq.Repositories.Users;
+using Microsoft.Extensions.Configuration;
+using Rafeeq.Configurations;
 
 namespace Rafeeq.Configurations
 {
@@ -59,8 +61,14 @@ namespace Rafeeq.Configurations
 
             // Chat  services 
             services.AddScoped<SignalRService>();
-       
 
+            return services;
+        }
+
+        //  Stripe configuration
+        public static IServiceCollection AddStripeConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<StripeSettings>(configuration.GetSection("StripeSettings"));
             return services;
         }
     }

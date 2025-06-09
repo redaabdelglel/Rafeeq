@@ -7,7 +7,7 @@ namespace Rafeeq.DTOs.Payments
         [Required]
         public int BookingId { get; set; }
 
-        // Returned from the server
+        // These properties will be populated by the server, not required from client
         public string ClientSecret { get; set; }
         public string PaymentIntentId { get; set; }
         public decimal Amount { get; set; }

@@ -1,6 +1,6 @@
 ﻿namespace Rafeeq.Configurations
 {
-    public class StripeConfiguration
+    public class StripeSettings
     {
         public string SecretKey { get; set; }
         public string PublishableKey { get; set; }

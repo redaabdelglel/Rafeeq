@@ -75,7 +75,7 @@ namespace Rafeeq.Repositories.Payments
                 .Where(p => p.Booking.MentorId == mentorId)
                 .ToListAsync();
 
-            return payments.Sum(p => p.AmountPaid - p.Booking.Commission);
+            return payments.Sum(p => (p.AmountPaid ?? 0) - (p.Booking.Commission ?? 0));
         }
 
         // Get earnings for specific months
@@ -84,11 +84,12 @@ namespace Rafeeq.Repositories.Payments
             var payments = await _context.Payments
                 .Include(p => p.Booking)
                 .Where(p => p.Booking.MentorId == mentorId &&
-                           p.PaymentDate.Year == year &&
-                           p.PaymentDate.Month == month)
+                           p.PaymentDate.HasValue &&
+                           p.PaymentDate.Value.Year == year &&
+                           p.PaymentDate.Value.Month == month)
                 .ToListAsync();
 
-            return payments.Sum(p => p.AmountPaid - p.Booking.Commission);
+            return payments.Sum(p => (p.AmountPaid ?? 0) - (p.Booking.Commission ?? 0));
         }
 
         // Get payment counts by status
@@ -118,16 +119,18 @@ namespace Rafeeq.Repositories.Payments
             var payments = await _context.Payments
                 .Include(p => p.Booking)
                 .Where(p => p.Booking.MentorId == mentorId &&
-                           p.PaymentDate >= startDate &&
-                           p.PaymentDate <= endDate)
+                           p.PaymentDate.HasValue &&
+                           p.PaymentDate.Value >= startDate &&
+                           p.PaymentDate.Value <= endDate)
                 .ToListAsync();
 
             return payments
-                .GroupBy(p => new { p.PaymentDate.Year, p.PaymentDate.Month })
+                .Where(p => p.PaymentDate.HasValue)
+                .GroupBy(p => new { Year = p.PaymentDate.Value.Year, Month = p.PaymentDate.Value.Month })
                 .Select(g => (
                     Year: g.Key.Year,
                     Month: g.Key.Month,
-                    Amount: g.Sum(p => p.AmountPaid - p.Booking.Commission)
+                    Amount: g.Sum(p => (p.AmountPaid ?? 0) - (p.Booking.Commission ?? 0))
                 ))
                 .OrderBy(x => x.Year)
                 .ThenBy(x => x.Month)

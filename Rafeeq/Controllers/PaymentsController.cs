@@ -20,13 +20,17 @@ namespace Rafeeq.Controllers
         }
 
         // POST: api/payments/create-intent
+        // In PaymentsController.cs
         [HttpPost("create-intent")]
-        public async Task<IActionResult> CreatePaymentIntent([FromBody] PaymentIntentDto dto)
+        public async Task<IActionResult> CreatePaymentIntent([FromBody] CreatePaymentIntentDto requestDto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
+
+            // Create a PaymentIntentDto from the request
+            var dto = new PaymentIntentDto { BookingId = requestDto.BookingId };
 
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value);
             var result = await _paymentService.CreatePaymentIntentAsync(dto, userId);
@@ -38,6 +42,7 @@ namespace Rafeeq.Controllers
 
             return Ok(new { success = true, data = result.Data });
         }
+
 
         // POST: api/payments/confirm
         [HttpPost("confirm")]
