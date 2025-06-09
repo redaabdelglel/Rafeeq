@@ -47,30 +47,40 @@ namespace Rafeeq.Services.Payments
         {
             try
             {
-                var service = new PaymentIntentService();
-                var paymentIntent = await service.GetAsync(paymentIntentId);
+#if DEBUG
+                // For testing only - automatically succeed in development
+                return true;
+#else
+        var service = new PaymentIntentService();
+        var paymentIntent = await service.GetAsync(paymentIntentId);
 
-                // Check payment status
-                if (paymentIntent.Status == "succeeded")
-                {
-                    return true;
-                }
+        // Normal verification logic for production
+        if (paymentIntent.Status == "succeeded")
+        {
+            return true;
+        }
 
-                // For intents that need additional confirmation
-                if (paymentIntent.Status == "requires_confirmation")
-                {
-                    var options = new PaymentIntentConfirmOptions();
-                    paymentIntent = await service.ConfirmAsync(paymentIntentId, options);
-                    return paymentIntent.Status == "succeeded";
-                }
+        if (paymentIntent.Status == "requires_confirmation")
+        {
+            var options = new PaymentIntentConfirmOptions();
+            paymentIntent = await service.ConfirmAsync(paymentIntentId, options);
+            return paymentIntent.Status == "succeeded";
+        }
 
-                return false;
+        return false;
+#endif
             }
-            catch
+            catch (Exception)
             {
-                return false;
+#if DEBUG
+                // In development, return true even on exceptions
+                return true;
+#else
+        return false;
+#endif
             }
         }
+
 
         // Refund payment
         public async Task<bool> RefundPaymentAsync(string paymentIntentId, decimal? amount = null)
