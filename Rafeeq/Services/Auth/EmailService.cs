@@ -69,7 +69,7 @@ namespace Rafeeq.Services.Auth
             await SendEmailAsync(toEmail, subject, message);
         }
 
-       // method for payment confirmation emails
+        // method for payment confirmation emails
         public async Task SendPaymentConfirmationEmailAsync(string toEmail, string userName, int bookingId, decimal amount, DateTime sessionDateTime, string userType)
         {
             var subject = "Rafeeq: Payment Confirmation";
@@ -78,24 +78,24 @@ namespace Rafeeq.Services.Auth
             if (userType.ToLower() == "mentor")
             {
                 message = $@"
-                <h2>Payment Received</h2>
-                <p>Dear {userName},</p>
-                <p>Good news! You've received a payment of ${amount:F2} for booking #{bookingId}.</p>
-                <p>The session is scheduled for {sessionDateTime.ToString("f")}.</p>
-                <p>Please log in to your dashboard to view more details.</p>
-                <p>Thank you for being part of Rafeeq!</p>
-                ";
+                 <h2>Payment Received</h2>
+                 <p>Dear {userName},</p>
+                 <p>Good news! You've received a payment of ${amount:F2} for booking #{bookingId}.</p>
+                 <p>The session is scheduled for {sessionDateTime.ToString("f")}.</p>
+                 <p>Please log in to your dashboard to view more details.</p>
+                 <p>Thank you for being part of Rafeeq!</p>
+                 ";
             }
             else
             {
                 message = $@"
-                <h2>Payment Confirmation</h2>
-                <p>Dear {userName},</p>
-                <p>Your payment of ${amount:F2} for booking #{bookingId} was successful.</p>
-                <p>The session is scheduled for {sessionDateTime.ToString("f")}.</p>
-                <p>Please log in to your dashboard to view more details and join the session.</p>
-                <p>Thank you for using Rafeeq!</p>
-                ";
+                 <h2>Payment Confirmation</h2>
+                 <p>Dear {userName},</p>
+                 <p>Your payment of ${amount:F2} for booking #{bookingId} was successful.</p>
+                 <p>The session is scheduled for {sessionDateTime.ToString("f")}.</p>
+                 <p>Please log in to your dashboard to view more details and join the session.</p>
+                 <p>Thank you for using Rafeeq!</p>
+                 ";
             }
 
             await SendEmailAsync(toEmail, subject, message);
