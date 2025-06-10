@@ -128,7 +128,6 @@ namespace Rafeeq.Repositories.admin
 
 
 
-        // Add to AdminRepository class
         public async Task<int> GetMentorSkillsCountAsync()
         {
             return await _context.MentorSkills.CountAsync();
