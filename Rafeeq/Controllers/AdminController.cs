@@ -201,7 +201,7 @@ namespace Rafeeq.Controllers
         [HttpGet("reviews")]
         public async Task<IActionResult> GetAllReviews()
         {
-            var reviews = await _unitOfWork.ReviewRepository.GetAllAsync();
+            var reviews = await _unitOfWork.ReviewRepository.GetAllReviewsAsync();
             if (reviews == null || !reviews.Any())
             {
                 return NotFound("No reviews found.");

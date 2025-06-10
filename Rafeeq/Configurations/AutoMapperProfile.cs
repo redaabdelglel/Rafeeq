@@ -11,6 +11,7 @@ using Rafeeq.DTOs.CV;
 using Rafeeq.DTOs.Chat;
 using Rafeeq.DTOs.Notifications;
 using Rafeeq.DTOs.Payments;
+using Rafeeq.DTOs.Reviews;
 
 namespace Rafeeq.Configurations
 {
@@ -160,7 +161,11 @@ namespace Rafeeq.Configurations
     .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
     .ForMember(dest => dest.HourlyRate, opt => opt.MapFrom(src => src.HourlyRate));
 
+            //review mapping
+                //CreateMap<Review, ReviewDto>()
 
+                //.ForMember(dest => dest.ReviewerName, op => op.MapFrom(src => src.Reviewer.FullName))
+                // .ForMember(dest => dest.ReviewedUserName, op => op.MapFrom(src => src.Reviewer.FullName)).ReverseMap();
 
         }
     }

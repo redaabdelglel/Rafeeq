@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Rafeeq.DTOs.Dashboard;
+using Rafeeq.DTOs.Reviews;
 using Rafeeq.DTOs.Skills;
 using Rafeeq.DTOs.Users;
 using Rafeeq.Models;
@@ -26,11 +27,10 @@ namespace Rafeeq.Repositories.admin
         {
             return await _context.Bookings.ToListAsync();
         }
-        //get all reviews
-        public async Task<IEnumerable<Review>> GetAllReviewsAsync()
-        {
-            return await _context.Reviews.ToListAsync();
-        }
+       
+       
+
+
         // get all payments
         public async Task<IEnumerable<Payment>> GetAllPaymentsAsync()
         {
@@ -185,19 +185,35 @@ namespace Rafeeq.Repositories.admin
             double revenueGrowth = revenueTwoMonthsAgo == 0 ? 100 :
                 ((double)(revenueLastMonth - revenueTwoMonthsAgo) / (double)revenueTwoMonthsAgo) * 100;
             // last 12 month
-            var monthlyUserGrowth = await _context.Users
-                .Where(u => u.CreatedAt.HasValue && u.CreatedAt.Value >= now.AddMonths(-12) && u.IsDeleted == false)
-                .GroupBy(u => new { u.CreatedAt.Value.Year, u.CreatedAt.Value.Month })
-                .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
-                .Select(g => g.Count())
-                .ToListAsync();
+            var userGroups = await _context.Users
+              .Where(u => u.CreatedAt.HasValue && u.CreatedAt.Value >= now.AddMonths(-12) && u.IsDeleted == false)
+              .GroupBy(u => new { u.CreatedAt.Value.Year, u.CreatedAt.Value.Month })
+               .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
+              .ToListAsync();
 
-            var monthlyRevenue = await _context.Payments
-                .Where(p => p.PaymentDate.HasValue && p.PaymentDate.Value >= now.AddMonths(-6))
-                .GroupBy(p => new { p.PaymentDate.Value.Year, p.PaymentDate.Value.Month })
-                .OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month)
-                .Select(g => g.Sum(p => p.AmountPaid ?? 0))
-                .ToListAsync();
+            var monthlyUserGrowth = new List<int>();
+            for (int i = 11; i >= 0; i--)
+            {
+                var targetMonth = now.AddMonths(-i);
+                var data = userGroups.FirstOrDefault(g => g.Year == targetMonth.Year && g.Month == targetMonth.Month);
+                monthlyUserGrowth.Add(data?.Count ?? 0);
+            }
+
+
+            var revenueGroups = await _context.Payments
+             .Where(p => p.PaymentDate.HasValue && p.PaymentDate.Value >= now.AddMonths(-12))
+             .GroupBy(p => new { p.PaymentDate.Value.Year, p.PaymentDate.Value.Month })
+             .Select(g => new { g.Key.Year, g.Key.Month, Total = g.Sum(p => p.AmountPaid ?? 0) })
+             .ToListAsync();
+
+            var monthlyRevenue = new List<decimal>();
+            for (int i = 11; i >= 0; i--)
+            {
+                var targetMonth = now.AddMonths(-i);
+                var data = revenueGroups.FirstOrDefault(g => g.Year == targetMonth.Year && g.Month == targetMonth.Month);
+                monthlyRevenue.Add(data?.Total ?? 0);
+            }
+
 
             return new List<DashboardDto>
             {
