@@ -14,7 +14,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Rafeeq.Controllers
 {
     [Route("api/admin")]
-   [AllowAnonymous]
+    [AllowAnonymous]
     [ApiController]
     //[Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
@@ -276,18 +276,18 @@ namespace Rafeeq.Controllers
                 return BadRequest("Skill data is null.");
             }
 
-         
+
             var skill = await _unitOfWork.SkillRepository.GetByIdAsync(id);
             if (skill == null)
             {
                 return NotFound($"Skill with ID {id} not found.");
             }
 
-           
+
             _map.Map(skillDto, skill);
 
             _unitOfWork.SkillRepository.Update(skill);
-           
+
 
             return Ok(_map.Map<UpdateSkillDto>(skill));
         }
@@ -306,7 +306,7 @@ namespace Rafeeq.Controllers
             {
                 return StatusCode(500, "Failed to delete the skill.");
             }
-          
+
             return Ok(new { message = "Skill deleted successfully" });
         }
 
@@ -327,11 +327,20 @@ namespace Rafeeq.Controllers
             // Map DTO to Skill model
             var skill = _map.Map<Skill>(skillDto);
             await _unitOfWork.SkillRepository.AddAsync(skill);
-          
+
             return Ok(new { Message = "Skill created successfully" });
 
         }
+
+        // You can add this diagnostic endpoint to check if there are any mentor skills in the database
+        [HttpGet("diagnostics/mentor-skills-count")]
+        public async Task<IActionResult> GetMentorSkillsCount()
+        {
+            var count = await _unitOfWork.AdminRepositary.GetMentorSkillsCountAsync();
+            return Ok(new { mentorSkillsCount = count });
         }
+
+    }
 }
 
 
