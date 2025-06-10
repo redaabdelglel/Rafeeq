@@ -18,8 +18,9 @@ namespace Rafeeq.Repositories.Auth
         public async Task<UserToken?> GetTokenByValueAndTypeAsync(string tokenValue, string tokenType)
         {
             return await Context.UserTokens
-                .Where(t => t.TokenValue == tokenValue && t.TokenType == tokenType && t.IsUsed == false && t.ExpiryDate > DateTime.UtcNow)
+                .Where(t => t.TokenValue == tokenValue.Trim() && t.TokenType == tokenType && t.IsUsed == false && t.ExpiryDate > DateTime.UtcNow)
                 .FirstOrDefaultAsync();
         }
+    
     }
 }
