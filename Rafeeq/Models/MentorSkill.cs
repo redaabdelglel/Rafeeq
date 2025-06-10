@@ -13,9 +13,9 @@ public partial class MentorSkill
     [Key]
     public int MentorSkillId { get; set; }
 
-    public int? UserId { get; set; }
+    public int UserId { get; set; }
 
-    public int? SkillId { get; set; }
+    public int SkillId { get; set; }
 
     [ForeignKey("SkillId")]
     [InverseProperty("MentorSkills")]

@@ -33,6 +33,10 @@ builder.Services.AddSignalRServices();
 // Configure AutoMapper
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 builder.Services.AddApplicationServices();
+
+// Add Stripe configuration
+builder.Services.AddStripeConfiguration(builder.Configuration);
+
 // Register repositories
 builder.Services.AddScoped<UnitOfWorkManager>();
 
@@ -119,6 +123,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerDocumentation();
+    
 }
 
 app.UseCors("AllowSpecificOrigin");

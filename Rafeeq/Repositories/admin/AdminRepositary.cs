@@ -1,4 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Rafeeq.DTOs.Skills;
+using Rafeeq.DTOs.Users;
 using Rafeeq.Models;
 
 namespace Rafeeq.Repositories.admin
@@ -9,7 +11,7 @@ namespace Rafeeq.Repositories.admin
 
         public AdminRepositary(RafeeqContext context)
         {
-            context = _context;
+            _context = context;
 
         }
         // get all users
@@ -61,15 +63,17 @@ namespace Rafeeq.Repositories.admin
             return await _context.MentorSkills.ToListAsync();
         }
         // get all chat messages
-        public async Task<IEnumerable<ChatMessage>> GetAllChatMessagesAsync()
-        {
-            return await _context.ChatMessages.ToListAsync();
-        }
-        // get all chat attachments
-        public async Task<IEnumerable<ChatAttachment>> GetAllChatAttachmentsAsync()
-        {
-            return await _context.ChatAttachments.ToListAsync();
-        }
+        //public async Task<IEnumerable<ChatMessage>> GetAllChatMessagesAsync()
+        //{
+        //    return await _context.ChatMessages.ToListAsync();
+        //}
+        //// get all chat attachments
+        //public async Task<IEnumerable<ChatAttachment>> GetAllChatAttachmentsAsync()
+        //{
+        //    return await _context.ChatAttachments.ToListAsync();
+        //}
+
+
         // toogle user block status
         public async Task ToggleUserBlockStatusAsync(int userId)
         {
@@ -101,6 +105,53 @@ namespace Rafeeq.Repositories.admin
             await _context.SaveChangesAsync();
             return true;
         }
+
+        //get all mentors with their skills
+ public async Task<IEnumerable<MentorDto>> GetAllMentors()
+ {
+     var mentors = await _context.Users
+         .Where(u => u.IsMentor == true && u.IsDeleted == false)
+         .Include(u => u.MentorSkills)
+         .ThenInclude(ms => ms.Skill)
+         .Select(u => new MentorDto
+         {
+             Id = u.UserId,
+             FullName = u.FullName,
+             Email = u.Email,
+             role = u.Role.RoleName,
+             HourlyRate = u.HourlyRate ?? 0,
+             MentorSkills = u.MentorSkills.Select(ms => new SkillDto
+             {
+                 Id = ms.Skill.SkillId,
+                 Name = ms.Skill.Name
+             }).ToList()
+         })
+         .ToListAsync();
+
+     return mentors;
+ }
+
+ // get all skills and mentores count of using skill
+ public async Task<IEnumerable<SkillDto>> GetSkillsWithMentorCountAsync()
+ {
+     return await _context.Skills
+         .Include(s => s.MentorSkills)
+         .Select(s => new SkillDto
+         {
+             Id = s.SkillId,
+             Name = s.Name,
+             MentorsCount = s.MentorSkills
+                 .Select(ms => ms.UserId)
+                 .Distinct()
+                 .Count()
+         })
+         .ToListAsync();
+ }
+
+
+
+
+       
 
 
     }
