@@ -16,6 +16,7 @@ public partial class Skill
     [Required]
     [StringLength(100)]
     public string Name { get; set; }
+    public bool IsDeleted { get; set; } = false;
 
     [InverseProperty("Skill")]
     public virtual ICollection<MenteeSkill> MenteeSkills { get; set; } = new List<MenteeSkill>();

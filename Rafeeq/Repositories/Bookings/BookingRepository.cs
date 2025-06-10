@@ -126,5 +126,7 @@ namespace Rafeeq.Repositories.Bookings
             _context.Bookings.Update(booking);
             
         }
+
+    
     }
 }

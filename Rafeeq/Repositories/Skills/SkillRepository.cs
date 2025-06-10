@@ -44,8 +44,9 @@ namespace Rafeeq.Repositories.Skills
             if (skill == null)
                 return false;
 
-            _context.Skills.Remove(skill);
-           await SaveChangesAsync();
+            skill.IsDeleted = true;
+            _context.Skills.Update(skill);
+            await SaveChangesAsync();
             return true;
         }
 

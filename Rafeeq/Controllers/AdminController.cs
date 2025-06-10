@@ -11,10 +11,11 @@ using Rafeeq.UnitOfWork;
 using BCrypt.Net;
 using Rafeeq.DTOs.Skills;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.InteropServices;
 namespace Rafeeq.Controllers
 {
     [Route("api/admin")]
-   [AllowAnonymous]
+    [AllowAnonymous]
     [ApiController]
     //[Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
@@ -232,12 +233,12 @@ namespace Rafeeq.Controllers
 
 
 
-  
+
         [HttpGet("mentors")]
         public async Task<IActionResult> GetAllMentors()
         {
-            var mentors = await _unitOfWork.UserRepository.GetAllMentors(); 
-            if (mentors == null || !mentors.Any()) 
+            var mentors = await _unitOfWork.AdminRepositary.GetAllMentors();
+            if (mentors == null || !mentors.Any())
             {
                 return NotFound("No mentors found.");
             }
@@ -270,18 +271,18 @@ namespace Rafeeq.Controllers
                 return BadRequest("Skill data is null.");
             }
 
-         
+
             var skill = await _unitOfWork.SkillRepository.GetByIdAsync(id);
             if (skill == null)
             {
                 return NotFound($"Skill with ID {id} not found.");
             }
 
-           
+
             _map.Map(skillDto, skill);
 
             _unitOfWork.SkillRepository.Update(skill);
-           
+
 
             return Ok(_map.Map<UpdateSkillDto>(skill));
         }
@@ -300,7 +301,7 @@ namespace Rafeeq.Controllers
             {
                 return StatusCode(500, "Failed to delete the skill.");
             }
-          
+
             return Ok(new { message = "Skill deleted successfully" });
         }
 
@@ -321,11 +322,21 @@ namespace Rafeeq.Controllers
             // Map DTO to Skill model
             var skill = _map.Map<Skill>(skillDto);
             await _unitOfWork.SkillRepository.AddAsync(skill);
-          
+
             return Ok(new { Message = "Skill created successfully" });
 
         }
+        
+
+
+
+    // dashboard 
+    [HttpGet("dashboard")]
+        public async Task<IActionResult> GetDashboardDataAsync()
+        {
+          var dashboardDto=  await _unitOfWork.AdminRepositary.GetDashboardDataAsync();
+            return Ok(dashboardDto);
         }
+    }
+
 }
-
-
