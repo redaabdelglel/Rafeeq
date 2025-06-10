@@ -15,9 +15,9 @@ using System.Runtime.InteropServices;
 namespace Rafeeq.Controllers
 {
     [Route("api/admin")]
-    [AllowAnonymous]
+    //[AllowAnonymous]
     [ApiController]
-    //[Authorize(Roles = "Admin")]
+   [Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
     {
         private UnitOfWorkManager _unitOfWork;

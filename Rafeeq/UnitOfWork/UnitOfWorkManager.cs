@@ -193,7 +193,7 @@ namespace Rafeeq.UnitOfWork
                 return _roleRepository;
             }
         }
-
+      
         public void Save()
         {
             context.SaveChanges();
@@ -203,7 +203,6 @@ namespace Rafeeq.UnitOfWork
         {
             return await context.SaveChangesAsync();
         }
-
         public AdminRepositary AdminRepositary
         {
             get
