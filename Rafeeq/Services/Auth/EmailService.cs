@@ -51,9 +51,9 @@ namespace Rafeeq.Services.Auth
 
             var subject = "Rafeeq: Password Reset Request";
             var message = $"You have requested a password reset. Click the link in you Email: <a href=\"{resetLink}\">{resetLink}</a>";
-            var resetLink = $"{frontendUrl}/reset-password?token={token}";
-            var subject = "Rafeeq: Password Reset Request";
-            var message = $"You have requested a password reset. Please click on this link to reset your password: <a href=\"{resetLink}\">{resetLink}</a>";
+            //var resetLink = $"{frontendUrl}/reset-password?token={token}";
+            //var subject = "Rafeeq: Password Reset Request";
+            //var message = $"You have requested a password reset. Please click on this link to reset your password: <a href=\"{resetLink}\">{resetLink}</a>";
             await SendEmailAsync(toEmail, subject, message);
         }
 
@@ -63,13 +63,13 @@ namespace Rafeeq.Services.Auth
             var verificationLink = $"{frontendUrl}/verify-email/{token}";
             var subject = "Rafeeq: Verify Your Email Address";
             var message = $" verify your email by clicking on this link: <a href=\"{verificationLink}\">{verificationLink}</a>";
-            var verificationLink = $"{frontendUrl}/verify-email?token={token}";
-            var subject = "Rafeeq: Verify Your Email Address";
-            var message = $"Please verify your email address by clicking on this link: <a href=\"{verificationLink}\">{verificationLink}</a>";
+            //var verificationLink = $"{frontendUrl}/verify-email?token={token}";
+            //var subject = "Rafeeq: Verify Your Email Address";
+            //var message = $"Please verify your email address by clicking on this link: <a href=\"{verificationLink}\">{verificationLink}</a>";
             await SendEmailAsync(toEmail, subject, message);
         }
 
-        //  method for payment confirmation emails
+       // method for payment confirmation emails
         public async Task SendPaymentConfirmationEmailAsync(string toEmail, string userName, int bookingId, decimal amount, DateTime sessionDateTime, string userType)
         {
             var subject = "Rafeeq: Payment Confirmation";
@@ -100,5 +100,6 @@ namespace Rafeeq.Services.Auth
 
             await SendEmailAsync(toEmail, subject, message);
         }
+
     }
 }
