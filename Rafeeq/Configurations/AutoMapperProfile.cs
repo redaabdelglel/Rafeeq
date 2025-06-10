@@ -6,6 +6,7 @@ using Rafeeq.DTOs.Skills;
 using Rafeeq.DTOs.Auth;
 using BCrypt.Net;
 using Rafeeq.DTOs.Bookings;
+using Rafeeq.DTOs.CV;
 
 namespace Rafeeq.Configurations
 {
@@ -110,6 +111,13 @@ namespace Rafeeq.Configurations
             CreateMap<Booking, BookingDetailsDTO>()
                 .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName))
                 .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Mentee.FullName));
+
+            CreateMap<MenteeCV, MenteeCVDto>()
+                .ForMember(dest => dest.CVId, opt => opt.MapFrom(src => src.CVId))
+                .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.User.FullName)) // إذا كان هناك علاقة مع User
+                .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.Comments));
+
+            CreateMap<CVComment, CVCommentDto>();
 
         }
     }

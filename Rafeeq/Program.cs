@@ -124,7 +124,7 @@ builder.Services.AddScoped<IMenteeRepository, MenteeRepository>();
 builder.Services.AddScoped<IUnitOfWork, CVBookingUnitOfWork>();
 
 // Register BookingService (after all its dependencies are registered)
-builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped< BookingService>();
 
 //  AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));

@@ -11,6 +11,7 @@ namespace Rafeeq.Repositories.CV
         Task<IEnumerable<CVComment>> GetCVCommentsAsync(int cvId);
         Task<CVComment> AddCVCommentAsync(CVComment comment);
         Task<MenteeCV> GetCurrentCVAsync(int userId);
+        Task<MenteeCV> GetCVByIdAsync(int cvId); // Added new method
     }
 
     public class MenteeCVRepository : ICVRepository
@@ -32,6 +33,12 @@ namespace Rafeeq.Repositories.CV
                 .ToListAsync();
         }
 
+        public async Task<MenteeCV> GetCVByIdAsync(int cvId)
+        {
+            return await _context.MenteeCVs
+                .FirstOrDefaultAsync(cv => cv.CVId == cvId);
+        }
+
         public async Task<MenteeCV> UploadCVAsync(MenteeCV cv)
         {
             // Deactivate all previous CVs
@@ -39,10 +46,10 @@ namespace Rafeeq.Repositories.CV
                 .Where(c => c.UserId == cv.UserId && c.IsActive)
                 .ToListAsync();
 
-            foreach (var prevCV in previousCVs)
-            {
-                prevCV.IsActive = false;
-            }
+            //foreach (var prevCV in previousCVs)
+            //{
+            //    prevCV.IsActive = false;
+            //}
 
             // Add new CV
             cv.UploadDate = DateTime.Now;
@@ -86,4 +93,3 @@ namespace Rafeeq.Repositories.CV
         }
     }
 }
-
