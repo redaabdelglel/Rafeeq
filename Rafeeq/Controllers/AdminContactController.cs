@@ -154,34 +154,6 @@ namespace Rafeeq.Controllers.Admin
                 return StatusCode(500, new { success = false, message = "An error occurred while deleting the contact message", error = ex.Message });
             }
         }
-        [HttpGet("test")]
-        [AllowAnonymous] // Make this accessible without authentication for testing
-        public async Task<IActionResult> TestContactRepository()
-        {
-            try
-            {
-                // Direct database access to verify table exists
-                var contactMessagesCount = await _unitOfWork.context.Database
-                    .ExecuteSqlRawAsync("SELECT COUNT(*) FROM ContactMessages");
-
-                // Try to get data through repository
-                var messages = await _unitOfWork.ContactRepository.GetAllAsync(true);
-
-                return Ok(new
-                {
-                    directSqlCount = contactMessagesCount,
-                    repositoryCount = messages?.Count() ?? 0,
-                    messages = messages
-                });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    error = ex.Message,
-                    stackTrace = ex.StackTrace
-                });
-            }
-        }
+        
     }
 }
