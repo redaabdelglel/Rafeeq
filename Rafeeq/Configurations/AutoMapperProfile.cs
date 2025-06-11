@@ -4,6 +4,7 @@ using Rafeeq.Models;
 using Rafeeq.DTOs.Users;
 using Rafeeq.DTOs.Skills;
 using Rafeeq.DTOs.Bookings;
+using Rafeeq.DTOs.Reviews;
 
 namespace Rafeeq.Configurations
 {
@@ -26,6 +27,10 @@ namespace Rafeeq.Configurations
             CreateMap<Booking, BookingDto>()
     .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName))
     .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Mentee.FullName));
+
+            // Reviews mapping
+            CreateMap<Review, ReviewDto>();
+            CreateMap<ReviewDto, CreateReviewDto>();
 
         }
     }
