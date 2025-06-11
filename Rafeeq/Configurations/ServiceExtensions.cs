@@ -15,6 +15,7 @@ using Rafeeq.Repositories.RepositoryBase;
 using Rafeeq.Repositories.Users;
 using Microsoft.Extensions.Configuration;
 using Rafeeq.Configurations;
+using Rafeeq.Services.Contact;
 
 namespace Rafeeq.Configurations
 {
@@ -42,7 +43,8 @@ namespace Rafeeq.Configurations
             services.AddScoped<MentorService>();
 
             // Core Feature Services
-            services.AddScoped<ISkillService,SkillService>();
+            services.AddScoped<ISkillService, SkillService>();
+            services.AddScoped<IContactService, ContactService>();
             services.AddScoped<AvailabilityService>();
             services.AddScoped<BookingService>();
             services.AddScoped<MeetingService>();
@@ -51,6 +53,9 @@ namespace Rafeeq.Configurations
             services.AddScoped<ChatService>();
             services.AddScoped<ReviewService>();
             services.AddScoped<NotificationService>();
+            
+            
+
 
             // Admin Services
             services.AddScoped<AdminService>();
