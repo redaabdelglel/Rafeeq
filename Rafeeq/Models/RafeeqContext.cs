@@ -44,6 +44,8 @@ public partial class RafeeqContext : DbContext
     public virtual DbSet<UserToken> UserTokens { get; set; }
     public virtual DbSet<MenteeCV> MenteeCVs { get; set; }
     public virtual DbSet<CVComment> CVComments { get; set; }
+    
+    public virtual DbSet<ContactMessage> ContactMessages { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -195,6 +197,20 @@ public partial class RafeeqContext : DbContext
             entity.Property(e => e.IsUsed).HasDefaultValue(false);
 
             entity.HasOne(d => d.User).WithMany(p => p.UserTokens).HasConstraintName("FK__UserToken__UserI__6C190EBB");
+        });
+
+        // In the OnModelCreating method of RafeeqContext.cs
+        modelBuilder.Entity<ContactMessage>(entity =>
+        {
+            entity.HasKey(e => e.MessageId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Status).HasDefaultValue("New");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            entity.HasOne(d => d.Responder)
+                .WithMany()
+                .HasForeignKey(d => d.RespondedBy)
+                .OnDelete(DeleteBehavior.SetNull);
         });
 
 

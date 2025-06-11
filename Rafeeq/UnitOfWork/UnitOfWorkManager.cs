@@ -6,6 +6,7 @@ using Rafeeq.Repositories.Auth;
 using Rafeeq.Repositories.Availability;
 using Rafeeq.Repositories.Bookings;
 using Rafeeq.Repositories.Chat;
+using Rafeeq.Repositories.Contact;
 using Rafeeq.Repositories.CV;
 using Rafeeq.Repositories.Mentee;
 using Rafeeq.Repositories.Notifications;
@@ -259,5 +260,20 @@ namespace Rafeeq.UnitOfWork
                 return _adminRepositary;
             }
         }
+        
+        private ContactRepository _contactRepository;
+
+        public ContactRepository ContactRepository
+        {
+            get
+            {
+                if (_contactRepository == null)
+                {
+                    _contactRepository = new ContactRepository(context);
+                }
+                return _contactRepository;
+            }
+        }
+
     }
 }

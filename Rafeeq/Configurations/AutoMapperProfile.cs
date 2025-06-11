@@ -14,6 +14,7 @@ using Rafeeq.DTOs.Payments;
 using Rafeeq.DTOs.Reviews;
 using Rafeeq.DTOs.CV;
 using Rafeeq.DTOs.Availability;
+using Rafeeq.DTOs.Contact;
 
 namespace Rafeeq.Configurations
 {
@@ -175,10 +176,10 @@ namespace Rafeeq.Configurations
     .ForMember(dest => dest.HourlyRate, opt => opt.MapFrom(src => src.HourlyRate));
 
             //review mapping
-                //CreateMap<Review, ReviewDto>()
+            //CreateMap<Review, ReviewDto>()
 
-                //.ForMember(dest => dest.ReviewerName, op => op.MapFrom(src => src.Reviewer.FullName))
-                // .ForMember(dest => dest.ReviewedUserName, op => op.MapFrom(src => src.Reviewer.FullName)).ReverseMap();
+            //.ForMember(dest => dest.ReviewerName, op => op.MapFrom(src => src.Reviewer.FullName))
+            // .ForMember(dest => dest.ReviewedUserName, op => op.MapFrom(src => src.Reviewer.FullName)).ReverseMap();
 
             CreateMap<CreateBookingDTO, Booking>();
 
@@ -213,6 +214,29 @@ namespace Rafeeq.Configurations
                             EndTime = a.EndTime ?? TimeSpan.Zero
                         }).ToList()
                         : new List<AvailabilityDto>()));
+
+            // In AutoMapperProfile.cs
+            CreateMap<ContactMessage, ContactMessageListDto>()
+                .ForMember(dest => dest.MessageId, opt => opt.MapFrom(src => src.MessageId))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.Subject, opt => opt.MapFrom(src => src.Subject))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
+
+            CreateMap<ContactMessage, ContactMessageDto>()
+                .ForMember(dest => dest.MessageId, opt => opt.MapFrom(src => src.MessageId))
+                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.Subject, opt => opt.MapFrom(src => src.Subject))
+                .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.Message))
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.ResponseDate, opt => opt.MapFrom(src => src.ResponseDate))
+                .ForMember(dest => dest.ResponseMessage, opt => opt.MapFrom(src => src.ResponseMessage))
+                .ForMember(dest => dest.ResponderName, opt => opt.MapFrom(src => src.Responder != null ? src.Responder.FullName : null));
+
+
         }
     }
 }
