@@ -197,6 +197,50 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred while updating profile", error = ex.Message });
             }
         }
+        [HttpPost("profile-picture")]
+        [Authorize]
+        public async Task<IActionResult> UploadProfilePicture(IFormFile file)
+        {
+            try
+            {
+                // Get the current user ID from claims
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+                if (userId == 0)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
+                }
+
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { success = false, message = "No file was uploaded" });
+                }
+
+                var success = await _userService.UploadProfilePictureAsync(userId, file);
+
+                if (!success)
+                {
+                    return BadRequest(new { success = false, message = "Failed to upload profile picture." });
+                }
+
+                // Get updated profile to return the new profile picture URL
+                var updatedProfile = await _userService.GetUserProfileAsync(userId);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Profile picture updated successfully",
+                    profilePictureUrl = updatedProfile.ProfilePicture
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error uploading profile picture");
+                return StatusCode(500, new { success = false, message = "An error occurred while uploading profile picture", error = ex.Message });
+            }
+        }
+
+
 
     }
 }
