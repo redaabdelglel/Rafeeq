@@ -129,5 +129,74 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred while toggling mentor status", error = ex.Message });
             }
         }
+        
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetUserProfile()
+        {
+            try
+            {
+                // Get the current user ID from claims
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+                if (userId == 0)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
+                }
+
+                var profile = await _userService.GetUserProfileAsync(userId);
+
+                if (profile == null)
+                {
+                    return NotFound(new { success = false, message = "User profile not found" });
+                }
+
+                return Ok(new { success = true, data = profile });
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving user profile");
+                return StatusCode(500, new { success = false, message = "An error occurred while retrieving user profile", error = ex.Message });
+            }
+        }
+
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateUserProfile([FromBody] UpdateProfileDto dto)
+        {
+            try
+            {
+                // Get the current user ID from claims
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+                if (userId == 0)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var success = await _userService.UpdateUserProfileAsync(userId, dto);
+
+                if (!success)
+                {
+                    return BadRequest(new { success = false, message = "Failed to update profile." });
+                }
+
+                // Get updated profile to return in response
+                var updatedProfile = await _userService.GetUserProfileAsync(userId);
+
+                return Ok(new { success = true, message = "Profile updated successfully", data = updatedProfile });
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error updating user profile");
+                return StatusCode(500, new { success = false, message = "An error occurred while updating profile", error = ex.Message });
+            }
+        }
+
     }
 }
