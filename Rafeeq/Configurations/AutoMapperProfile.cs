@@ -6,6 +6,7 @@ using Rafeeq.DTOs.Skills;
 using Rafeeq.DTOs.Auth;
 using BCrypt.Net;
 using Rafeeq.DTOs.Bookings;
+
 using Rafeeq.DTOs.Availability;
 using Rafeeq.DTOs.CV;
 using Rafeeq.DTOs.Chat;
@@ -121,6 +122,12 @@ namespace Rafeeq.Configurations
 
             // Availability mappings
 
+
+            // Reviews mapping
+            CreateMap<Review, ReviewDto>();
+            CreateMap<ReviewDto, CreateReviewDto>();
+
+
             CreateMap<Models.Availability, AvailabilityDto>();
             CreateMap<CreateAvailabilityDto, Models.Availability>();
             CreateMap<UpdateAvailabilityDto, Models.Availability>();
@@ -168,12 +175,36 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.SkillName, opt => opt.MapFrom(src => src.Name));
 
             // MentorDto mapping
+            // Mentor mapping (single, comprehensive version)
             CreateMap<User, MentorDto>()
-    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
-    .ForMember(dest => dest.MentorSkills, opt => opt.MapFrom(src => src.MentorSkills.Select(ms => ms.Skill)))
-    .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
-    .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-    .ForMember(dest => dest.HourlyRate, opt => opt.MapFrom(src => src.HourlyRate));
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.role, opt => opt.MapFrom(src => src.Role.RoleName))
+                .ForMember(dest => dest.HourlyRate, opt => opt.MapFrom(src => src.HourlyRate))
+                .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.ProfilePicture))
+                .ForMember(dest => dest.Bio, opt => opt.MapFrom(src => src.Bio))
+                .ForMember(dest => dest.IsMentor, opt => opt.MapFrom(src => src.IsMentor))
+                .ForMember(dest => dest.IsInterviewer, opt => opt.MapFrom(src => src.IsInterviewer))
+                .ForMember(dest => dest.Skills, opt => opt.MapFrom(src =>
+                    (src.MentorSkills != null)
+                        ? src.MentorSkills.Where(ms => ms.Skill != null).Select(ms => ms.Skill.Name).ToList()
+                        : new List<string>()))
+                .ForMember(dest => dest.MentorSkills, opt => opt.MapFrom(src =>
+                    (src.MentorSkills != null)
+                        ? src.MentorSkills.Where(ms => ms.Skill != null)
+                            .Select(ms => new SkillDto { Id = ms.Skill.SkillId, Name = ms.Skill.Name }).ToList()
+                        : new List<SkillDto>()))
+                .ForMember(dest => dest.Availabilities, opt => opt.MapFrom(src =>
+                    (src.Availabilities != null)
+                        ? src.Availabilities.Select(a => new AvailabilityDto
+                        {
+                            AvailabilityId = a.AvailabilityId,
+                            DayOfWeek = a.DayOfWeek ?? 0,
+                            StartTime = a.StartTime ?? TimeSpan.Zero,
+                            EndTime = a.EndTime ?? TimeSpan.Zero
+                        }).ToList()
+                        : new List<AvailabilityDto>()));
 
             //review mapping
             //CreateMap<Review, ReviewDto>()
@@ -214,29 +245,6 @@ namespace Rafeeq.Configurations
                             EndTime = a.EndTime ?? TimeSpan.Zero
                         }).ToList()
                         : new List<AvailabilityDto>()));
-
-            // In AutoMapperProfile.cs
-            CreateMap<ContactMessage, ContactMessageListDto>()
-                .ForMember(dest => dest.MessageId, opt => opt.MapFrom(src => src.MessageId))
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-                .ForMember(dest => dest.Subject, opt => opt.MapFrom(src => src.Subject))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
-
-            CreateMap<ContactMessage, ContactMessageDto>()
-                .ForMember(dest => dest.MessageId, opt => opt.MapFrom(src => src.MessageId))
-                .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
-                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-                .ForMember(dest => dest.Subject, opt => opt.MapFrom(src => src.Subject))
-                .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.Message))
-                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
-                .ForMember(dest => dest.ResponseDate, opt => opt.MapFrom(src => src.ResponseDate))
-                .ForMember(dest => dest.ResponseMessage, opt => opt.MapFrom(src => src.ResponseMessage))
-                .ForMember(dest => dest.ResponderName, opt => opt.MapFrom(src => src.Responder != null ? src.Responder.FullName : null));
-
-
         }
     }
 }
