@@ -118,7 +118,7 @@ builder.Services.Configure<GoogleMeetSettings>(builder.Configuration.GetSection(
 builder.Services.AddScoped<IGoogleMeetService, GoogleMeetService>();
 
 // Register repositories
-builder.Services.AddScoped<IBookingRepository, MenteeBookingRepository>();
+builder.Services.AddScoped<IMenteeBookingRepository, MenteeBookingRepository>();
 builder.Services.AddScoped<ICVRepository, MenteeCVRepository>();
 builder.Services.AddScoped<IMentorRepository, MenteeMentorRepository>();
 builder.Services.AddScoped<IMenteeRepository, MenteeRepository>();
@@ -126,8 +126,6 @@ builder.Services.AddScoped<IMenteeRepository, MenteeRepository>();
 // Register Unit of Work
 builder.Services.AddScoped<IUnitOfWork, CVBookingUnitOfWork>();
 
-// Register BookingService (after all its dependencies are registered)
-builder.Services.AddScoped<IBookingService, BookingService>();
 
 //  AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));

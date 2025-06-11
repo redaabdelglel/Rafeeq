@@ -6,8 +6,8 @@ using Rafeeq.Models;
 
 namespace Rafeeq.Repositories.Bookings
 {
-        public interface IBookingRepository
-        {
+        public interface IMenteeBookingRepository
+    {
             Task<IEnumerable<Booking>> GetMenteeBookingsAsync(int menteeId);
             Task<IEnumerable<Booking>> GetUpcomingBookingsAsync(int userId);
             Task<IEnumerable<Booking>> GetCompletedBookingsAsync(int userId);
@@ -21,8 +21,8 @@ namespace Rafeeq.Repositories.Bookings
 
     }
 
-    public class MenteeBookingRepository : IBookingRepository
-        {
+    public class MenteeBookingRepository : IMenteeBookingRepository
+    {
             private readonly RafeeqContext _context;
             private readonly ILogger<MenteeBookingRepository> _logger;  // Add logging
 

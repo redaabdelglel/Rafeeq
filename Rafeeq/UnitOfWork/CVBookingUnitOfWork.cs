@@ -7,7 +7,7 @@ namespace Rafeeq.UnitOfWork
 {
     public interface IUnitOfWork : IDisposable
     {
-        IBookingRepository Bookings { get; }
+        IMenteeBookingRepository Bookings { get; }
         ICVRepository CVs { get; }
         IMentorRepository Mentors { get; }
         Task<int> CompleteAsync();
@@ -39,7 +39,7 @@ namespace Rafeeq.UnitOfWork
         }
 
 
-        public IBookingRepository Bookings { get; }
+        public IMenteeBookingRepository Bookings { get; }
         public ICVRepository CVs { get; }
         public IMentorRepository Mentors { get; }
 

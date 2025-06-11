@@ -23,20 +23,24 @@ namespace Rafeeq.UnitOfWork
         // Repository fields
         private UserRepository _userRepository;
         private UserTokenRepository? _userTokenRepository; 
-
         private SkillRepository _skillRepository;
         private AvailabilityRepository _availabilityRepository;
-        private MenteeBookingRepository _bookingRepository;
         private PaymentRepository _paymentRepository;
         private ChatRepository _chatRepository;
         private ChatAttachmentRepository _chatAttachmentRepository;
         private ReviewRepository _reviewRepository;
         private NotificationRepository _notificationRepository;
-        private CVRepository _menteeCVRepository;
+
+        private IMentorRepository _menteeMentorRepository;
+        private MenteeBookingRepository _menteeBookingRepository;
+        private MenteeCVRepository _menteeCVRepository;
         private IMenteeRepository _menteeRepository;
+
         private CVCommentRepository _cvCommentRepository;
         private RoleRepository _roleRepository;
         private AdminRepositary _adminRepositary;
+        private BookingRepository _bookingRepository;
+        
 
 
         public UnitOfWorkManager(RafeeqContext context)
@@ -104,16 +108,49 @@ namespace Rafeeq.UnitOfWork
                 return _availabilityRepository;
             }
         }
-
-        public MenteeBookingRepository BookingRepository
+        public BookingRepository BookingRepository
         {
             get
             {
                 if (_bookingRepository == null)
                 {
-                    _bookingRepository = new MenteeBookingRepository(context);
+                    _bookingRepository = new BookingRepository(context);
                 }
                 return _bookingRepository;
+            }
+        }
+
+        public IMentorRepository MenteeMentorRepository
+        {
+            get
+            {
+                if (_menteeMentorRepository == null)
+                {
+                    _menteeMentorRepository = new MenteeMentorRepository(context);
+                }
+                return _menteeMentorRepository;
+            }
+        }
+        public MenteeBookingRepository MenteeBookingRepository
+        {
+            get
+            {
+                if (_menteeBookingRepository == null)
+                {
+                    _menteeBookingRepository = new MenteeBookingRepository(context);
+                }
+                return _menteeBookingRepository;
+            }
+        }
+        public MenteeCVRepository MenteeCVRepository
+        {
+            get
+            {
+                if (_menteeCVRepository == null)
+                {
+                    _menteeCVRepository = new MenteeCVRepository(context);
+                }
+                return _menteeCVRepository;
             }
         }
 
@@ -177,17 +214,7 @@ namespace Rafeeq.UnitOfWork
             }
         }
 
-        public CVRepository MenteeCVRepository
-        {
-            get
-            {
-                if (_menteeCVRepository == null)
-                {
-                    _menteeCVRepository = new CVRepository(context);
-                }
-                return _menteeCVRepository;
-            }
-        }
+       
 
         public CVCommentRepository CVCommentRepository
         {

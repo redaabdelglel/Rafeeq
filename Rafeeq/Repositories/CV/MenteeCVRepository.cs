@@ -23,7 +23,11 @@ namespace Rafeeq.Repositories.CV
             _context = context;
             _environment = environment;
         }
+        public MenteeCVRepository(RafeeqContext context)
+        {
+            _context = context;
 
+        }
         public async Task<IEnumerable<MenteeCV>> GetMenteeCVsAsync(int userId)
         {
             return await _context.MenteeCVs
@@ -39,10 +43,10 @@ namespace Rafeeq.Repositories.CV
                 .Where(c => c.UserId == cv.UserId && c.IsActive)
                 .ToListAsync();
 
-            foreach (var prevCV in previousCVs)
-            {
-                prevCV.IsActive = false;
-            }
+            //foreach (var prevCV in previousCVs)
+            //{
+            //    prevCV.IsActive = false;
+            //}
 
             // Add new CV
             cv.UploadDate = DateTime.Now;
