@@ -24,5 +24,6 @@ public partial class Availability
 
     [ForeignKey("UserId")]
     [InverseProperty("Availabilities")]
+
     public virtual User User { get; set; }
 }

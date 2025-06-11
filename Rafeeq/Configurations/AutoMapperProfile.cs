@@ -12,6 +12,8 @@ using Rafeeq.DTOs.Chat;
 using Rafeeq.DTOs.Notifications;
 using Rafeeq.DTOs.Payments;
 using Rafeeq.DTOs.Reviews;
+using Rafeeq.DTOs.CV;
+using Rafeeq.DTOs.Availability;
 
 namespace Rafeeq.Configurations
 {
@@ -99,8 +101,19 @@ namespace Rafeeq.Configurations
 
             // bookings mapping
             CreateMap<Booking, BookingDto>()
-    .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName))
-    .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Mentee.FullName));
+            .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName))
+            .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Mentee.FullName));
+
+
+            // Booking mappings
+            CreateMap<Booking, BookingDto>()
+                .ForMember(dest => dest.GoogleMeetLink, opt => opt.MapFrom(src => src.GoogleMeetLink))
+                .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName));
+
+
+            CreateMap<Booking, BookingDetailsDTO>()
+                .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName))
+                .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Mentee.FullName));
 
 
 
@@ -167,6 +180,40 @@ namespace Rafeeq.Configurations
                 //.ForMember(dest => dest.ReviewerName, op => op.MapFrom(src => src.Reviewer.FullName))
                 // .ForMember(dest => dest.ReviewedUserName, op => op.MapFrom(src => src.Reviewer.FullName)).ReverseMap();
 
+            CreateMap<CreateBookingDTO, Booking>();
+
+            // CV mappings
+            CreateMap<MenteeCV, CVDTO>()
+                .ForMember(dest => dest.DownloadUrl, opt => opt.MapFrom(src =>
+                    $"/api/cvs/download/{src.CVId}")); // You'll need to implement the download endpoint
+
+            CreateMap<CVComment, CVCommentDto>()
+                .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName));
+
+            CreateMap<CreateCVCommentDTO, CVComment>();
+
+            // In your MappingProfile.cs or where you configure AutoMapper
+            CreateMap<Availability, AvailabilityDto>()
+            .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.DayOfWeek));
+
+
+            // Mentor mappings (robust version)
+            CreateMap<User, MentorDto>()
+                .ForMember(dest => dest.Skills, opt => opt.MapFrom(src =>
+                    (src.MentorSkills != null)
+                        ? src.MentorSkills.Where(ms => ms.Skill != null).Select(ms => ms.Skill.Name).ToList()
+                        : new List<string>()))
+                .ForMember(dest => dest.Availabilities, opt => opt.MapFrom(src =>
+                    (src.Availabilities != null)
+                        ? src.Availabilities.Select(a => new AvailabilityDto
+                        {
+                            AvailabilityId = a.AvailabilityId,
+                            DayOfWeek = a.DayOfWeek ?? 0, // 0 = Sunday, or use your preferred default
+                            StartTime = a.StartTime ?? TimeSpan.Zero,
+                            EndTime = a.EndTime ?? TimeSpan.Zero
+                        }).ToList()
+                        : new List<AvailabilityDto>()));
         }
     }
 }
+
