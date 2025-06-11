@@ -167,18 +167,42 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.SkillName, opt => opt.MapFrom(src => src.Name));
 
             // MentorDto mapping
+            // Mentor mapping (single, comprehensive version)
             CreateMap<User, MentorDto>()
-    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
-    .ForMember(dest => dest.MentorSkills, opt => opt.MapFrom(src => src.MentorSkills.Select(ms => ms.Skill)))
-    .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
-    .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
-    .ForMember(dest => dest.HourlyRate, opt => opt.MapFrom(src => src.HourlyRate));
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+                .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+                .ForMember(dest => dest.role, opt => opt.MapFrom(src => src.Role.RoleName))
+                .ForMember(dest => dest.HourlyRate, opt => opt.MapFrom(src => src.HourlyRate))
+                .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.ProfilePicture))
+                .ForMember(dest => dest.Bio, opt => opt.MapFrom(src => src.Bio))
+                .ForMember(dest => dest.IsMentor, opt => opt.MapFrom(src => src.IsMentor))
+                .ForMember(dest => dest.IsInterviewer, opt => opt.MapFrom(src => src.IsInterviewer))
+                .ForMember(dest => dest.Skills, opt => opt.MapFrom(src =>
+                    (src.MentorSkills != null)
+                        ? src.MentorSkills.Where(ms => ms.Skill != null).Select(ms => ms.Skill.Name).ToList()
+                        : new List<string>()))
+                .ForMember(dest => dest.MentorSkills, opt => opt.MapFrom(src =>
+                    (src.MentorSkills != null)
+                        ? src.MentorSkills.Where(ms => ms.Skill != null)
+                            .Select(ms => new SkillDto { Id = ms.Skill.SkillId, Name = ms.Skill.Name }).ToList()
+                        : new List<SkillDto>()))
+                .ForMember(dest => dest.Availabilities, opt => opt.MapFrom(src =>
+                    (src.Availabilities != null)
+                        ? src.Availabilities.Select(a => new AvailabilityDto
+                        {
+                            AvailabilityId = a.AvailabilityId,
+                            DayOfWeek = a.DayOfWeek ?? 0,
+                            StartTime = a.StartTime ?? TimeSpan.Zero,
+                            EndTime = a.EndTime ?? TimeSpan.Zero
+                        }).ToList()
+                        : new List<AvailabilityDto>()));
 
             //review mapping
-                //CreateMap<Review, ReviewDto>()
+            //CreateMap<Review, ReviewDto>()
 
-                //.ForMember(dest => dest.ReviewerName, op => op.MapFrom(src => src.Reviewer.FullName))
-                // .ForMember(dest => dest.ReviewedUserName, op => op.MapFrom(src => src.Reviewer.FullName)).ReverseMap();
+            //.ForMember(dest => dest.ReviewerName, op => op.MapFrom(src => src.Reviewer.FullName))
+            // .ForMember(dest => dest.ReviewedUserName, op => op.MapFrom(src => src.Reviewer.FullName)).ReverseMap();
 
             CreateMap<CreateBookingDTO, Booking>();
 
@@ -197,22 +221,7 @@ namespace Rafeeq.Configurations
             .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.DayOfWeek));
 
 
-            // Mentor mappings (robust version)
-            CreateMap<User, MentorDto>()
-                .ForMember(dest => dest.Skills, opt => opt.MapFrom(src =>
-                    (src.MentorSkills != null)
-                        ? src.MentorSkills.Where(ms => ms.Skill != null).Select(ms => ms.Skill.Name).ToList()
-                        : new List<string>()))
-                .ForMember(dest => dest.Availabilities, opt => opt.MapFrom(src =>
-                    (src.Availabilities != null)
-                        ? src.Availabilities.Select(a => new AvailabilityDto
-                        {
-                            AvailabilityId = a.AvailabilityId,
-                            DayOfWeek = a.DayOfWeek ?? 0, // 0 = Sunday, or use your preferred default
-                            StartTime = a.StartTime ?? TimeSpan.Zero,
-                            EndTime = a.EndTime ?? TimeSpan.Zero
-                        }).ToList()
-                        : new List<AvailabilityDto>()));
+            
         }
     }
 }
