@@ -42,7 +42,7 @@ namespace Rafeeq.Configurations
             services.AddScoped<MentorService>();
 
             // Core Feature Services
-            services.AddScoped<SkillService>();
+            services.AddScoped<ISkillService,SkillService>();
             services.AddScoped<AvailabilityService>();
             services.AddScoped<BookingService>();
             services.AddScoped<MeetingService>();
