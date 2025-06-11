@@ -1,4 +1,6 @@
-﻿using Rafeeq.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using Rafeeq.Models;
+using System.Linq.Expressions;
 
 namespace Rafeeq.Repositories
 {
@@ -43,7 +45,7 @@ namespace Rafeeq.Repositories
                 save();
             }
         }
-
+      
         public void save() { 
         _context.SaveChanges();
         }

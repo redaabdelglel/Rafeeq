@@ -10,6 +10,11 @@ using Rafeeq.Services.Payments;
 using Rafeeq.Services.Reviews;
 using Rafeeq.Services.Notifications;
 using Rafeeq.Services.CV;
+using Rafeeq.Repositories.Auth;
+using Rafeeq.Repositories.RepositoryBase;
+using Rafeeq.Repositories.Users;
+using Microsoft.Extensions.Configuration;
+using Rafeeq.Configurations;
 
 namespace Rafeeq.Configurations
 {
@@ -17,13 +22,23 @@ namespace Rafeeq.Configurations
     {
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
+            // Register Repositories
+            services.AddScoped(typeof(IRepositoryBase<>), typeof(RepositoryBase<>)); // Generic base repository
+            services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IUserTokenRepository, UserTokenRepository>(); // Added for Auth
             // Auth Services
             services.AddScoped<AuthService>();
             services.AddScoped<JwtService>();
             services.AddScoped<EmailService>();
 
+            services.AddScoped<IAuthService, AuthService>();
+            services.AddScoped<IJwtService, JwtService>();
+            services.AddScoped<IEmailService, EmailService>();
             // User Services
+
             services.AddScoped<UserService>();
+            services.AddScoped<IUserService, UserService>();
+
             services.AddScoped<MentorService>();
 
             // Core Feature Services
@@ -43,6 +58,17 @@ namespace Rafeeq.Configurations
             // CV Services
             services.AddScoped<CVService>();
 
+
+            // Chat  services 
+            services.AddScoped<SignalRService>();
+
+            return services;
+        }
+
+        //  Stripe configuration
+        public static IServiceCollection AddStripeConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<StripeSettings>(configuration.GetSection("StripeSettings"));
             return services;
         }
     }

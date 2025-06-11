@@ -1,9 +1,13 @@
-﻿using Rafeeq.Models;
+﻿using Microsoft.EntityFrameworkCore;
+using Rafeeq.Models;
 using Rafeeq.Repositories;
+using Rafeeq.Repositories.admin;
+using Rafeeq.Repositories.Auth;
 using Rafeeq.Repositories.Availability;
 using Rafeeq.Repositories.Bookings;
 using Rafeeq.Repositories.Chat;
 using Rafeeq.Repositories.CV;
+using Rafeeq.Repositories.Mentee;
 using Rafeeq.Repositories.Notifications;
 using Rafeeq.Repositories.Payments;
 using Rafeeq.Repositories.Reviews;
@@ -18,16 +22,26 @@ namespace Rafeeq.UnitOfWork
 
         // Repository fields
         private UserRepository _userRepository;
+        private UserTokenRepository? _userTokenRepository; 
         private SkillRepository _skillRepository;
         private AvailabilityRepository _availabilityRepository;
-        private BookingRepository _bookingRepository;
         private PaymentRepository _paymentRepository;
         private ChatRepository _chatRepository;
         private ChatAttachmentRepository _chatAttachmentRepository;
         private ReviewRepository _reviewRepository;
         private NotificationRepository _notificationRepository;
+
+        private IMentorRepository _menteeMentorRepository;
+        private MenteeBookingRepository _menteeBookingRepository;
         private MenteeCVRepository _menteeCVRepository;
+        private IMenteeRepository _menteeRepository;
+
         private CVCommentRepository _cvCommentRepository;
+        private RoleRepository _roleRepository;
+        private AdminRepositary _adminRepositary;
+        private BookingRepository _bookingRepository;
+        
+
 
         public UnitOfWorkManager(RafeeqContext context)
         {
@@ -44,6 +58,30 @@ namespace Rafeeq.UnitOfWork
                     _userRepository = new UserRepository(context);
                 }
                 return _userRepository;
+            }
+        }
+        public UserTokenRepository UserTokenRepository // Added for Auth
+        {
+            get
+            {
+                if (_userTokenRepository == null)
+                {
+                    _userTokenRepository = new UserTokenRepository(context);
+                }
+                return _userTokenRepository;
+            }
+        }
+
+
+        public IMenteeRepository Mentees
+        {
+            get
+            {
+                if (_menteeRepository == null)
+                {
+                    _menteeRepository = new MenteeRepository(context);
+                }
+                return _menteeRepository;
             }
         }
 
@@ -70,7 +108,6 @@ namespace Rafeeq.UnitOfWork
                 return _availabilityRepository;
             }
         }
-
         public BookingRepository BookingRepository
         {
             get
@@ -80,6 +117,40 @@ namespace Rafeeq.UnitOfWork
                     _bookingRepository = new BookingRepository(context);
                 }
                 return _bookingRepository;
+            }
+        }
+
+        public IMentorRepository MenteeMentorRepository
+        {
+            get
+            {
+                if (_menteeMentorRepository == null)
+                {
+                    _menteeMentorRepository = new MenteeMentorRepository(context);
+                }
+                return _menteeMentorRepository;
+            }
+        }
+        public MenteeBookingRepository MenteeBookingRepository
+        {
+            get
+            {
+                if (_menteeBookingRepository == null)
+                {
+                    _menteeBookingRepository = new MenteeBookingRepository(context);
+                }
+                return _menteeBookingRepository;
+            }
+        }
+        public MenteeCVRepository MenteeCVRepository
+        {
+            get
+            {
+                if (_menteeCVRepository == null)
+                {
+                    _menteeCVRepository = new MenteeCVRepository(context);
+                }
+                return _menteeCVRepository;
             }
         }
 
@@ -143,17 +214,7 @@ namespace Rafeeq.UnitOfWork
             }
         }
 
-        public MenteeCVRepository MenteeCVRepository
-        {
-            get
-            {
-                if (_menteeCVRepository == null)
-                {
-                    _menteeCVRepository = new MenteeCVRepository(context);
-                }
-                return _menteeCVRepository;
-            }
-        }
+       
 
         public CVCommentRepository CVCommentRepository
         {
@@ -166,7 +227,18 @@ namespace Rafeeq.UnitOfWork
                 return _cvCommentRepository;
             }
         }
-
+        public RoleRepository RoleRepository
+        {
+            get
+            {
+                if (_roleRepository == null)
+                {
+                    _roleRepository = new RoleRepository(context);
+                }
+                return _roleRepository;
+            }
+        }
+      
         public void Save()
         {
             context.SaveChanges();
@@ -175,6 +247,17 @@ namespace Rafeeq.UnitOfWork
         public async Task<int> SaveAsync()
         {
             return await context.SaveChangesAsync();
+        }
+        public AdminRepositary AdminRepositary
+        {
+            get
+            {
+                if (_adminRepositary == null)
+                {
+                    _adminRepositary = new AdminRepositary(context);
+                }
+                return _adminRepositary;
+            }
         }
     }
 }

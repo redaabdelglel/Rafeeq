@@ -1,5 +1,3 @@
-
-
 ## ✅ Detailed featurelist,pages,BackendStructure,FrontendStructure,EndpointsNeeded
 
 ##🔐 1. Authentication & User Management
@@ -60,6 +58,13 @@ View reviews written by them
 Edit/change password
 
 
+Upload CV for mentors to review
+
+
+View mentor comments on CV
+
+
+
 🔸 Mentor Profile:
 Bio, skills, years of experience
 
@@ -80,6 +85,12 @@ View reviews and ratings
 
 
 Manage bookings
+
+
+View mentees' CVs
+
+
+Comment on mentees' CVs
 
 
 
@@ -279,18 +290,91 @@ Reminder to leave review after session
 
 Reminder to verify email if still not done after registration
 
+## 📄 12. CV Management System
+Allows mentees to upload CVs and mentors to provide feedback.
+🔸 Features:
+Mentee can upload CV documents (PDF, DOCX)
 
 
-## 💡 Optional (Can be Done in MVP if Time Allows)
-Add wallet balance for mentors
+View list of uploaded CVs
 
 
-Add notifications panel (in-app with bell icon)
+Set one CV as active/primary
 
 
-Allow mentee to cancel bookings (e.g., 24h before session)
+Delete previously uploaded CVs
 
 
+Mentors can view mentees' CVs after booking
+
+
+Mentors can leave comments on specific CVs
+
+
+Thread-like comment system with timestamps
+
+
+Mentees receive notifications for new CV comments
+
+
+Mentors can highlight specific sections for feedback
+
+
+Version history if multiple CV uploads
+
+
+
+## 🤖 AI Integration Plan (One Week Implementation)
+
+Quick enhancement of the platform with essential AI capabilities.
+
+### 1. GPT-4 Mini Support Chatbot
+🔸 Features:
+- AI assistant for common platform questions
+- Help finding suitable mentors based on skills
+- Basic booking process guidance
+- Session preparation suggestions
+
+🔸 Implementation:
+- Integrate GPT-4 Mini with simple prompt templates
+- Create chat widget on key pages
+- Focus on 5-10 most common user scenarios
+- Implement basic conversation memory
+
+### 2. Voice Search with Whisper
+🔸 Features:
+- Basic voice-to-text search for mentors
+- Spoken skill requirements converted to queries
+- Accessibility enhancement
+
+🔸 Implementation:
+- Add microphone button to search interface
+- Integrate Whisper API for speech recognition
+- Connect transcribed text directly to existing search
+
+### 3. Simplified TTS for Session Notes
+🔸 Features:
+- Convert written session notes to audio
+- Basic playback controls
+- Single-voice implementation
+
+🔸 Implementation:
+- Use browser's built-in SpeechSynthesis API
+- Add "Listen" button to session summaries
+- Implement pause/play functionality
+- Keep audio processing client-side for simplicity
+
+### 4. Basic Embedding for Mentor Matching
+🔸 Features:
+- Match mentees with mentors using skill similarity
+- Simple recommendation system on dashboard
+- "Similar mentors" suggestions
+
+🔸 Implementation:
+- Generate embeddings for mentor profiles and skills
+- Store as simple vectors in existing database
+- Implement basic cosine similarity search
+- Display top 3-5 matches on mentee dashboard
 
 
 
@@ -693,8 +777,7 @@ Delete inappropriate reviews
 
 
 
-🛠️ Utility Pages
-## 20. Password Reset Page
+ ## 20. Password Reset Page
 Enter email to receive reset link
 
 
@@ -709,6 +792,11 @@ Informs user to check inbox
 Option to resend verification email
 
 
+
+## 22. CV Management Page
+- Mentees can upload/manage their CVs
+- View mentor comments on their CVs
+- Mentors can view mentees' CVs and leave comments
 
 ## 🌟 Optional Pages (for later if time allows)
 Notifications page (in-app)
@@ -872,6 +960,28 @@ CREATE TABLE ChatAttachments (
     ContentType NVARCHAR(100) NOT NULL
 );
 
+-- 14. CV Management Table
+CREATE TABLE MenteeCVs (
+    CVId INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT FOREIGN KEY REFERENCES Users(UserId),
+    FilePath NVARCHAR(255) NOT NULL,
+    FileName NVARCHAR(100) NOT NULL,
+    FileSize INT NOT NULL,
+    ContentType NVARCHAR(100) NOT NULL,
+    UploadDate DATETIME DEFAULT GETDATE(),
+    IsActive BIT DEFAULT 1
+);
+
+-- 15. CV Comments Table
+CREATE TABLE CVComments (
+    CommentId INT PRIMARY KEY IDENTITY(1,1),
+    CVId INT FOREIGN KEY REFERENCES MenteeCVs(CVId),
+    MentorId INT FOREIGN KEY REFERENCES Users(UserId),
+    Comment NVARCHAR(MAX) NOT NULL,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    UpdatedAt DATETIME NULL
+);
+
 -- Default Roles
 INSERT INTO Roles (RoleName) VALUES ('Admin'), ('Mentor'), ('Mentee');
 
@@ -879,639 +989,7 @@ INSERT INTO Roles (RoleName) VALUES ('Admin'), ('Mentor'), ('Mentee');
 
 ---------------------------------------------------------------------------
 
-
-
-
-
-## Backend Structure for Rafeeq Project (.NET Web API) with 3-Tier Architecture + Unit of Work + AutoMapper
-
-Overall Folder Structure
-/Rafeeq.Api               (Main Web API Project)
-│
-├── /Controllers          <-- API Controllers (entry points for HTTP requests)
-│      ├── AuthController.cs                    # Authentication endpoints
-│      ├── UsersController.cs                   # User profile management endpoints
-│      ├── MentorsController.cs                 # Mentor-specific endpoints
-│      ├── SkillsController.cs                  # Skills CRUD endpoints
-│      ├── AvailabilityController.cs            # Mentor availability management 
-│      ├── BookingsController.cs                # Booking management endpoints
-│      ├── PaymentsController.cs                # Payment processing endpoints
-│      ├── ChatController.cs                    # Chat message endpoints
-│      ├── ReviewsController.cs                 # Reviews and ratings endpoints
-│      ├── AdminController.cs                   # Admin-only endpoints
-│      └── NotificationsController.cs           # Notification endpoints
-│
-├── /DTOs                 <-- Data Transfer Objects (request/response shapes)
-│      ├── Auth
-│      │   ├── RegisterDto.cs                   # Registration request
-│      │   ├── LoginDto.cs                      # Login request
-│      │   ├── ExternalLoginDto.cs              # Social login request
-│      │   ├── TokenResponseDto.cs              # JWT token response
-│      │   ├── ForgotPasswordDto.cs             # Password reset request
-│      │   └── ResetPasswordDto.cs              # New password submission
-│      │
-│      ├── Users
-│      │   ├── UserDto.cs                       # User data response
-│      │   ├── UserProfileDto.cs                # User profile response
-│      │   ├── UpdateProfileDto.cs              # Profile update request
-│      │   ├── ChangePasswordDto.cs             # Password change request
-│      │   ├── MentorDto.cs                     # Mentor data response
-│      │   └── MentorSearchDto.cs               # Mentor search filters
-│      │
-│      ├── Skills
-│      │   ├── SkillDto.cs                      # Skill data
-│      │   ├── AddSkillDto.cs                   # Add skill request
-│      │   └── UserSkillDto.cs                  # User-skill association
-│      │
-│      ├── Availability
-│      │   ├── AvailabilityDto.cs               # Availability slot data
-│      │   ├── CreateAvailabilityDto.cs         # New availability request
-│      │   └── UpdateAvailabilityDto.cs         # Update availability request
-│      │
-│      ├── Bookings
-│      │   ├── BookingDto.cs                    # Booking response data
-│      │   ├── CreateBookingDto.cs              # New booking request
-│      │   ├── UpdateBookingStatusDto.cs        # Status update request
-│      │   └── MeetingLinkDto.cs                # Google Meet link response
-│      │
-│      ├── Payments
-│      │   ├── PaymentDto.cs                    # Payment data
-│      │   ├── PaymentIntentDto.cs              # Stripe payment intent
-│      │   ├── PaymentConfirmationDto.cs        # Payment confirmation
-│      │   └── EarningsSummaryDto.cs            # Mentor earnings response
-│      │
-│      ├── Chat
-│      │   ├── ChatMessageDto.cs                # Chat message data
-│      │   ├── SendMessageDto.cs                # New message request
-│      │   └── ChatAttachmentDto.cs             # File attachment data
-│      │
-│      ├── Reviews
-│      │   ├── ReviewDto.cs                     # Review response data
-│      │   └── CreateReviewDto.cs               # New review request
-│      │
-│      └── Notifications
-│          ├── NotificationDto.cs               # Notification data
-│          └── NotificationStatusDto.cs         # Read/unread status
-│
-├── /Services             <-- Business logic layer (implements interfaces)
-│      ├── Auth
-│      │   ├── IAuthService.cs                  # Authentication service interface
-│      │   ├── AuthService.cs                   # Authentication implementation
-│      │   ├── IJwtService.cs                   # JWT token generation/validation
-│      │   ├── JwtService.cs                    # JWT implementation
-│      │   ├── IEmailService.cs                 # Email services for verification/
-│      │   └── EmailService.cs                  # Email implementation
-│      │
-│      ├── Users
-│      │   ├── IUserService.cs                  # User management interface
-│      │   ├── UserService.cs                   # User management implementation
-│      │   ├── IMentorService.cs                # Mentor-specific functionality
-│      │   └── MentorService.cs                 # Mentor implementation
-│      │
-│      ├── Skills
-│      │   ├── ISkillService.cs                 # Skills management interface
-│      │   └── SkillService.cs                  # Skills implementation
-│      │
-│      ├── Availability
-│      │   ├── IAvailabilityService.cs          # Availability management interface
-│      │   └── AvailabilityService.cs           # Availability implementation
-│      │
-│      ├── Bookings
-│      │   ├── IBookingService.cs               # Booking management interface
-│      │   ├── BookingService.cs                # Booking implementation
-│      │   ├── IMeetingService.cs               # Google Meet integration
-│      │   └── MeetingService.cs                # Google Meet implementation
-│      │
-│      ├── Payments
-│      │   ├── IPaymentService.cs               # Payment management interface
-│      │   ├── PaymentService.cs                # Payment implementation
-│      │   ├── IStripeService.cs                # Stripe integration interface
-│      │   └── StripeService.cs                 # Stripe integration implementation
-│      │
-│      ├── Chat
-│      │   ├── IChatService.cs                  # Chat functionality interface
-│      │   ├── ChatService.cs                   # Chat implementation
-│      │   ├── ISignalRService.cs               # SignalR real-time messaging
-│      │   └── SignalRService.cs                # SignalR implementation
-│      │
-│      ├── Reviews
-│      │   ├── IReviewService.cs                # Review management interface
-│      │   └── ReviewService.cs                 # Review implementation
-│      │
-│      ├── Admin
-│      │   ├── IAdminService.cs                 # Admin operations interface
-│      │   └── AdminService.cs                  # Admin operations implementation
-│      │
-│      └── Notifications
-│          ├── INotificationService.cs          # Notification interface
-│          └── NotificationService.cs           # Notification implementation
-│
-├── /Repositories         <-- Data access layer (implements interfaces)
-│      ├── IRepositoryBase.cs                   # Generic repository interface
-│      ├── RepositoryBase.cs                    # Generic repository implementation
-│
-├── Users
-│   ├── IUserRepository.cs               # User data access interface
-│   └── UserRepository.cs                # User data access implementation
-│
-├── Skills
-│   ├── ISkillRepository.cs              # Skills data access interface
-│   └── SkillRepository.cs               # Skills data access implementation
-│
-├── Availability
-│   ├── IAvailabilityRepository.cs       # Availability data access interface
-│   └── AvailabilityRepository.cs        # Availability data access implementation
-│
-├── Bookings
-│   ├── IBookingRepository.cs            # Booking data access interface
-│   └── BookingRepository.cs             # Booking data access implementation
-│
-├── Payments
-│   ├── IPaymentRepository.cs            # Payment data access interface
-│   └── PaymentRepository.cs             # Payment data access implementation
-│
-├── Chat
-│   ├── IChatRepository.cs               # Chat data access interface
-│   ├── ChatRepository.cs                # Chat data access implementation
-│   ├── IChatAttachmentRepository.cs     # Chat attachments interface
-│   └── ChatAttachmentRepository.cs      # Chat attachments implementation
-│
-├── Reviews
-│   ├── IReviewRepository.cs             # Review data access interface
-│   └── ReviewRepository.cs              # Review data access implementation
-│
-└── Notifications
-    ├── INotificationRepository.cs       # Notification data access interface
-    └── NotificationRepository.cs        # Notification data access implementation
-│
-├── /UnitOfWork           <-- Unit of Work to coordinate repository commits
-│      ├── IUnitOfWork.cs                       # UoW interface with all repositories
-│      └── UnitOfWork.cs                        # UoW implementation
-│
-├── /Entities             <-- EF Core entities mapping to DB tables
-│      ├── User.cs
-│      ├── Role.cs
-│      ├── Booking.cs
-│      ├── Review.cs
-│      ├── ChatMessage.cs
-│      ├── Skill.cs
-│      ├── Availability.cs
-│      ├── Payment.cs
-│      ├── Notification.cs
-│      └── ...
-│
-├── /Data                 <-- DbContext and EF Core Migrations
-│      ├── RafeeqDbContext.cs                   # EF Core DbContext
-│      ├── EntityConfigurations/                # Fluent API configurations
-│      │   ├── UserConfiguration.cs
-│      │   ├── BookingConfiguration.cs
-│      │   └── ...
-│      └── Migrations/                          # EF Core migrations
-│
-├── /Helpers              <-- Utility classes, e.g., password hashing, JWT helpers
-│
-├── /Configurations       <-- Configure DI, Swagger, CORS, AutoMapper Profiles
-│
-├── /Middlewares          <-- Custom Middleware (optional)
-│
-├── appsettings.json      <-- Config file (DB strings, API keys, Stripe keys, etc.)
-├── Program.cs            <-- Main entry point
-└── Startup.cs            <-- Service configuration and middleware setup (if .NET 5 or earlier)
-
-
-Explanation of Layers and Why Interfaces?
-## 1. Interfaces: Why Use Them?
-Loose Coupling:
- Interfaces allow your code to depend on abstractions, not concrete implementations. This means you can swap out implementations without changing the dependent code. For example, swapping a repository that uses EF Core with one that uses Dapper or a mock version for testing.
-
-
-Testability:
- Using interfaces lets you easily mock dependencies in unit tests. For example, you can mock IUserRepository to test UserService without needing a real database.
-
-
-Separation of Concerns:
- Interfaces clearly define what an object should do, while the implementation defines how it does it. This leads to cleaner code.
-
-
-Maintainability:
- As your app grows, interfaces make the codebase more maintainable and flexible.
-
-
-Example:
-
- public interface IUserRepository
-{
-    Task<User> GetByIdAsync(int id);
-    Task AddAsync(User user);
-    // ... more methods
-}
-
-public class UserRepository : IUserRepository
-{
-    private readonly RafeeqDbContext _context;
-    public UserRepository(RafeeqDbContext context) => _context = context;
-    
-    public async Task<User> GetByIdAsync(int id) => await _context.Users.FindAsync(id);
-    public async Task AddAsync(User user) => await _context.Users.AddAsync(user);
-    // ... implementation
-}
- Now, in your service:
-
- public class UserService : IUserService
-{
-    private readonly IUserRepository _userRepository;
-    private readonly IMapper _mapper;
-    public UserService(IUserRepository userRepository, IMapper mapper)
-    {
-        _userRepository = userRepository;
-        _mapper = mapper;
-    }
-    
-    public async Task<UserDto> GetUserByIdAsync(int id)
-    {
-        var user = await _userRepository.GetByIdAsync(id);
-        return _mapper.Map<UserDto>(user);
-    }
-    // ... business logic
-}
-
-
-
-## 2. Controllers
-Controllers receive HTTP requests, validate input, call services, and return HTTP responses.
-
-
-Should be thin with minimal business logic.
-
-
-Example:
-
-
-UsersController handles user-related routes (GET user profile, POST register).
-
-
-BookingsController manages booking operations.
-
-
-ReviewsController for reviews.
-
-
-AuthController for authentication (login, social login, email verification).
-
-
-
-## 3. DTOs (Data Transfer Objects)
-Shape the data that flows in/out of the API.
-
-
-Prevent direct exposure of database entities.
-
-
-Simplify and control the data sent to clients or accepted from clients.
-
-
-Also used with AutoMapper to map between entities and DTOs automatically.
-
-
-Example DTO:
-public class UserDto
-{
-    public int Id { get; set; }
-    public string FullName { get; set; }
-    public string Email { get; set; }
-    public string Role { get; set; }
-}
-
-
-## 4. Services
-Contain all business logic.
-
-
-Use repositories for data access.
-
-
-Coordinate complex workflows (e.g., booking + payment + notification).
-
-
-Handle validations that depend on multiple repositories/entities.
-
-
-Use AutoMapper to map entities to/from DTOs.
-
-
-
-## 5. Repositories
-Handle data storage and retrieval only.
-
-
-Use EF Core DbContext inside.
-
-
-Provide async CRUD operations.
-
-
-Abstract the data access layer from the rest of the app.
-
-
-
-## 6. Unit of Work
-Encapsulates all repository instances.
-
-
-Allows atomic commit or rollback of multiple changes.
-
-
-Ensures data consistency in complex operations.
-
-
-Example interface:
-public interface IUnitOfWork : IDisposable
-{
-    IUserRepository Users { get; }
-    IBookingRepository Bookings { get; }
-    IReviewRepository Reviews { get; }
-    Task<int> CompleteAsync();  // commit changes
-}
-
-
-## 7. Entities
-POCO classes representing your DB tables.
-
-
-EF Core uses these to create the schema and manage relations.
-
-
-Contain navigation properties for relationships.
-
-
-
-## 8. AutoMapper
-Automates mapping between entities and DTOs.
-
-
-Avoids writing repetitive manual mapping code.
-
-
-Improves maintainability and readability.
-
-
-Example AutoMapper Profile:
-public class MappingProfile : Profile
-{
-    public MappingProfile()
-    {
-        CreateMap<User, UserDto>();
-        CreateMap<CreateUserDto, User>();
-        CreateMap<Booking, BookingDto>();
-        // ... other mappings
-    }
-}
-
-Register AutoMapper in Startup.cs / Program.cs:
-services.AddAutoMapper(typeof(MappingProfile));
-
-Use in service:
-var userDto = _mapper.Map<UserDto>(userEntity);
-
-
-## 9. Dependency Injection Setup
-Register services, repositories, UnitOfWork, DbContext, and AutoMapper in DI container:
-services.AddScoped<IUserRepository, UserRepository>();
-services.AddScoped<ISkillRepository, SkillRepository>();
-services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
-services.AddScoped<IBookingRepository, BookingRepository>();
-services.AddScoped<IPaymentRepository, PaymentRepository>();
-services.AddScoped<IChatRepository, ChatRepository>();
-services.AddScoped<IReviewRepository, ReviewRepository>();
-services.AddScoped<INotificationRepository, NotificationRepository>();
-
-services.AddScoped<IAuthService, AuthService>();
-services.AddScoped<IJwtService, JwtService>();
-services.AddScoped<IEmailService, EmailService>();
-services.AddScoped<IUserService, UserService>();
-services.AddScoped<IMentorService, MentorService>();
-services.AddScoped<ISkillService, SkillService>();
-services.AddScoped<IAvailabilityService, AvailabilityService>();
-services.AddScoped<IBookingService, BookingService>();
-services.AddScoped<IMeetingService, MeetingService>();
-services.AddScoped<IPaymentService, PaymentService>();
-services.AddScoped<IStripeService, StripeService>();
-services.AddScoped<IChatService, ChatService>();
-services.AddScoped<IReviewService, ReviewService>();
-services.AddScoped<IAdminService, AdminService>();
-services.AddScoped<INotificationService, NotificationService>();
-
-// Register Unit of Work
-services.AddScoped<IUnitOfWork, UnitOfWork>();
-
-// Register AutoMapper
-services.AddAutoMapper(typeof(Program).Assembly);
-
-
-Summary: Why this approach?
-Separation of concerns: Controllers only handle HTTP, services only handle business rules, repositories only data access.
-
-
-Testability: Interfaces + DI make it easy to mock dependencies for testing.
-
-
-Maintainability: Clear folder and responsibility separation.
-
-
-Extensibility: Easily add new features by adding new services/repositories/controllers.
-
-
-AutoMapper: Cuts down repetitive mapping code, prevents bugs, and speeds up development.
-
-
-
-## frontend structure
-
-Root folder structure
-/rafeeq-angular
-│
-├── /src
-│    ├── /app
-│    │    ├── /core                  # Singleton services used app-wide (auth, http interceptors, guards, utilities)
-│    │    │    ├── auth.service.ts
-│    │    │    ├── http.interceptor.ts
-│    │    │    ├── auth.guard.ts
-│    │    │    └── ...
-│    │    │
-│    │    ├── /shared                # Shared components, directives, pipes, models used across modules
-│    │    │    ├── /components
-│    │    │    │    ├── button/
-│    │    │    │    ├── modal/
-│    │    │    │    └── ...
-│    │    │    ├── /pipes
-│    │    │    ├── /directives
-│    │    │    ├── /models           # Interfaces & types for data models (User, Booking, Review, etc.)
-│    │    │    └── shared.module.ts  # Export common modules, components, pipes here
-│    │    │
-│    │    ├── /features              # Feature modules (lazy loaded for performance)
-│    │    │    ├── /auth             # Login, registration, social login, password reset
-│    │    │    │    ├── login/
-│    │    │    │    ├── register/
-│    │    │    │    ├── forgot-password/
-│    │    │    │    └── auth.module.ts
-│    │    │    │
-│    │    │    ├── /user             # User profile, user settings, user dashboard
-│    │    │    ├── /mentor           # Mentor profile, availability, sessions
-│    │    │    ├── /mentee           # Mentee profile, booking history, session list
-│    │    │    ├── /booking          # Booking creation, management, payment
-│    │    │    ├── /reviews          # Review submission and viewing
-│    │    │    ├── /chat             # SignalR chat components and services
-│    │    │    ├── /admin            # Admin dashboard and management (users, bookings, reviews)
-│    │    │    ├── /about            # Static about page
-│    │    │    ├── /contact          # Contact us page with form
-│    │    │    └── features.module.ts # Optional umbrella module if needed
-│    │    │
-│    │    ├── /layouts              # Different layouts for the app (auth layout, main layout)
-│    │    │    ├── main-layout/
-│    │    │    ├── auth-layout/
-│    │    │    └── ...
-│    │    │
-│    │    ├── /store                # NgRx or other state management (optional, for global state)
-│    │    │    ├── actions/
-│    │    │    ├── reducers/
-│    │    │    ├── effects/
-│    │    │    └── selectors/
-│    │    │
-│    │    ├── app-routing.module.ts # Root routing config
-│    │    ├── app.component.ts
-│    │    ├── app.module.ts
-│    │    └── ...
-│    │
-│    ├── /assets                   # Images, styles, fonts
-│    │
-│    ├── /environments            # environment.ts, environment.prod.ts
-│    │
-│    └── styles                   # Global styles (scss or css)
-│
-├── angular.json
-├── package.json
-├── tsconfig.json
-└── ...
-
-
-Explanation of key folders:
-## 1. Core Module (/core)
-Singleton services instantiated once app-wide.
-
-
-AuthService: manage login, logout, social login, JWT token.
-
-
-HttpInterceptor: attach JWT tokens, handle errors globally.
-
-
-AuthGuard: route guard for protecting routes by role.
-
-
-Utility services (notification service, api service).
-
-
-## 2. Shared Module (/shared)
-Reusable UI components (buttons, modals, loading spinners).
-
-
-Common pipes (date format, currency).
-
-
-Directives used across multiple modules.
-
-
-Shared models/interfaces for typing API responses (User, Booking, Review).
-
-
-SharedModule exports all these to feature modules.
-
-
-## 3. Feature Modules (/features)
-Each feature in its own folder/module for modularity and lazy loading.
-
-
-Auth: Login, Register, Social login, Password reset, Email verification pages.
-
-
-User: Profile view/edit, settings.
-
-
-Mentor & Mentee: Role-specific dashboards and profile management.
-
-
-Booking: Create booking, payment integration, view booking history.
-
-
-Reviews: Submit and view ratings and reviews.
-
-
-Chat: SignalR chat components and services.
-
-
-Admin: Dashboard, user management, booking review, revenue reports.
-
-
-About & Contact: Static informational pages.
-
-
-## 4. Layouts (/layouts)
-Layouts separate the general structure, so you can have different headers, footers, sidebars based on user state or page type.
-
-
-Example: auth-layout is a simple login/register layout without main nav bar.
-
-
-main-layout includes navigation, footer, and user profile menu.
-
-
-## 5. Store (/store) (optional)
-If you want to use NgRx or any other state management for managing complex global states like authentication state, chat messages, booking state, etc.
-
-
-Keep actions, reducers, effects, and selectors organized.
-
-
-
-Best Practices and Workflow
-Lazy Loading: Load feature modules on demand to reduce initial bundle size and improve app startup time.
-
-
-Type Safety: Use shared interfaces/models for all API data to avoid runtime errors.
-
-
-Single Responsibility: Each service or component does one job (e.g., a BookingService only manages booking API calls).
-
-
-Reusable Components: Create small UI components in /shared/components to avoid duplication.
-
-
-Routing: Keep routes organized by feature, e.g., /auth/login, /mentor/profile, /booking/new.
-
-
-
-## Example: Booking Module Structure
-/booking
-│
-├── booking.module.ts
-├── booking-routing.module.ts
-├── components/
-│    ├── booking-form/
-│    ├── booking-list/
-│    ├── payment/
-│
-├── services/
-│    ├── booking.service.ts
-│    └── payment.service.ts
-│
-└── models/
-     └── booking.model.ts
-
-
-
-
-
-
+ 
 
 ## endpoint needed 
 
@@ -1534,6 +1012,9 @@ GET    /api/users/profile                # Get current user profile
 PUT    /api/users/profile                # Update current user profile
 PUT    /api/users/change-password        # Change password
 POST   /api/users/upload-photo           # Upload profile picture
+POST   /api/users/upload-cv              # Upload mentee CV
+GET    /api/users/cv                     # Get current user CV
+DELETE /api/users/cv/{id}                # Delete a CV
 GET    /api/users/{id}                   # Get user public profile
 GET    /api/users/mentors                # Get all mentors (with filters)
 PUT    /api/users/toggle-mentor-status   # Toggle mentor/interviewer status
@@ -1617,3 +1098,11 @@ DELETE /api/admin/reviews/{id}           # Delete inappropriate review
 GET    /api/notifications                # Get user notifications
 PUT    /api/notifications/{id}/read      # Mark notification as read
 PUT    /api/notifications/read-all       # Mark all notifications as read
+
+## 11. CVs Controller
+GET    /api/cvs                          # Get all CVs for a mentee
+POST   /api/cvs                          # Upload new CV
+DELETE /api/cvs/{id}                     # Delete a CV
+GET    /api/cvs/comments/{cvId}         # Get comments for a CV
+POST   /api/cvs/comments                 # Add a comment to a CV
+DELETE /api/cvs/comments/{id}            # Delete a comment (admin/author only)

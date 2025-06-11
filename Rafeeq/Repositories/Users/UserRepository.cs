@@ -1,38 +1,84 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
+using Rafeeq.DTOs.Skills;
+using Rafeeq.DTOs.Users;
 using Rafeeq.Models;
+using Rafeeq.Repositories.RepositoryBase;
+using System.Threading.Tasks;
 
 namespace Rafeeq.Repositories.Users
 {
-    public class UserRepository
+    public class UserRepository : RepositoryBase<User>, IUserRepository
     {
-        private readonly RafeeqContext _context;
-
-        public UserRepository(RafeeqContext context)
-        {
-            _context = context;
+        public UserRepository(RafeeqContext Context) : base(Context) { 
+        
         }
 
+        public async Task<User?> GetUserByEmailAsync(string email)
+        {
+            return await Context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
+        }
+
+        //get user by id
         public async Task<User> GetByIdAsync(int id)
         {
-            return await _context.Users.Include(d => d.Role).FirstOrDefaultAsync(u => u.UserId == id);
+            return await Context.Users.Include(d => d.Role).FirstOrDefaultAsync(u => u.UserId == id);
+           
         }
 
+        public async Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType)
+        {
+            //return await _context.Users.Include(d=> d.Role).ToListAsync();
+            return await Context.Users
+                .Include(u => u.Role)
+                .FirstOrDefaultAsync(u => u.ExternalId == externalId && u.ExternalType == externalType);
+        }   
+
+
+
+        //get all users
         public async Task<IEnumerable<User>> GetAllAsync()
         {
-            return await _context.Users.Include(d=> d.Role).ToListAsync();
+            return await Context.Users.Include(d=> d.Role).ToListAsync();
+            
         }
 
-        public async Task<User> GetByEmailAsync(string email)
+
+        public async Task<User?> GetUserWithRoleAsync(int userId)
         {
-            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+            return await Context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == userId);
         }
+       
 
-        // update user
+        //update user
         public void Update(User user)
         {
-            _context.Users.Update(user);
+            Context.Users.Update(user);
         }
+
+        // create user
+        public async Task<IEnumerable<User>> AddAsync(User user)
+        {
+            await Context.Users.AddAsync(user);
+            await Context.SaveChangesAsync();
+            return await Context.Users.Include(d => d.Role).ToListAsync();
+        }
+
+        // delete user 
+        public async Task<bool> DeleteUserAsync(int id)
+        {
+            var user = await Context.Users.FindAsync(id);
+            if (user == null)
+                return false;
+            Context.Users.Remove(user);
+            await Context.SaveChangesAsync();
+            return true;
+
+        }
+
+        
+
+
 
     }
 }

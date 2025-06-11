@@ -1,6 +1,17 @@
-﻿namespace Rafeeq.DTOs.Bookings
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Rafeeq.DTOs.Bookings
 {
-    public class CreateBookingDto
+    public class CreateBookingDTO
     {
+        [Required]
+        public int MentorId { get; set; }
+        [Required]
+        public string SessionType { get; set; }
+        [Required]
+        public DateTime StartDateTime { get; set; }
+        [Required]
+        public DateTime EndDateTime { get; set; }
+
     }
 }
