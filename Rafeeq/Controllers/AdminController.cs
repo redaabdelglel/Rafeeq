@@ -11,12 +11,13 @@ using Rafeeq.UnitOfWork;
 using BCrypt.Net;
 using Rafeeq.DTOs.Skills;
 using Microsoft.EntityFrameworkCore;
+using System.Runtime.InteropServices;
 namespace Rafeeq.Controllers
 {
     [Route("api/admin")]
-    [AllowAnonymous]
+    //[AllowAnonymous]
     [ApiController]
-    //[Authorize(Roles = "Admin")]
+   [Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
     {
         private UnitOfWorkManager _unitOfWork;
@@ -200,7 +201,7 @@ namespace Rafeeq.Controllers
         [HttpGet("reviews")]
         public async Task<IActionResult> GetAllReviews()
         {
-            var reviews = await _unitOfWork.ReviewRepository.GetAllAsync();
+            var reviews = await _unitOfWork.ReviewRepository.GetAllReviewsAsync();
             if (reviews == null || !reviews.Any())
             {
                 return NotFound("No reviews found.");
@@ -232,12 +233,12 @@ namespace Rafeeq.Controllers
 
 
 
-  
+
         [HttpGet("mentors")]
         public async Task<IActionResult> GetAllMentors()
         {
-            var mentors = await _unitOfWork.UserRepository.GetAllMentors();
-            if (mentors == null || !mentors.Any()) 
+            var mentors = await _unitOfWork.AdminRepositary.GetAllMentors();
+            if (mentors == null || !mentors.Any())
             {
                 return NotFound("No mentors found.");
             }
@@ -325,16 +326,17 @@ namespace Rafeeq.Controllers
             return Ok(new { Message = "Skill created successfully" });
 
         }
+        
 
-        // You can add this diagnostic endpoint to check if there are any mentor skills in the database
-        [HttpGet("diagnostics/mentor-skills-count")]
-        public async Task<IActionResult> GetMentorSkillsCount()
+
+
+    // dashboard 
+    [HttpGet("dashboard")]
+        public async Task<IActionResult> GetDashboardDataAsync()
         {
-            var count = await _unitOfWork.AdminRepositary.GetMentorSkillsCountAsync();
-            return Ok(new { mentorSkillsCount = count });
+          var dashboardDto=  await _unitOfWork.AdminRepositary.GetDashboardDataAsync();
+            return Ok(dashboardDto);
         }
-
     }
+
 }
-
-

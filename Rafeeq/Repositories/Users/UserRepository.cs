@@ -76,38 +76,7 @@ namespace Rafeeq.Repositories.Users
 
         }
 
-        public async Task<IEnumerable<MentorDto>> GetAllMentors()
-        {
-            var mentors = await Context.Users
-                .Where(u => u.IsMentor == true && u.IsDeleted == false)
-                .Include(u => u.Role)
-                .Include(u => u.MentorSkills)
-                    .ThenInclude(ms => ms.Skill)
-                .ToListAsync();
-
-            var mentorDtos = mentors.Select(u => new MentorDto
-            {
-                Id = u.UserId,
-                FullName = u.FullName,
-                Email = u.Email,
-                role = u.Role?.RoleName,
-                HourlyRate = u.HourlyRate ?? 0,
-                MentorSkills = u.MentorSkills
-                    .Where(ms => ms.Skill != null)
-                    .Select(ms => new SkillDto
-                    {
-                        Id = ms.Skill.SkillId,
-                        Name = ms.Skill.Name
-                    })
-                    .ToList()
-            })
-            .ToList();
-
-            return mentorDtos;
-        }
-
-
-
+        
 
 
 

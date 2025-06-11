@@ -10,7 +10,7 @@ namespace Rafeeq.Services.Auth
 {
     public class JwtService : IJwtService
     {
-        private  IConfiguration _config;
+        private IConfiguration _config;
         public JwtService(IConfiguration config)
         {
             this._config = config;
@@ -21,14 +21,14 @@ namespace Rafeeq.Services.Auth
             return GenerateTokens(admin).AccessToken;
         }
 
-
-
         public TokenResponseDto GenerateTokens(User user)
         {
             var jwtSettings = _config.GetSection("Jwt");
             var secretKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is not configured.");
-            var issuer = jwtSettings["AudienceIP"] ?? throw new InvalidOperationException("JWT Issuer is not configured."); // API URL
-            var audience = jwtSettings["IssuerIP"] ?? throw new InvalidOperationException("JWT Audience is not configured."); // Frontend URL
+
+            var issuer = jwtSettings["IssuerIP"] ?? throw new InvalidOperationException("JWT Issuer is not configured.");
+            var audience = jwtSettings["AudienceIP"] ?? throw new InvalidOperationException("JWT Audience is not configured.");
+
             var accessTokenExpirationMinutes = double.Parse(jwtSettings["AccessTokenExpirationMinutes"] ?? "60");
 
             var claims = new List<Claim>
@@ -36,7 +36,9 @@ namespace Rafeeq.Services.Auth
                 new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.Name, user.FullName),
-                new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "Mentee")
+                new Claim(ClaimTypes.Role, user.Role?.RoleName ?? "Mentee"),
+                new Claim(JwtRegisteredClaimNames.Iss, issuer),
+                new Claim(JwtRegisteredClaimNames.Aud, audience)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
@@ -55,13 +57,13 @@ namespace Rafeeq.Services.Auth
             var token = tokenHandler.CreateToken(tokenDescriptor);
             var accessToken = tokenHandler.WriteToken(token);
 
-            var refreshToken = Guid.NewGuid().ToString(); 
+            var refreshToken = Guid.NewGuid().ToString();
 
             return new TokenResponseDto
             {
                 AccessToken = accessToken,
                 RefreshToken = refreshToken,
-                ExpiresIn = (int)TimeSpan.FromMinutes(accessTokenExpirationMinutes).TotalSeconds, 
+                ExpiresIn = (int)TimeSpan.FromMinutes(accessTokenExpirationMinutes).TotalSeconds,
                 UserId = user.UserId,
                 FullName = user.FullName,
                 Email = user.Email,
@@ -73,8 +75,9 @@ namespace Rafeeq.Services.Auth
         {
             var jwtSettings = _config.GetSection("Jwt");
             var secretKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is not configured.");
-            var issuer = jwtSettings["AudienceIP"] ?? throw new InvalidOperationException("JWT Issuer is not configured.");
-            var audience = jwtSettings["IssuerIP"] ?? throw new InvalidOperationException("JWT Audience is not configured.");
+
+            var issuer = jwtSettings["IssuerIP"] ?? throw new InvalidOperationException("JWT Issuer is not configured.");
+            var audience = jwtSettings["AudienceIP"] ?? throw new InvalidOperationException("JWT Audience is not configured.");
 
             var tokenValidationParameters = new TokenValidationParameters
             {
@@ -82,7 +85,7 @@ namespace Rafeeq.Services.Auth
                 ValidateIssuer = true,
                 ValidateIssuerSigningKey = true,
                 IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-                ValidateLifetime = false, 
+                ValidateLifetime = false,
                 ValidIssuer = issuer,
                 ValidAudience = audience
             };
