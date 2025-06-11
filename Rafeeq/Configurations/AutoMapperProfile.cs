@@ -6,6 +6,12 @@ using Rafeeq.DTOs.Skills;
 using Rafeeq.DTOs.Auth;
 using BCrypt.Net;
 using Rafeeq.DTOs.Bookings;
+using Rafeeq.DTOs.Availability;
+using Rafeeq.DTOs.CV;
+using Rafeeq.DTOs.Chat;
+using Rafeeq.DTOs.Notifications;
+using Rafeeq.DTOs.Payments;
+using Rafeeq.DTOs.Reviews;
 using Rafeeq.DTOs.CV;
 using Rafeeq.DTOs.Availability;
 
@@ -32,10 +38,6 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.ExpiresIn, opt => opt.Ignore()); // ExpiresIn set by JwtService
 
 
-            // User mapping
-            CreateMap<User, UserDto>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
-                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName));
 
             // UserProfileDto mapping
             CreateMap<User, UserProfileDto>()
@@ -45,7 +47,7 @@ namespace Rafeeq.Configurations
             // UpdateProfileDto to User
             CreateMap<UpdateProfileDto, User>()
                 .ForMember(dest => dest.UserId, opt => opt.Ignore())
-                .ForMember(dest => dest.Email, opt => opt.Ignore()) 
+                .ForMember(dest => dest.Email, opt => opt.Ignore())
                 .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
                 .ForMember(dest => dest.IsEmailVerified, opt => opt.Ignore())
                 .ForMember(dest => dest.RoleId, opt => opt.Ignore())
@@ -94,8 +96,8 @@ namespace Rafeeq.Configurations
             CreateMap<Skill, SkillDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.SkillId));
 
-            CreateMap<CreateSkillDto, Skill>();
-            CreateMap<UpdateSkillDto, Skill>();
+            CreateMap<CreateSkillDto, Skill>().ReverseMap();
+            CreateMap<UpdateSkillDto, Skill>().ReverseMap();
 
             // bookings mapping
             CreateMap<Booking, BookingDto>()
@@ -112,6 +114,71 @@ namespace Rafeeq.Configurations
             CreateMap<Booking, BookingDetailsDTO>()
                 .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName))
                 .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Mentee.FullName));
+
+
+
+
+            // Availability mappings
+
+            CreateMap<Models.Availability, AvailabilityDto>();
+            CreateMap<CreateAvailabilityDto, Models.Availability>();
+            CreateMap<UpdateAvailabilityDto, Models.Availability>();
+
+            // UpdateBookingStatusDto mapping
+            CreateMap<UpdateBookingStatusDto, Booking>()
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => DateTime.UtcNow));
+
+
+            // cvcomments mapping
+            CreateMap<CVComment, CVCommentDto>()
+                .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName));
+            CreateMap<AddCVCommentDto, CVComment>();
+
+            // Chat mappings
+            CreateMap<ChatMessage, ChatMessageDto>()
+                .ForMember(dest => dest.SenderName, opt => opt.MapFrom(src => src.Sender.FullName))
+                .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.Sender.ProfilePicture))
+                .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.ChatAttachments));
+
+            CreateMap<ChatAttachment, ChatAttachmentDto>()
+                .ForMember(dest => dest.FullUrl, opt => opt.MapFrom(src => $"{src.FilePath}"));
+
+            CreateMap<SendMessageDto, ChatMessage>()
+                .ForMember(dest => dest.SentAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+                .ForMember(dest => dest.IsRead, opt => opt.MapFrom(src => false));
+
+            // Notification mappings
+            CreateMap<Notification, NotificationDto>();
+
+            // Payment mappings
+            CreateMap<Payment, PaymentDto>()
+                .ForMember(dest => dest.MentorName, opt => opt.Ignore())
+                .ForMember(dest => dest.MenteeName, opt => opt.Ignore())
+                .ForMember(dest => dest.SessionType, opt => opt.Ignore())
+                .ForMember(dest => dest.SessionDateTime, opt => opt.Ignore())
+                .ForMember(dest => dest.Commission, opt => opt.Ignore())
+                .ForMember(dest => dest.MentorAmount, opt => opt.Ignore());
+
+
+            //mentor skill mapping
+            CreateMap<Skill, UserSkillDto>()
+                .ForMember(dest => dest.SkillId, opt => opt.MapFrom(src => src.SkillId))
+                .ForMember(dest => dest.SkillName, opt => opt.MapFrom(src => src.Name));
+
+            // MentorDto mapping
+            CreateMap<User, MentorDto>()
+    .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
+    .ForMember(dest => dest.MentorSkills, opt => opt.MapFrom(src => src.MentorSkills.Select(ms => ms.Skill)))
+    .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
+    .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+    .ForMember(dest => dest.HourlyRate, opt => opt.MapFrom(src => src.HourlyRate));
+
+            //review mapping
+                //CreateMap<Review, ReviewDto>()
+
+                //.ForMember(dest => dest.ReviewerName, op => op.MapFrom(src => src.Reviewer.FullName))
+                // .ForMember(dest => dest.ReviewedUserName, op => op.MapFrom(src => src.Reviewer.FullName)).ReverseMap();
 
             CreateMap<CreateBookingDTO, Booking>();
 

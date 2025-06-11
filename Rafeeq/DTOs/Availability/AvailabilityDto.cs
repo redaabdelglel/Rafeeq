@@ -1,11 +1,14 @@
-﻿namespace Rafeeq.DTOs.Availability
+﻿using System;
+
+namespace Rafeeq.DTOs.Availability
 {
-        public class AvailabilityDto
-        {
-            public int? AvailabilityId { get; set; } // Non-nullable
-            public int? DayOfWeek { get; set; } // Non-nullable
-            public TimeSpan? StartTime { get; set; } // Non-nullable
-            public TimeSpan? EndTime { get; set; } // Non-nullable
-        }
-    
+    public class AvailabilityDto
+    {
+        public int AvailabilityId { get; set; }
+        public int UserId { get; set; }
+        public int DayOfWeek { get; set; } // 0 = Sunday, 6 = Saturday
+        public TimeSpan StartTime { get; set; }
+        public TimeSpan EndTime { get; set; }
+        public string DayName => Enum.GetName(typeof(DayOfWeek), DayOfWeek);
+    }
 }

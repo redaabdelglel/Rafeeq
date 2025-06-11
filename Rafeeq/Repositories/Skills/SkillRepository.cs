@@ -27,13 +27,16 @@ namespace Rafeeq.Repositories.Skills
         public async Task<Skill> AddAsync(Skill skill)
         {
             await _context.Skills.AddAsync(skill);
+           await SaveChangesAsync();
             return skill;
         }
 
-        public void Update(Skill skill)
+        public async Task Update(Skill skill)
         {
             _context.Skills.Update(skill);
+            await SaveChangesAsync();
         }
+
 
         public async Task<bool> DeleteAsync(int id)
         {
@@ -41,7 +44,9 @@ namespace Rafeeq.Repositories.Skills
             if (skill == null)
                 return false;
 
-            _context.Skills.Remove(skill);
+            skill.IsDeleted = true;
+            _context.Skills.Update(skill);
+            await SaveChangesAsync();
             return true;
         }
 
@@ -53,6 +58,12 @@ namespace Rafeeq.Repositories.Skills
         public async Task<bool> SkillExistsAsync(int id)
         {
             return await _context.Skills.AnyAsync(s => s.SkillId == id);
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+
         }
     }
 }

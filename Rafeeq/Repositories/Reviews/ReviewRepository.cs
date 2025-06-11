@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Rafeeq.DTOs.Reviews;
 using Rafeeq.Models;
 
 namespace Rafeeq.Repositories.Reviews
@@ -36,15 +37,52 @@ namespace Rafeeq.Repositories.Reviews
                 .ToListAsync();
         }
 
-        // Get all reviews
-        public async Task<IEnumerable<Review>> GetAllAsync()
+        //get all reviews
+        public async Task<IEnumerable<ReviewDto>> GetAllReviewsAsync()
         {
-            return await _context.Reviews.ToListAsync();
+            return await _context.Reviews
+                .Include(s => s.ReviewedUser)
+                .Include(d => d.Reviewer)
+                .Select(r => new ReviewDto
+                {
+                    ReviewId = r.ReviewId,
+                    ReviewerId = r.ReviewerId,
+                    ReviewedUserId = r.ReviewedUserId,
+                    CreatedAt = r.CreatedAt,
+                    Rating = r.Rating,
+                    Comment = r.Comment,
+                    ReviewedUserName = r.Reviewer.FullName,
+                    ReviewerName = r.Reviewer.FullName
+
+                    
+                })
+                .ToListAsync();
         }
+
+
         // Get review by ID
-        public async Task<Review> GetByIdAsync(int id)
+        public async Task<ReviewDto> GetByIdAsync(int id)
         {
-            return await _context.Reviews.FindAsync(id);
+            if (id <= 0)
+            {
+                throw new ArgumentException("Invalid review ID.", nameof(id));
+            }
+
+            var review = await _context.Reviews
+                .AsNoTracking()
+                .Where(r => r.ReviewId == id)
+                .Select(r => new ReviewDto
+                {
+                    ReviewId = r.ReviewId,
+                    ReviewerId = r.ReviewerId,
+                    ReviewedUserId = r.ReviewedUserId,
+                    Rating = r.Rating,
+                    Comment = r.Comment,
+                    CreatedAt = r.CreatedAt
+                })
+                .FirstOrDefaultAsync();
+
+            return review;
         }
         // delete review by ID
         public async Task<bool> DeleteAsync(int id)

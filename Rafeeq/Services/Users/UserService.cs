@@ -22,7 +22,7 @@ namespace Rafeeq.Services.Users
         }
         public async Task<bool> ChangePasswordAsync(int userId, string oldPassword, string newPassword)
         {
-            var user = await _unitOfWork.UserRepository.GetById(userId);
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
             if (user == null)
             {
                 return false;
@@ -65,7 +65,7 @@ namespace Rafeeq.Services.Users
 
         public async Task<bool> UpdateUserProfileAsync(int userId, UpdateProfileDto dto)
         {
-            var user = await _unitOfWork.UserRepository.GetById(userId);
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
             if (user == null)
             {
                 return false;
@@ -83,5 +83,33 @@ namespace Rafeeq.Services.Users
         {
             throw new NotImplementedException();
         }
+        public async Task<bool> UpdateHourlyRateAsync(int userId, decimal hourlyRate)
+        {
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+            if (user == null || !user.IsMentor.GetValueOrDefault())
+            {
+                return false; // User not found or not a mentor
+            }
+
+            user.HourlyRate = hourlyRate;
+            _unitOfWork.UserRepository.Update(user);
+            await _unitOfWork.SaveAsync();
+            return true;
+        }
+
+        public async Task<bool> ToggleMentorStatusAsync(int userId, bool isInterviewer)
+        {
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+            if (user == null || !user.IsMentor.GetValueOrDefault())
+            {
+                return false; // User not found or not a mentor
+            }
+
+            user.IsInterviewer = isInterviewer;
+            _unitOfWork.UserRepository.Update(user);
+            await _unitOfWork.SaveAsync();
+            return true;
+        }
+
     }
 }

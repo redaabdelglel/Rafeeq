@@ -26,13 +26,13 @@ namespace Rafeeq.Repositories.RepositoryBase
             return Context.Set<T>().Where(expression);
         }
 
-        public async Task<IEnumerable<T>> GetAll()
+        public async Task<IEnumerable<T>> GetAllAsync()
         {
 
             return await Context.Set<T>().ToListAsync();
         }
 
-        public async Task<T?> GetById(int id)
+        public async Task<T?> GetByIdAsync(int id)
         {
              return await Context.Set<T>().FindAsync(id);
         }

@@ -1,7 +1,10 @@
 ﻿
 using Microsoft.EntityFrameworkCore;
+using Rafeeq.DTOs.Skills;
+using Rafeeq.DTOs.Users;
 using Rafeeq.Models;
 using Rafeeq.Repositories.RepositoryBase;
+using System.Threading.Tasks;
 
 namespace Rafeeq.Repositories.Users
 {
@@ -16,7 +19,7 @@ namespace Rafeeq.Repositories.Users
             return await Context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Email == email);
         }
 
-        //get by id
+        //get user by id
         public async Task<User> GetByIdAsync(int id)
         {
             return await Context.Users.Include(d => d.Role).FirstOrDefaultAsync(u => u.UserId == id);
@@ -45,6 +48,7 @@ namespace Rafeeq.Repositories.Users
         {
             return await Context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == userId);
         }
+       
 
         //update user
         public void Update(User user)
@@ -71,5 +75,10 @@ namespace Rafeeq.Repositories.Users
             return true;
 
         }
+
+        
+
+
+
     }
 }

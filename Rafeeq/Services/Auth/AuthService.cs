@@ -26,6 +26,110 @@ namespace Rafeeq.Services.Auth
             _emailService = emailService;
             _config = config;
         }
+
+        public async Task<RegisterResponseDto> RegisterAsync(RegisterDto dto)
+        {
+            var existingUser = await _unitOfWork.UserRepository.GetUserByEmailAsync(dto.Email);
+            if (existingUser != null)
+            {
+                return new RegisterResponseDto
+                {
+                    IsSuccess = false,
+                    Message = "Email is already registered.",
+                    IsEmailAlreadyRegistered = true
+                };
+            }
+
+            var role = await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == dto.Role);
+            if (role == null)
+            {
+                role = await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Mentee");
+                if (role == null)
+                {
+                    return new RegisterResponseDto 
+                    {
+                        IsSuccess = false,
+                        Message = "Internal server error: Default user role not found.",
+                        IsEmailAlreadyRegistered = false
+                    };
+                }
+            }
+
+            var user = _mapp.Map<User>(dto);
+            user.PasswordHash = PasswordHasher.HashPassword(dto.Password);
+            user.RoleId = role.RoleId;
+            user.IsMentor = (dto.Role == "Mentor");
+            user.IsInterviewer = (dto.Role == "Mentor");
+            user.IsEmailVerified = false;
+            user.CreatedAt = DateTime.UtcNow;
+
+            _unitOfWork.UserRepository.Add(user);
+            await _unitOfWork.SaveAsync();
+
+            var token = Guid.NewGuid().ToString();
+            var userToken = new UserToken
+            {
+                UserId = user.UserId,
+                TokenType = "EmailVerification",
+                TokenValue = token,
+                ExpiryDate = DateTime.UtcNow.AddHours(24),
+                IsUsed = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            _unitOfWork.UserTokenRepository.Add(userToken);
+            await _unitOfWork.SaveAsync();
+
+            var frontendUrl = _config.GetSection("FrontendUrl").Value;
+            if (string.IsNullOrEmpty(frontendUrl))
+            {
+                return new RegisterResponseDto
+                {
+                    IsSuccess = true,
+                    Message = "Registration successful, but unable to send verification email due to server misconfiguration.",
+                    IsEmailAlreadyRegistered = false
+                };
+            }
+            //var verificationLink = $"{frontendUrl}/verify-email/{token}";
+
+            await _emailService.SendVerificationEmailAsync(user.Email, token);
+
+            return new RegisterResponseDto
+            {
+                IsSuccess = true,
+                Message = "Registration successful. Please check your email to verify your account.",
+                IsEmailAlreadyRegistered = false
+            };
+        }
+
+        public async Task<LoginResult> LoginAsync(LoginDto dto)
+        {
+            var user = await _unitOfWork.UserRepository.GetUserByEmailAsync(dto.Email);
+            if (user == null || !PasswordHasher.VerifyPassword(dto.Password, user.PasswordHash))
+            {
+                return new LoginResult { ErrorMessage = "Invalid credentials." };
+            }
+            if (!user.IsEmailVerified.GetValueOrDefault())
+            {
+                return new LoginResult { ErrorMessage = "Email not verified. Please check your email for a verification" };
+            }
+            // ... rest of login logic ...
+            var tokenResponse = _jwtService.GenerateTokens(user);
+            await InvalidateRefreshTokenAsync(user.UserId);
+            var refreshTokenExpiresInDays = double.Parse(_config.GetSection("Jwt")["RefreshTokenExpirationDays"] ?? "7");
+            var refreshTokenEntity = new UserToken
+            {
+                UserId = user.UserId,
+                TokenType = "RefreshToken",
+                TokenValue = tokenResponse.RefreshToken,
+                ExpiryDate = DateTime.UtcNow.AddDays(refreshTokenExpiresInDays),
+                IsUsed = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            _unitOfWork.UserTokenRepository.Add(refreshTokenEntity);
+            await _unitOfWork.SaveAsync();
+            return new LoginResult { TokenData = tokenResponse };
+        }
+
         public async Task<TokenResponseDto?> ExternalLoginAsync(ExternalLoginDto dto)
         {
             User? user = null;
@@ -34,14 +138,12 @@ namespace Rafeeq.Services.Auth
             string verifiedExternalId = string.Empty;
             string? verifiedProfilePicture = null;
 
-            // Step 1: Verify the ID Token with the external provider like google or any external login
             switch (dto.Provider.ToLower())
             {
                 case "google":
                     var googleClientId = _config["GoogleAuthSettings:ClientId"] ?? throw new InvalidOperationException("Google ClientId is not configured.");
                     try
                     {
-                        // Verify Google ID Token
                         var payload = await GoogleJsonWebSignature.ValidateAsync(dto.IdToken, new GoogleJsonWebSignature.ValidationSettings
                         {
                             Audience = new[] { googleClientId }
@@ -54,28 +156,24 @@ namespace Rafeeq.Services.Auth
                     }
                     catch (InvalidJwtException ex)
                     {
-                        // Token is invalid, expired, or tampered with
                         Console.WriteLine($"Google token validation failed: {ex.Message}");
-                        return null; // Return null on invalid token
+                        return null;
                     }
                     catch (Exception ex)
                     {
-                        // Other errors during Google token validation
                         Console.WriteLine($"Error during Google token validation: {ex.Message}");
                         return null;
                     }
                     break;
 
-                case "facebook":
-                   
+                case "facebook": 
                     verifiedEmail = dto.Email;
                     verifiedFullName = dto.FullName;
-                    verifiedExternalId = dto.IdToken; 
+                    verifiedExternalId = dto.IdToken;
                     verifiedProfilePicture = dto.ProfilePicture;
                     break;
 
-                case "linkedin":
-                    
+                case "linkedin": 
                     verifiedEmail = dto.Email;
                     verifiedFullName = dto.FullName;
                     verifiedExternalId = dto.IdToken; 
@@ -83,32 +181,29 @@ namespace Rafeeq.Services.Auth
                     break;
 
                 default:
-                    return null; // Unsupported provider
+                    return null;
             }
 
-            // Step 2: Check if user exists in your database by external ID or verified email
             user = await _unitOfWork.UserRepository.GetUserByExternalIdAndTypeAsync(verifiedExternalId, dto.Provider);
 
             if (user == null)
             {
-                // If not found by external ID, check by email to link existing accounts
                 user = await _unitOfWork.UserRepository.GetUserByEmailAsync(verifiedEmail);
                 if (user != null)
                 {
-                    // Existing user found by email, link the external ID
                     user.ExternalId = verifiedExternalId;
                     user.ExternalType = dto.Provider;
-                    user.ExternalToken = dto.IdToken; // Store the external token if needed for future API calls to provider
+                    user.ExternalToken = dto.IdToken;
+                    user.IsEmailVerified = true;
                     _unitOfWork.UserRepository.Update(user);
                     await _unitOfWork.SaveAsync();
                 }
                 else
                 {
-                    // New user - register them
-                    var role = (await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == dto.Role));
+                    var role = await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == dto.Role);
                     if (role == null)
                     {
-                        role = (await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Mentee"));
+                        role = await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Mentee");
                     }
 
                     user = new User
@@ -117,13 +212,14 @@ namespace Rafeeq.Services.Auth
                         Email = verifiedEmail,
                         ExternalId = verifiedExternalId,
                         ExternalType = dto.Provider,
-                        ExternalToken = dto.IdToken, // Store the external token
+                        ExternalToken = dto.IdToken,
                         ProfilePicture = verifiedProfilePicture,
-                        IsEmailVerified = true, // External providers usually verify email
+                        IsEmailVerified = true,
                         RoleId = role!.RoleId,
                         IsMentor = (dto.Role == "Mentor"),
                         IsInterviewer = (dto.Role == "Mentor"),
-                        CreatedAt = DateTime.UtcNow
+                        CreatedAt = DateTime.UtcNow,
+                        PasswordHash = PasswordHasher.HashPassword(Guid.NewGuid().ToString())
                     };
                     _unitOfWork.UserRepository.Add(user);
                     await _unitOfWork.SaveAsync();
@@ -131,19 +227,16 @@ namespace Rafeeq.Services.Auth
             }
             else
             {
-                // Existing user found by external ID - update their external token/profile picture if necessary
-                user.ExternalToken = dto.IdToken; // Update the external token if it changes
-                user.ProfilePicture = verifiedProfilePicture ?? user.ProfilePicture; // Update profile picture if provided
+                user.ExternalToken = dto.IdToken;
+                user.ProfilePicture = verifiedProfilePicture ?? user.ProfilePicture;
                 _unitOfWork.UserRepository.Update(user);
                 await _unitOfWork.SaveAsync();
             }
 
-            // Step 3: Generate and return your application's tokens
             var tokenResponse = _jwtService.GenerateTokens(user);
 
-            // Invalidate old refresh tokens and store new one
             await InvalidateRefreshTokenAsync(user.UserId);
-            var refreshTokenExpiresInDays = double.Parse(_config.GetSection("Jwt")["RefreshExpiresInDays"] ?? "7");
+            var refreshTokenExpiresInDays = double.Parse(_config.GetSection("Jwt")["RefreshTokenExpirationDays"] ?? "7");
             var refreshTokenEntity = new UserToken
             {
                 UserId = user.UserId,
@@ -158,122 +251,29 @@ namespace Rafeeq.Services.Auth
 
             return tokenResponse;
         }
-
-
-
-
-
-        public async Task ForgotPasswordAsync(string email)
-        {
-            var user = await _unitOfWork.UserRepository.GetUserByEmailAsync(email);
-            if (user == null)
-            {
-                // To prevent email enumeration, always return success, but don't send email
-                return;
-            }
-
-            // Invalidate any existing password reset tokens for this user
-            var existingTokens = await _unitOfWork.UserTokenRepository.GetActiveTokensForUserAsync(user.UserId, "PasswordReset");
-            foreach (var token in existingTokens)
-            {
-                token.IsUsed = true;
-                _unitOfWork.UserTokenRepository.Update(token);
-            }
-            await _unitOfWork.SaveAsync();
-
-            // Generate new password reset token
-            var resetToken = Guid.NewGuid().ToString();
-            var userToken = new UserToken
-            {
-                UserId = user.UserId,
-                TokenType = "PasswordReset",
-                TokenValue = resetToken,
-                ExpiryDate = DateTime.UtcNow.AddHours(1), // Reset token expires in 1 hour
-                IsUsed = false,
-                CreatedAt = DateTime.UtcNow
-            };
-            _unitOfWork.UserTokenRepository.Add(userToken);
-            await _unitOfWork.SaveAsync();
-
-            await _emailService.SendPasswordResetEmailAsync(user.Email, resetToken);
-        }
-
-
-
-        public async Task<bool> InvalidateRefreshTokenAsync(int userId)
-        {
-            var tokens = await _unitOfWork.UserTokenRepository.GetActiveTokensForUserAsync(userId, "RefreshToken");
-            foreach (var token in tokens)
-            {
-                token.IsUsed = true;
-                _unitOfWork.UserTokenRepository.Update(token);
-            }
-            await _unitOfWork.SaveAsync();
-            return true;
-        }
-
-        public async Task<TokenResponseDto?> LoginAsync(LoginDto dto)
-        {
-            var user = await _unitOfWork.UserRepository.GetUserByEmailAsync(dto.Email);
-            if (user == null || !PasswordHasher.VerifyPassword(dto.Password, user.PasswordHash))
-            {
-                return null; // Invalid credentials
-            }
-            // Check if email is verified
-            if ((bool)!user.IsEmailVerified)
-            {
-                return null;
-            }
-            // Generate JWT tokens
-            var tokenResponse = _jwtService.GenerateTokens(user);
-            // Invalidate old refresh tokens and store new one
-            await InvalidateRefreshTokenAsync(user.UserId); // Invalidate any existing refresh tokens
-            var refreshTokenExpiresInDays = double.Parse(_config.GetSection("Jwt")["RefreshExpiresInDays"] ?? "7");
-            var refreshTokenEntity = new UserToken
-            {
-                UserId = user.UserId,
-                TokenType = "RefreshToken",
-                TokenValue = tokenResponse.RefreshToken,
-                ExpiryDate = DateTime.UtcNow.AddDays(refreshTokenExpiresInDays),
-                IsUsed = false,
-                CreatedAt = DateTime.UtcNow
-            };
-            _unitOfWork.UserTokenRepository.Add(refreshTokenEntity);
-            await _unitOfWork.SaveAsync();
-
-            return tokenResponse;
-        }
-
-
-
-
 
         public async Task<TokenResponseDto?> RefreshTokenAsync(string refreshToken)
         {
             var storedToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(refreshToken, "RefreshToken");
 
-           
             if (storedToken == null || storedToken.IsUsed.GetValueOrDefault() || storedToken.ExpiryDate < DateTime.UtcNow)
             {
-                return null;  
+                return null;
             }
 
-            var user = await _unitOfWork.UserRepository.GetById(storedToken.UserId.GetValueOrDefault());
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(storedToken.UserId.GetValueOrDefault());
             if (user == null)
             {
                 return null;
             }
 
-            // Mark the old refresh token as used  
             storedToken.IsUsed = true;
             _unitOfWork.UserTokenRepository.Update(storedToken);
             await _unitOfWork.SaveAsync();
 
-            // Generate new tokens  
             var newTokens = _jwtService.GenerateTokens(user);
 
-            // Store the new refresh token  
-            var refreshTokenExpiresInDays = double.Parse(_config.GetSection("Jwt")["RefreshExpiresInDays"] ?? "7");
+            var refreshTokenExpiresInDays = double.Parse(_config.GetSection("Jwt")["RefreshTokenExpirationDays"] ?? "7");
             var newRefreshTokenEntity = new UserToken
             {
                 UserId = user.UserId,
@@ -289,88 +289,15 @@ namespace Rafeeq.Services.Auth
             return newTokens;
         }
 
-
-
-        public async Task<TokenResponseDto?> RegisterAsync(RegisterDto dto)
-        {
-            // 1. Check if user already exists
-            var existingUser = await _unitOfWork.UserRepository.GetUserByEmailAsync(dto.Email);
-            if (existingUser != null)
-            {
-                return null;
-
-            }
-            // 2. Get RoleId
-            
-            var role = (await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == dto.Role));
-            if (role == null)
-            {
-                role = (await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Mentee"));
-            }
-            var user = _mapp.Map<User>(dto);
-            user.PasswordHash = PasswordHasher.HashPassword(dto.Password);
-            user.RoleId = role!.RoleId; 
-            user.IsMentor = (dto.Role == "Mentor");
-            user.IsInterviewer = (dto.Role == "Mentor");
-            user.IsEmailVerified = false; // when the user rgister first one he have to verfiy his registertion in his account 
-
-            //user.IsEmailVerified = true;
-
-            user.CreatedAt = DateTime.UtcNow;
-
-            // 4. Add user
-            _unitOfWork.UserRepository.Add(user);
-            await _unitOfWork.SaveAsync();
-
-            // 5. Generate email verification token
-            var token = Guid.NewGuid().ToString();
-            var userToken = new UserToken
-            {
-                UserId = user.UserId,
-                TokenType = "EmailVerification",
-                TokenValue = token,
-                ExpiryDate = DateTime.UtcNow.AddHours(24), 
-                IsUsed = false,
-                CreatedAt = DateTime.UtcNow
-            };
-            _unitOfWork.UserTokenRepository.Add(userToken);
-            await _unitOfWork.SaveAsync();
-
-            // 6.Send verification email
-            await _emailService.SendVerificationEmailAsync(user.Email, token);
-
-            // 7. Generate JWT token for immediate login (optional, or force email verification first)
-            var tokenResponse = _jwtService.GenerateTokens(user);
-
-            // 8. Store refresh token
-            var refreshTokenExpiresInDays = double.Parse(_config.GetSection("Jwt")["RefreshExpiresInDays"] ?? "7");
-            var refreshTokenEntity = new UserToken
-            {
-                UserId = user.UserId,
-                TokenType = "RefreshToken",
-                TokenValue = tokenResponse.RefreshToken,
-                ExpiryDate = DateTime.UtcNow.AddDays(refreshTokenExpiresInDays),
-                IsUsed = false,
-                CreatedAt = DateTime.UtcNow
-            };
-            _unitOfWork.UserTokenRepository.Add(refreshTokenEntity);
-            await _unitOfWork.SaveAsync();
-
-            return tokenResponse;
-
-        }
-
-        public async Task ResendVerificationEmailAsync(string email)
+        public async Task ForgotPasswordAsync(string email)
         {
             var user = await _unitOfWork.UserRepository.GetUserByEmailAsync(email);
-            if (user == null || user.IsEmailVerified.GetValueOrDefault())
+            if (user == null)
             {
-                // Prevent email enumeration and avoid sending to already verified users  
                 return;
             }
 
-            // Invalidate any existing email verification tokens for this user  
-            var existingTokens = await _unitOfWork.UserTokenRepository.GetActiveTokensForUserAsync(user.UserId, "EmailVerification");
+            var existingTokens = await _unitOfWork.UserTokenRepository.GetActiveTokensForUserAsync(user.UserId, "PasswordReset");
             foreach (var token in existingTokens)
             {
                 token.IsUsed = true;
@@ -378,38 +305,45 @@ namespace Rafeeq.Services.Auth
             }
             await _unitOfWork.SaveAsync();
 
-            // Generate new email verification token  
-            var newToken = Guid.NewGuid().ToString();
+            var resetToken = Guid.NewGuid().ToString();
             var userToken = new UserToken
             {
                 UserId = user.UserId,
-                TokenType = "EmailVerification",
-                TokenValue = newToken,
-                ExpiryDate = DateTime.UtcNow.AddHours(24), // Token expires in 24 hours  
+                TokenType = "PasswordReset",
+                TokenValue = resetToken,
+                ExpiryDate = DateTime.UtcNow.AddHours(1),
                 IsUsed = false,
                 CreatedAt = DateTime.UtcNow
             };
             _unitOfWork.UserTokenRepository.Add(userToken);
             await _unitOfWork.SaveAsync();
 
-            await _emailService.SendVerificationEmailAsync(user.Email, newToken);
+            var frontendUrl = _config.GetSection("FrontendUrl").Value;
+            if (string.IsNullOrEmpty(frontendUrl))
+            {
+                return;
+            }
+            //  var resetLink = $"{frontendUrl}/reset-password/{resetToken}";
+
+            await _emailService.SendPasswordResetEmailAsync(user.Email, resetToken);
         }
-
-
-
 
         public async Task<bool> ResetPasswordAsync(string token, string newPassword)
         {
-            var userToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(token, "PasswordReset");
+           
+            var userToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(token.Trim(), "PasswordReset");
 
-            // Fix for CS0019: Explicitly check for null and use GetValueOrDefault for nullable bool  
-            if (userToken == null || userToken.IsUsed.GetValueOrDefault() || userToken.ExpiryDate < DateTime.UtcNow)
+            if (userToken == null)
             {
-                return false; // Invalid, used, or expired token  
+                return false;
             }
 
-            // Fix for CS8602: Use GetValueOrDefault for nullable UserId  
-            var user = await _unitOfWork.UserRepository.GetById(userToken.UserId.GetValueOrDefault());
+            if (userToken.IsUsed.GetValueOrDefault() || userToken.ExpiryDate < DateTime.UtcNow)
+            {
+                return false;
+            }
+
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userToken.UserId.GetValueOrDefault());
             if (user == null)
             {
                 return false;
@@ -418,7 +352,7 @@ namespace Rafeeq.Services.Auth
             user.PasswordHash = PasswordHasher.HashPassword(newPassword);
             _unitOfWork.UserRepository.Update(user);
 
-            userToken.IsUsed = true; // Mark token as used  
+            userToken.IsUsed = true; 
             _unitOfWork.UserTokenRepository.Update(userToken);
 
             await _unitOfWork.SaveAsync();
@@ -428,25 +362,86 @@ namespace Rafeeq.Services.Auth
         public async Task<bool> VerifyEmailAsync(string token)
         {
             var userToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(token, "EmailVerification");
-
             if (userToken == null || userToken.IsUsed.GetValueOrDefault() || userToken.ExpiryDate < DateTime.UtcNow)
             {
-                return false; 
+                return false;
             }
-
-            // Fix for CS8602: Use GetValueOrDefault for nullable UserId  
-            var user = await _unitOfWork.UserRepository.GetById(userToken.UserId.GetValueOrDefault());
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userToken.UserId.GetValueOrDefault());
             if (user == null)
             {
                 return false;
             }
-
             user.IsEmailVerified = true;
             _unitOfWork.UserRepository.Update(user);
-
-            userToken.IsUsed = true; // Mark token as used  
+            userToken.IsUsed = true;
             _unitOfWork.UserTokenRepository.Update(userToken);
+            await _unitOfWork.SaveAsync();
+            return true;
+        }
 
+        public async Task ResendVerificationEmailAsync(string email)
+        {
+            var user = await _unitOfWork.UserRepository.GetUserByEmailAsync(email);
+            if (user == null || user.IsEmailVerified.GetValueOrDefault())
+            {
+                return;
+            }
+
+            var existingTokens = await _unitOfWork.UserTokenRepository.GetActiveTokensForUserAsync(user.UserId, "EmailVerification");
+            foreach (var token in existingTokens)
+            {
+                token.IsUsed = true;
+                _unitOfWork.UserTokenRepository.Update(token);
+            }
+            await _unitOfWork.SaveAsync();
+
+            var newToken = Guid.NewGuid().ToString();
+            var userToken = new UserToken
+            {
+                UserId = user.UserId,
+                TokenType = "EmailVerification",
+                TokenValue = newToken,
+                ExpiryDate = DateTime.UtcNow.AddHours(24),
+                IsUsed = false,
+                CreatedAt = DateTime.UtcNow
+            };
+            _unitOfWork.UserTokenRepository.Add(userToken);
+            await _unitOfWork.SaveAsync();
+
+            var frontendUrl = _config.GetSection("FrontendUrl").Value;
+            if (string.IsNullOrEmpty(frontendUrl))
+            {
+                return;
+            }
+            //var verificationLink = $"{frontendUrl}/verify-email/{newToken}";
+
+            await _emailService.SendVerificationEmailAsync(user.Email, newToken);
+        }
+
+        public async Task<bool> InvalidateRefreshTokenAsync(int userId)
+        {
+            var tokens = await _unitOfWork.UserTokenRepository.GetActiveTokensForUserAsync(userId, "RefreshToken");
+            foreach (var token in tokens)
+            {
+                token.IsUsed = true;
+                _unitOfWork.UserTokenRepository.Update(token);
+            }
+            await _unitOfWork.SaveAsync();
+            return true;
+        }
+
+        public async Task<bool> InvalidateRefreshTokenByValueAsync(string refreshTokenValue)
+        {
+            var token = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(refreshTokenValue, "RefreshToken");
+
+            if (token == null || token.IsUsed.GetValueOrDefault() || token.ExpiryDate < DateTime.UtcNow)
+            {
+
+                return false;
+            }
+
+            token.IsUsed = true;
+            _unitOfWork.UserTokenRepository.Update(token);
             await _unitOfWork.SaveAsync();
             return true;
         }

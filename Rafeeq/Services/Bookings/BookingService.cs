@@ -1,103 +1,76 @@
-﻿using Rafeeq.Models;
-using Rafeeq.Repositories.Bookings;
+﻿using AutoMapper;
+using Rafeeq.DTOs.Bookings;
+using Rafeeq.UnitOfWork;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Rafeeq.Services.Bookings
 {
-    public interface IBookingService
+    public class BookingService
     {
-        Task<Booking> CreateBookingWithMeetAsync(Booking booking);
-        Task<string> GetOrCreateMeetingLinkAsync(int bookingId);
-    }
+        private readonly UnitOfWorkManager _unitOfWork;
+        private readonly IMapper _mapper;
 
-    public class BookingService : IBookingService
-    {
-        private readonly IBookingRepository _bookingRepository;
-        private readonly IGoogleMeetService _meetService;
-        private readonly ILogger<BookingService> _logger;
-
-        public BookingService(
-            IBookingRepository bookingRepository,
-            IGoogleMeetService meetService,
-            ILogger<BookingService> logger)
+        public BookingService(UnitOfWorkManager unitOfWork, IMapper mapper)
         {
-            _bookingRepository = bookingRepository;
-            _meetService = meetService;
-            _logger = logger;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
-        public async Task<Booking> CreateBookingWithMeetAsync(Booking booking)
+        public async Task<IEnumerable<BookingDto>> GetMentorBookingsAsync(int mentorId)
         {
-            try
-            {
-                // Validate booking times
-                if (booking.StartDateTime >= booking.EndDateTime)
-                {
-                    throw new ArgumentException("End time must be after start time");
-                }
-
-                // Create the booking first
-                var createdBooking = await _bookingRepository.CreateBookingAsync(booking);
-                _logger.LogInformation("Created booking with ID {BookingId}", createdBooking.BookingId);
-
-                // Generate meeting link
-                var meetingName = $"Rafeeq Session: {createdBooking.BookingId}";
-                var meetLink = await _meetService.CreateMeetingAsync(
-                    meetingName,
-                    createdBooking.StartDateTime.Value,
-                    createdBooking.EndDateTime.Value,
-                    $"Mentorship session between mentor {createdBooking.MentorId} and mentee {createdBooking.MenteeId}");
-
-                // Update booking with meet link
-                createdBooking.GoogleMeetLink = meetLink;
-                await _bookingRepository.UpdateBookingAsync(createdBooking);
-                _logger.LogInformation("Added Google Meet link to booking {BookingId}", createdBooking.BookingId);
-
-                return createdBooking;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error creating booking with Meet link");
-                throw;
-            }
+            return await _unitOfWork.BookingRepository.GetBookingsByMentorIdAsync(mentorId);
         }
 
-        public async Task<string> GetOrCreateMeetingLinkAsync(int bookingId)
+        public async Task<(bool Success, string Message, BookingDto Data)> UpdateBookingStatusAsync(
+            int bookingId, string newStatus, int currentUserId, string userRole)
         {
-            try
+            var booking = await _unitOfWork.BookingRepository.GetByIdAsync(bookingId);
+
+            if (booking == null)
             {
-                var booking = await _bookingRepository.GetBookingDetailsAsync(bookingId);
-
-                if (booking == null)
-                {
-                    throw new ArgumentException($"Booking with ID {bookingId} not found");
-                }
-
-                // Return existing link if available
-                if (!string.IsNullOrEmpty(booking.GoogleMeetLink))
-                {
-                    return booking.GoogleMeetLink;
-                }
-
-                // Create new meeting if no link exists
-                var meetingName = $"Rafeeq Session: {booking.BookingId}";
-                var meetLink = await _meetService.CreateMeetingAsync(
-                    meetingName,
-                    booking.StartDateTime.Value,
-                    booking.EndDateTime.Value,
-                    $"Mentorship session between mentor {booking.MentorId} and mentee {booking.MenteeId}");
-
-                // Update booking with new meet link
-                booking.GoogleMeetLink = meetLink;
-                await _bookingRepository.UpdateBookingAsync(booking);
-                _logger.LogInformation("Generated new Meet link for booking {BookingId}", bookingId);
-
-                return meetLink;
+                return (false, "Booking not found", null);
             }
-            catch (Exception ex)
+
+            // Security check - Only the mentor of this booking or an admin can update status
+            if (booking.MentorId != currentUserId && userRole != "Admin")
             {
-                _logger.LogError(ex, "Error getting/creating Meet link for booking {BookingId}", bookingId);
-                throw;
+                return (false, "You don't have permission to update this booking", null);
             }
+
+            // Validate the status change
+            if (!IsValidStatusTransition(booking.Status, newStatus))
+            {
+                return (false, $"Cannot change status from '{booking.Status}' to '{newStatus}'", null);
+            }
+
+            // Update the booking status
+            booking.Status = newStatus;
+            _unitOfWork.BookingRepository.UpdateStatus(booking);
+            await _unitOfWork.SaveAsync();
+
+            // Map to DTO and return
+            var bookingDto = _mapper.Map<BookingDto>(booking);
+            return (true, "Booking status updated successfully", bookingDto);
+        }
+
+        // Helper method to validate status transitions
+        private bool IsValidStatusTransition(string currentStatus, string newStatus)
+        {
+            // Define valid status transitions
+            if (currentStatus == "Pending")
+            {
+                // From Pending, can go to Confirmed or Cancelled
+                return newStatus == "Confirmed" || newStatus == "Cancelled";
+            }
+            else if (currentStatus == "Confirmed")
+            {
+                // From Confirmed, can go to Completed or Cancelled
+                return newStatus == "Completed" || newStatus == "Cancelled";
+            }
+            // Once Completed or Cancelled, cannot change status
+            return false;
         }
     }
 }

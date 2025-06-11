@@ -38,6 +38,10 @@ builder.Services.AddSignalRServices();
 // Configure AutoMapper
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 builder.Services.AddApplicationServices();
+
+// Add Stripe configuration
+builder.Services.AddStripeConfiguration(builder.Configuration);
+
 // Register repositories
 builder.Services.AddScoped<UnitOfWorkManager>();
 
@@ -54,7 +58,7 @@ builder.Services.AddAuthentication(options =>
 .AddJwtBearer(options =>
 {
     options.SaveToken = true;
-    options.RequireHttpsMetadata = true;
+    options.RequireHttpsMetadata = false;
     options.TokenValidationParameters = new TokenValidationParameters
     {
         ValidateIssuer = true,
@@ -67,7 +71,6 @@ builder.Services.AddAuthentication(options =>
         ClockSkew = TimeSpan.Zero
     };
 
-    // Allow token in query string for SignalR
     options.Events = new JwtBearerEvents
     {
         OnMessageReceived = context =>
@@ -151,6 +154,7 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerDocumentation();
+    
 }
 
 app.UseCors("AllowSpecificOrigin");

@@ -46,8 +46,10 @@ namespace Rafeeq.Controllers
 
             Console.WriteLine($"Found user in DB: {admin.FullName} with stored password: {admin.PasswordHash}");
 
-            // مؤقتاً بدون تشفير
-            bool isPasswordCorrect = dto.Password == admin.PasswordHash;
+            
+            //bool isPasswordCorrect = dto.Password == admin.PasswordHash;
+            bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(dto.Password, admin.PasswordHash);
+
 
             Console.WriteLine($"Password Verification Result: {isPasswordCorrect}");
 
