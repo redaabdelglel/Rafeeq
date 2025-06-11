@@ -6,6 +6,7 @@ using Rafeeq.DTOs.Skills;
 using Rafeeq.DTOs.Auth;
 using BCrypt.Net;
 using Rafeeq.DTOs.Bookings;
+
 using Rafeeq.DTOs.Availability;
 using Rafeeq.DTOs.CV;
 using Rafeeq.DTOs.Chat;
@@ -120,6 +121,12 @@ namespace Rafeeq.Configurations
 
             // Availability mappings
 
+
+            // Reviews mapping
+            CreateMap<Review, ReviewDto>();
+            CreateMap<ReviewDto, CreateReviewDto>();
+
+
             CreateMap<Models.Availability, AvailabilityDto>();
             CreateMap<CreateAvailabilityDto, Models.Availability>();
             CreateMap<UpdateAvailabilityDto, Models.Availability>();
@@ -221,7 +228,6 @@ namespace Rafeeq.Configurations
             .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.DayOfWeek));
 
 
-            
         }
     }
 }
