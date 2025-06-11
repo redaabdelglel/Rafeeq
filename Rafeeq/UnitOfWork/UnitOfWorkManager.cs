@@ -25,14 +25,13 @@ namespace Rafeeq.UnitOfWork
 
         private SkillRepository _skillRepository;
         private AvailabilityRepository _availabilityRepository;
-        private BookingRepository _bookingRepository;
+        private MenteeBookingRepository _bookingRepository;
         private PaymentRepository _paymentRepository;
         private ChatRepository _chatRepository;
         private ChatAttachmentRepository _chatAttachmentRepository;
         private ReviewRepository _reviewRepository;
         private NotificationRepository _notificationRepository;
-        private MenteeCVRepository _menteeCVRepository;
-        private CVCommentRepository _cvCommentRepository;   
+        private CVRepository _menteeCVRepository;
         private IMenteeRepository _menteeRepository;
         private CVCommentRepository _cvCommentRepository;
         private RoleRepository _roleRepository;
@@ -104,13 +103,13 @@ namespace Rafeeq.UnitOfWork
             }
         }
 
-        public BookingRepository BookingRepository
+        public MenteeBookingRepository BookingRepository
         {
             get
             {
                 if (_bookingRepository == null)
                 {
-                    _bookingRepository = new BookingRepository(context);
+                    _bookingRepository = new MenteeBookingRepository(context);
                 }
                 return _bookingRepository;
             }
@@ -176,13 +175,13 @@ namespace Rafeeq.UnitOfWork
             }
         }
 
-        public MenteeCVRepository MenteeCVRepository
+        public CVRepository MenteeCVRepository
         {
             get
             {
                 if (_menteeCVRepository == null)
                 {
-                    _menteeCVRepository = new MenteeCVRepository(context);
+                    _menteeCVRepository = new CVRepository(context);
                 }
                 return _menteeCVRepository;
             }

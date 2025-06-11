@@ -12,6 +12,9 @@ namespace Rafeeq.DTOs.Users
         public decimal? HourlyRate { get; set; }
         public List<string> Skills { get; set; }
         public List<AvailabilityDto> Availabilities { get; set; } = new List<AvailabilityDto>();
+        public bool IsMentor { get; set; }
+        public bool? IsInterviewer { get; set; }
+
 
     }
 }

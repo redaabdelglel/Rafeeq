@@ -11,14 +11,14 @@ namespace Rafeeq.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-   // [Authorize]
-    public class CVsController : ControllerBase
+    [Authorize]
+    public class MenteeCVsController : ControllerBase
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
         private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public CVsController(IUnitOfWork unitOfWork, IMapper mapper, IHttpContextAccessor httpContextAccessor)
+        public MenteeCVsController(IUnitOfWork unitOfWork, IMapper mapper, IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
@@ -27,15 +27,19 @@ namespace Rafeeq.Controllers
 
         private int GetCurrentUserId()
         {
-            return int.Parse(_httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
+            var userIdClaim = _httpContextAccessor.HttpContext?.User?.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                throw new UnauthorizedAccessException("User ID claim is missing or invalid.");
+            }
+            return userId;
         }
 
         // GET: api/cvs
         [HttpGet]
         public async Task<ActionResult<IEnumerable<CVDTO>>> GetMenteeCVs()
         {
-            //var userId = GetCurrentUserId();
-            var userId = 2;
+            var userId = GetCurrentUserId();
 
             var cvs = await _unitOfWork.CVs.GetMenteeCVsAsync(userId);
             return Ok(_mapper.Map<IEnumerable<CVDTO>>(cvs));
@@ -45,8 +49,7 @@ namespace Rafeeq.Controllers
         [HttpPost]
         public async Task<ActionResult<CVDTO>> UploadCV([FromForm] UploadCVDTO uploadCVDTO)
         {
-            //var userId = GetCurrentUserId();
-            var userId = 2;
+            var userId = GetCurrentUserId();
 
 
             if (uploadCVDTO.File == null || uploadCVDTO.File.Length == 0)
@@ -113,8 +116,8 @@ namespace Rafeeq.Controllers
         [HttpGet("users/cv")]
         public async Task<ActionResult<CVDTO>> GetCurrentCV()
         {
-            //var userId = GetCurrentUserId();
-            var userId = 2;
+            var userId = GetCurrentUserId();
+            
 
             var cv = await _unitOfWork.CVs.GetCurrentCVAsync(userId);
             if (cv == null)

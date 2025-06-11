@@ -45,8 +45,8 @@ namespace Rafeeq.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while fetching all mentors");
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request");
+                _logger.LogError(ex, "Error occurred while fetching all mentors: {Message} | {StackTrace}", ex.Message, ex.StackTrace);
+                return StatusCode(StatusCodes.Status500InternalServerError, $"An error occurred: {ex.Message}\n{ex.StackTrace}");
             }
         }
 
@@ -93,21 +93,67 @@ namespace Rafeeq.Controllers
                 }
 
                 _logger.LogInformation("Fetching mentor profile for ID: {MentorId}", id);
+
+                // 1. Log before fetching
+                _logger.LogDebug("Attempting to fetch mentor with ID: {MentorId}", id);
+
                 var mentor = await _unitOfWork.Mentors.GetMentorProfileAsync(id);
 
+                // 2. Log raw database results
                 if (mentor == null)
                 {
                     _logger.LogWarning("Mentor not found with ID: {MentorId}", id);
                     return NotFound();
                 }
 
-                return Ok(_mapper.Map<MentorDto>(mentor));
+                _logger.LogDebug("Raw mentor data loaded: {@MentorData}", new
+                {
+                    mentor.UserId,
+                    Availabilities = mentor.Availabilities?.Select(a => new {
+                        a.AvailabilityId,
+                        a.DayOfWeek,
+                        a.StartTime,
+                        a.EndTime
+                    }) ?? Enumerable.Empty<object>()
+                });
+
+                // 3. Log before mapping
+                _logger.LogDebug("Attempting to map mentor to DTO");
+
+                var mentorDto = _mapper.Map<MentorDto>(mentor);
+
+                // 4. Log after mapping
+                _logger.LogDebug("Mapped mentor DTO: {@MentorDto}", new
+                {
+                    mentorDto.UserId,
+                    Availabilities = mentorDto.Availabilities?.Select(a => new {
+                        a.AvailabilityId,
+                        a.DayOfWeek,
+                        a.StartTime,
+                        a.EndTime
+                    }) ?? Enumerable.Empty<object>()
+                });
+
+                // 5. Log before serialization
+                _logger.LogDebug("Attempting to serialize response");
+
+                return Ok(mentorDto);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while fetching mentor profile for ID: {MentorId}", id);
                 return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while processing your request");
             }
+        }
+
+        private int GetCurrentUserId()
+        {
+            var userIdClaim = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int userId))
+            {
+                throw new UnauthorizedAccessException("User ID claim is missing or invalid.");
+            }
+            return userId;
         }
     }
 }
