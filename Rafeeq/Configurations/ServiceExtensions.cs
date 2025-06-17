@@ -16,6 +16,7 @@ using Rafeeq.Repositories.Users;
 using Microsoft.Extensions.Configuration;
 using Rafeeq.Configurations;
 using Rafeeq.Services.Contact;
+using Rafeeq.Services.UserProfile;
 
 namespace Rafeeq.Configurations
 {
@@ -36,6 +37,10 @@ namespace Rafeeq.Configurations
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IEmailService, EmailService>();
             // User Services
+
+
+            services.AddScoped<UserProfileService>(); 
+            services.AddScoped<IUserProfileService, UserProfileService>(); 
 
             services.AddScoped<UserService>();
             services.AddScoped<IUserService, UserService>();

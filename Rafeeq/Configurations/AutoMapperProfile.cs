@@ -39,34 +39,33 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName));
 
-            // UpdateProfileDto to User
-            CreateMap<UpdateProfileDto, User>()
-                .ForMember(dest => dest.UserId, opt => opt.Ignore())
-                .ForMember(dest => dest.Email, opt => opt.Ignore())
-                .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
-                .ForMember(dest => dest.IsEmailVerified, opt => opt.Ignore())
-                .ForMember(dest => dest.RoleId, opt => opt.Ignore())
-                .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.ExternalId, opt => opt.Ignore())
-                .ForMember(dest => dest.ExternalType, opt => opt.Ignore())
-                .ForMember(dest => dest.ExternalToken, opt => opt.Ignore())
-                .ForMember(dest => dest.IsMentor, opt => opt.Ignore())
-                .ForMember(dest => dest.IsInterviewer, opt => opt.Ignore())
-                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
-                .ForMember(dest => dest.HourlyRate, opt => opt.Ignore())
-                .ForMember(dest => dest.Availabilities, opt => opt.Ignore())
-                .ForMember(dest => dest.BookingMentees, opt => opt.Ignore())
-                .ForMember(dest => dest.BookingMentors, opt => opt.Ignore())
-                .ForMember(dest => dest.ChatMessages, opt => opt.Ignore())
-                .ForMember(dest => dest.MenteeSkills, opt => opt.Ignore())
-                .ForMember(dest => dest.MentorSkills, opt => opt.Ignore())
-                .ForMember(dest => dest.Notifications, opt => opt.Ignore())
-                .ForMember(dest => dest.ReviewReviewedUsers, opt => opt.Ignore())
-                .ForMember(dest => dest.ReviewReviewers, opt => opt.Ignore())
-                .ForMember(dest => dest.UserTokens, opt => opt.Ignore())
-                .ForMember(dest => dest.CVs, opt => opt.Ignore())
-                .ForMember(dest => dest.CVComments, opt => opt.Ignore());
+            // UpdateMentorProfileDto to User
+            CreateMap<UpdateMentorProfileDto, User>()
+               .ForMember(destination => destination.FullName, opt => opt.Condition(src => src.FullName != null))
+               .ForMember(destination => destination.Email, opt => opt.Condition(src => src.Email != null))
+               .ForMember(destination => destination.PasswordHash, opt =>
+                   opt.MapFrom(src => src.Password != null ? BCrypt.Net.BCrypt.HashPassword(src.Password) : null))
+               .ForMember(destination => destination.ProfilePicture, opt => opt.Condition(src => src.ProfilePicture != null))
+               .ForMember(destination => destination.Bio, opt => opt.Condition(src => src.Bio != null))
+               .ForMember(destination => destination.HourlyRate, opt => opt.Condition(src => src.HourlyRate.HasValue))
+               .ForMember(destination => destination.IsInterviewer, opt => opt.Condition(src => src.IsInterviewer.HasValue));
+
+
+
+
+            // UpdateMenteeProfileDto to User
+            CreateMap<UpdateMenteeProfileDto, User>()
+               .ForMember(destination => destination.FullName, opt => opt.Condition(src => src.FullName != null))
+               .ForMember(destination => destination.Email, opt => opt.Condition(src => src.Email != null))
+               .ForMember(destination => destination.PasswordHash, opt =>
+                   opt.MapFrom(src => BCrypt.Net.BCrypt.HashPassword(src.Password)))
+               .ForMember(destination => destination.PasswordHash, opt =>
+                   opt.Condition(src => src.Password != null))
+               .ForMember(destination => destination.ProfilePicture, opt => opt.Condition(src => src.ProfilePicture != null))
+               .ForMember(destination => destination.Bio, opt => opt.Condition(src => src.Bio != null));
+
+
+
 
             // User mapping
             CreateMap<User, UserDto>()
