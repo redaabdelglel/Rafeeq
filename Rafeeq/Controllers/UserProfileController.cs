@@ -24,9 +24,7 @@ namespace Rafeeq.Controllers
             _userProfileService = userProfileService;
             _mapper = mapper;
         }
-        /// <summary>
-        /// Get the authenticated user's profile.
-        /// </summary>
+       
         [HttpGet("profile")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserProfileDto))]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -192,33 +190,33 @@ namespace Rafeeq.Controllers
             return Ok("Hourly rate updated successfully.");
         }
 
-       
-        //[HttpGet("mentors/{mentorId}")]
-        //[AllowAnonymous]
-        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(MentorDto))]
-        //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        //public async Task<IActionResult> GetMentorPublicProfile(int mentorId)
-        //{
-        //    var mentor = await _userProfileService.GetMentorPublicProfileAsync(mentorId);
-        //    if (mentor == null)
-        //    {
-        //        return NotFound("Mentor not found or is not active.");
-        //    }
-        //    return Ok(mentor);
-        //}
+
+        [HttpGet("mentors/{mentorId}")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(MentorDto))]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetMentorPublicProfile(int mentorId)
+        {
+            var mentor = await _userProfileService.GetMentorPublicProfileAsync(mentorId);
+            if (mentor == null)
+            {
+                return NotFound("Mentor not found or is not active.");
+            }
+            return Ok(mentor);
+        }
 
 
-        //[HttpGet("mentors")]
-        //[AllowAnonymous]
-        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<MentorDto>))]
-        //public async Task<IActionResult> GetAllMentors(
-        //    [FromQuery] string? skill,
-        //    [FromQuery] decimal? minRate,
-        //    [FromQuery] decimal? maxRate,
-        //    [FromQuery] int? rating)
-        //{
-        //    var mentors = await _userProfileService.GetAllMentorsAsync(skill, minRate, maxRate, rating);
-        //    return Ok(mentors);
-        //}
+        [HttpGet("mentors")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<MentorDto>))]
+        public async Task<IActionResult> GetAllMentors(
+            [FromQuery] string? skill,
+            [FromQuery] decimal? minRate,
+            [FromQuery] decimal? maxRate,
+            [FromQuery] int? rating)
+        {
+            var mentors = await _userProfileService.GetAllMentorsAsync(skill, minRate, maxRate, rating);
+            return Ok(mentors);
+        }
     }
 }
