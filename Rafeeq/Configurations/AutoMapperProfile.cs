@@ -197,7 +197,7 @@ namespace Rafeeq.Configurations
 
             CreateMap<CreateCVCommentDTO, CVComment>();
 
-            // In your MappingProfile.cs or where you configure AutoMapper
+           
             CreateMap<Availability, AvailabilityDto>()
                 .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.DayOfWeek));
 
