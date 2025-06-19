@@ -38,7 +38,7 @@ namespace Rafeeq.Configurations
             services.AddScoped<IEmailService, EmailService>();
             // User Services
 
-
+            // UserProfile Services
             services.AddScoped<UserProfileService>(); 
             services.AddScoped<IUserProfileService, UserProfileService>(); 
 

@@ -245,6 +245,44 @@ namespace Rafeeq.Services.UserProfile
             return true;
         }
 
+        public async Task<string?> UploadProfilePictureFileAsync(int userId, IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+            {
+                return null;
+            }
+
+            var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "Uploads", "ProfilePictures");
+            if (!Directory.Exists(uploadsFolder))
+            {
+                Directory.CreateDirectory(uploadsFolder);
+            }
+
+            var fileName = $"{Guid.NewGuid()}_{file.FileName}";
+            var filePath = Path.Combine(uploadsFolder, fileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await file.CopyToAsync(stream);
+            }
+
+            var baseUrl = "https://localhost:7001"; // Use your actual base URL
+            var fileUrl = $"{baseUrl}/Uploads/ProfilePictures/{fileName}";
+
+            var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+            if (user == null)
+            {
+                File.Delete(filePath);
+                return null;
+            }
+
+            user.ProfilePicture = fileUrl;
+            _unitOfWork.UserRepository.Update(user);
+            await _unitOfWork.SaveAsync();
+
+            return fileUrl;
+        }
+
         public async Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword)
         {
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);

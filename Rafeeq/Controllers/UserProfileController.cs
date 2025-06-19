@@ -87,12 +87,11 @@ namespace Rafeeq.Controllers
             return Ok(updatedProfile);
         }
 
-      
-        [HttpPost("upload-photo")]
+        [HttpPost("update-photo-by-url")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> UploadProfilePicture([FromBody] string profilePictureUrl)
+        public async Task<IActionResult> UpdateProfilePictureByUrl([FromBody] string profilePictureUrl)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
@@ -108,12 +107,62 @@ namespace Rafeeq.Controllers
             var result = await _userProfileService.UpdateUserProfilePictureAsync(userId, profilePictureUrl);
             if (!result)
             {
-                return BadRequest("Failed to upload profile picture.");
+                return BadRequest("Failed to update profile picture with URL.");
             }
-            return Ok("Profile picture updated successfully.");
+            return Ok("Profile picture URL updated successfully.");
         }
 
-       
+      
+        [HttpPost("upload-photo")] 
+        [Authorize(Policy = "MentorOrMenteePolicy")] 
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))] 
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UploadProfilePictureFile([FromForm] ProfilePictureUploadRequest request)
+        {
+            if (request == null || request.File == null || request.File.Length == 0)
+            {
+                return BadRequest("No file uploaded or file is empty.");
+            }
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized("User ID not found in token.");
+            }
+
+            var file = request.File;
+
+            if (file.Length > 5 * 1024 * 1024) 
+            {
+                return BadRequest("File size exceeds 5MB limit.");
+            }
+
+            var allowedExtensions = new[] { ".jpg", ".jpeg", ".png", ".gif" };
+            var fileExtension = System.IO.Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!allowedExtensions.Contains(fileExtension))
+            {
+                return BadRequest("Invalid file type. Only JPG, JPEG, PNG, GIF are allowed.");
+            }
+
+            try
+            {
+                var uploadedUrl = await _userProfileService.UploadProfilePictureFileAsync(userId, file);
+                if (uploadedUrl == null)
+                {
+                    return StatusCode(StatusCodes.Status500InternalServerError, "Failed to upload or save profile picture.");
+                }
+                return Ok(uploadedUrl); 
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, $"Internal server error: {ex.Message}");
+            }
+        }
+
+
         [HttpPut("change-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -191,32 +240,32 @@ namespace Rafeeq.Controllers
         }
 
 
-        [HttpGet("mentors/{mentorId}")]
-        [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(MentorDto))]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> GetMentorPublicProfile(int mentorId)
-        {
-            var mentor = await _userProfileService.GetMentorPublicProfileAsync(mentorId);
-            if (mentor == null)
-            {
-                return NotFound("Mentor not found or is not active.");
-            }
-            return Ok(mentor);
-        }
+        //[HttpGet("mentors/{mentorId}")]
+        //[AllowAnonymous]
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(MentorDto))]
+        //[ProducesResponseType(StatusCodes.Status404NotFound)]
+        //public async Task<IActionResult> GetMentorPublicProfile(int mentorId)
+        //{
+        //    var mentor = await _userProfileService.GetMentorPublicProfileAsync(mentorId);
+        //    if (mentor == null)
+        //    {
+        //        return NotFound("Mentor not found or is not active.");
+        //    }
+        //    return Ok(mentor);
+        //}
 
 
-        [HttpGet("mentors")]
-        [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<MentorDto>))]
-        public async Task<IActionResult> GetAllMentors(
-            [FromQuery] string? skill,
-            [FromQuery] decimal? minRate,
-            [FromQuery] decimal? maxRate,
-            [FromQuery] int? rating)
-        {
-            var mentors = await _userProfileService.GetAllMentorsAsync(skill, minRate, maxRate, rating);
-            return Ok(mentors);
-        }
+        //[HttpGet("mentors")]
+        //[AllowAnonymous]
+        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<MentorDto>))]
+        //public async Task<IActionResult> GetAllMentors(
+        //    [FromQuery] string? skill,
+        //    [FromQuery] decimal? minRate,
+        //    [FromQuery] decimal? maxRate,
+        //    [FromQuery] int? rating)
+        //{
+        //    var mentors = await _userProfileService.GetAllMentorsAsync(skill, minRate, maxRate, rating);
+        //    return Ok(mentors);
+        //}
     }
 }

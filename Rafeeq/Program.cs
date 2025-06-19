@@ -13,6 +13,7 @@ using Rafeeq.Services.Bookings;
 using Rafeeq.Repositories.Mentee;
 using Microsoft.AspNetCore.Authorization;
 using Rafeeq.Helpers;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -157,6 +158,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowSpecificOrigin");
 app.UseHttpsRedirection();
+
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "Uploads")), 
+    RequestPath = "/Uploads" 
+});
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();

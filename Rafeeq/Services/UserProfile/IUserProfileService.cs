@@ -14,6 +14,8 @@ namespace Rafeeq.Services.UserProfile
         Task<bool> UpdateMentorHourlyRateAsync(int mentorId, decimal hourlyRate);
         Task<bool> ToggleMentorInterviewerStatusAsync(int mentorId, bool isInterviewer);
         Task<bool> UpdateUserProfilePictureAsync(int userId, string profilePictureUrl);
+
+        Task<string?> UploadProfilePictureFileAsync(int userId, IFormFile file);
         Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
 
 

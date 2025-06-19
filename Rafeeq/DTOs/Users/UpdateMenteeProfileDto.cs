@@ -2,7 +2,7 @@
 
 namespace Rafeeq.DTOs.Users
 {
-    public class UpdateMenteeProfileDto
+    public class UpdateMenteeProfileDto 
     {
         [StringLength(100, ErrorMessage = "Full name cannot exceed 100 characters.")]
         public string? FullName { get; set; }
