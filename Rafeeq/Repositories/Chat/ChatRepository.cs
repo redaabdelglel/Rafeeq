@@ -69,7 +69,7 @@ namespace Rafeeq.Repositories.Chat
             return await _context.ChatMessages
                 .Where(m => bookings.Contains(m.BookingId.Value) &&
                        m.SenderId != userId &&
-                       m.IsRead == false) 
+                       m.IsRead == false)
                 .CountAsync();
         }
 
@@ -150,6 +150,116 @@ namespace Rafeeq.Repositories.Chat
             await _context.SaveChangesAsync();
             return unreadMessages.Count;
         }
+        // Delete a message by ID
+        public async Task<bool> DeleteMessageAsync(int messageId)
+        {
+            var message = await _context.ChatMessages.FindAsync(messageId);
+            if (message == null)
+                return false;
+
+            // Remove any attachments first
+            var attachments = await _context.ChatAttachments
+                .Where(a => a.MessageId == messageId)
+                .ToListAsync();
+
+            if (attachments.Any())
+            {
+                _context.ChatAttachments.RemoveRange(attachments);
+            }
+
+            // Remove any read statuses
+            var readStatuses = await _context.MessageReadStatuses
+                .Where(rs => rs.MessageId == messageId)
+                .ToListAsync();
+
+            if (readStatuses.Any())
+            {
+                _context.MessageReadStatuses.RemoveRange(readStatuses);
+            }
+
+            // Remove the message
+            _context.ChatMessages.Remove(message);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // Search messages in a conversation
+        public async Task<IEnumerable<ChatMessage>> SearchMessagesAsync(int conversationId, string query, int limit)
+        {
+            return await _context.ChatMessages
+                .Include(m => m.Sender)
+                .Include(m => m.ChatAttachments)
+                .Include(m => m.ReadStatuses)
+                .Where(m => m.ConversationId == conversationId &&
+                           (string.IsNullOrEmpty(query) || m.MessageText.Contains(query)))
+                .OrderByDescending(m => m.SentAt)
+                .Take(limit > 0 ? limit : 50)
+                .ToListAsync();
+        }
+
+        // Update a message
+        public async Task<bool> UpdateMessageAsync(ChatMessage message)
+        {
+            _context.ChatMessages.Update(message);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // Add a reaction to a message
+        public async Task<MessageReaction> AddMessageReactionAsync(MessageReaction reaction)
+        {
+            // Check if this reaction already exists
+            var existingReaction = await _context.MessageReactions
+                .FirstOrDefaultAsync(r =>
+                    r.MessageId == reaction.MessageId &&
+                    r.UserId == reaction.UserId &&
+                    r.ReactionType == reaction.ReactionType);
+
+            if (existingReaction != null)
+            {
+                // Reaction already exists, just return it
+                return existingReaction;
+            }
+
+            // Add the new reaction
+            await _context.MessageReactions.AddAsync(reaction);
+            await _context.SaveChangesAsync();
+            return reaction;
+        }
+
+        // Get a specific reaction
+        public async Task<MessageReaction> GetMessageReactionAsync(int messageId, int userId, string reactionType)
+        {
+            return await _context.MessageReactions
+                .FirstOrDefaultAsync(r =>
+                    r.MessageId == messageId &&
+                    r.UserId == userId &&
+                    r.ReactionType == reactionType);
+        }
+
+        // Remove a reaction
+        public async Task<bool> RemoveMessageReactionAsync(MessageReaction reaction)
+        {
+            _context.MessageReactions.Remove(reaction);
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        // Get all reactions for a message
+        public async Task<IEnumerable<MessageReaction>> GetReactionsForMessageAsync(int messageId)
+        {
+            return await _context.MessageReactions
+                .Include(r => r.User)
+                .Where(r => r.MessageId == messageId)
+                .ToListAsync();
+        }
+
+        // Update conversation
+        public void UpdateConversation(ChatConversation conversation)
+        {
+            _context.ChatConversations.Update(conversation);
+        }
+
 
     }
 }

@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Hosting;
 
 namespace Rafeeq.Services.Chat
 {
@@ -20,6 +21,7 @@ namespace Rafeeq.Services.Chat
         private readonly IMapper _mapper;
         private readonly IHubContext<ChatHub> _chatHubContext;
         private readonly string _uploadsBasePath;
+        private readonly IWebHostEnvironment _hostEnvironment;  
 
         public ChatService(
             UnitOfWorkManager unitOfWork,
@@ -30,6 +32,7 @@ namespace Rafeeq.Services.Chat
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _chatHubContext = chatHubContext;
+            _hostEnvironment = environment;
 
             try
             {
@@ -377,6 +380,451 @@ namespace Rafeeq.Services.Chat
                 return (false, $"Failed to mark messages as read: {ex.Message}");
             }
         }
+
+        // Download a chat attachment
+        public async Task<(bool Success, string Message, FileDownloadDto Data)> DownloadAttachmentAsync(int messageId, int userId)
+        {
+            try
+            {
+                // Get the attachment
+                var attachment = await _unitOfWork.ChatAttachmentRepository.GetAttachmentByIdAsync(messageId);
+                if (attachment == null)
+                {
+                    return (false, "Attachment not found", null);
+                }
+
+                // Check if user is authorized to access this attachment
+                var isAuthorized = await _unitOfWork.ChatAttachmentRepository.IsUserAuthorizedForAttachmentAsync(attachment.AttachmentId, userId);
+                if (!isAuthorized)
+                {
+                    return (false, "You don't have permission to access this attachment", null);
+                }
+
+                // Return file info
+                var fileInfo = new FileDownloadDto
+                {
+                    FilePath = attachment.FilePath,
+                    FileName = attachment.FileName,
+                    ContentType = attachment.ContentType
+                };
+
+                return (true, "Attachment retrieved successfully", fileInfo);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to download attachment: {ex.Message}", null);
+            }
+        }
+
+        // Delete a message (sender only)
+        public async Task<(bool Success, string Message)> DeleteMessageAsync(int messageId, int userId)
+        {
+            try
+            {
+                // Get the message
+                var message = await _unitOfWork.ChatRepository.GetMessageByIdAsync(messageId);
+                if (message == null)
+                {
+                    return (false, "Message not found");
+                }
+
+                // Check if user is the sender
+                if (message.SenderId != userId)
+                {
+                    return (false, "You can only delete your own messages");
+                }
+
+                // Delete message
+                var result = await _unitOfWork.ChatRepository.DeleteMessageAsync(messageId);
+                if (!result)
+                {
+                    return (false, "Failed to delete message");
+                }
+
+                // Notify clients via SignalR that message was deleted
+                await _chatHubContext.Clients.Group($"booking-{message.BookingId}")
+                    .SendAsync("MessageDeleted", messageId);
+
+                return (true, "Message deleted successfully");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to delete message: {ex.Message}");
+            }
+        }
+
+        // Send typing indicator
+        public async Task<(bool Success, string Message)> SendTypingIndicatorAsync(TypingIndicatorDto dto, int userId)
+        {
+            try
+            {
+                // Check if user is part of the booking
+                var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(dto.BookingId, userId);
+                if (!isAuthorized)
+                {
+                    return (false, "You don't have permission to access this conversation");
+                }
+
+                // Get user details
+                var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+                if (user == null)
+                {
+                    return (false, "User not found");
+                }
+
+                // Create indicator data
+                var typingData = new
+                {
+                    UserId = userId,
+                    UserName = user.FullName,
+                    BookingId = dto.BookingId,
+                    IsTyping = dto.IsTyping
+                };
+
+                // Notify others in the chat via SignalR
+                await _chatHubContext.Clients.Group($"booking-{dto.BookingId}")
+     .SendAsync("UserTyping", typingData);
+                return (true, dto.IsTyping ? "Typing indicator sent" : "Typing indicator stopped");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to send typing indicator: {ex.Message}");
+            }
+        }
+
+        // Search messages in a conversation
+        public async Task<(bool Success, string Message, IEnumerable<ChatMessageDto> Data)> SearchMessagesAsync(
+            int bookingId, string query, int limit, int userId)
+        {
+            try
+            {
+                // Check if user is part of the booking
+                var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(bookingId, userId);
+                if (!isAuthorized)
+                {
+                    return (false, "You don't have permission to access this conversation", null);
+                }
+
+                // Get conversation
+                var conversation = await _unitOfWork.ChatRepository.GetConversationByBookingIdAsync(bookingId);
+                if (conversation == null)
+                {
+                    return (false, "Conversation not found", null);
+                }
+
+                // Search messages
+                var messages = await _unitOfWork.ChatRepository.SearchMessagesAsync(conversation.ConversationId, query, limit);
+                if (messages == null || !messages.Any())
+                {
+                    return (true, "No messages found matching your search", new List<ChatMessageDto>());
+                }
+
+                // Map to DTOs
+                var messageDtos = _mapper.Map<IEnumerable<ChatMessageDto>>(messages);
+
+                return (true, "Search results retrieved successfully", messageDtos);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to search messages: {ex.Message}", null);
+            }
+        }
+
+        // Edit a message (sender only)
+        public async Task<(bool Success, string Message, ChatMessageDto Data)> EditMessageAsync(
+            int messageId, string newMessageText, int userId)
+        {
+            try
+            {
+                // Get the message
+                var message = await _unitOfWork.ChatRepository.GetMessageByIdAsync(messageId);
+                if (message == null)
+                {
+                    return (false, "Message not found", null);
+                }
+
+                // Check if user is the sender
+                if (message.SenderId != userId)
+                {
+                    return (false, "You can only edit your own messages", null);
+                }
+
+                // Check if the message is not too old (optional policy)
+                var messageAge = DateTime.UtcNow - message.SentAt;
+                if (messageAge.Value.TotalHours > 24) // 24-hour edit window
+                {
+                    return (false, "You can only edit messages within 24 hours of sending", null);
+                }
+
+                // Update the message text
+                message.MessageText = newMessageText;
+                message.IsEdited = true; // Track that this message was edited
+
+                // Save to database
+                await _unitOfWork.ChatRepository.UpdateMessageAsync(message);
+
+                // Notify clients via SignalR that message was edited
+                var updatedMessageDto = _mapper.Map<ChatMessageDto>(message);
+                await _chatHubContext.Clients.Group($"booking-{message.BookingId}")
+                    .SendAsync("MessageEdited", updatedMessageDto);
+
+                return (true, "Message edited successfully", updatedMessageDto);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to edit message: {ex.Message}", null);
+            }
+        }
+
+        // Add a reaction to a message
+        public async Task<(bool Success, string Message, object Data)> AddMessageReactionAsync(
+            int messageId, string reactionType, int userId)
+        {
+            try
+            {
+                // Get the message
+                var message = await _unitOfWork.ChatRepository.GetMessageByIdAsync(messageId);
+                if (message == null)
+                {
+                    return (false, "Message not found", null);
+                }
+
+                // Check if user is authorized to access the conversation
+                var isInConversation = message.ConversationId.HasValue &&
+                    (message.Conversation.MentorId == userId || message.Conversation.MenteeId == userId);
+
+                if (!isInConversation)
+                {
+                    return (false, "You don't have permission to react to this message", null);
+                }
+
+                // Add reaction
+                var reaction = new MessageReaction
+                {
+                    MessageId = messageId,
+                    UserId = userId,
+                    ReactionType = reactionType,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _unitOfWork.ChatRepository.AddMessageReactionAsync(reaction);
+
+                // Get user who reacted
+                var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
+
+                // Create response data
+                var responseData = new
+                {
+                    MessageId = messageId,
+                    ReactionType = reactionType,
+                    UserId = userId,
+                    UserName = user?.FullName ?? "Unknown User"
+                };
+
+                // Notify via SignalR
+                await _chatHubContext.Clients.Group($"booking-{message.BookingId}")
+                    .SendAsync("MessageReaction", responseData);
+
+                return (true, "Reaction added", responseData);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to add reaction: {ex.Message}", null);
+            }
+        }
+
+        // Remove a reaction from a message
+        public async Task<(bool Success, string Message)> RemoveMessageReactionAsync(
+            int messageId, string reactionType, int userId)
+        {
+            try
+            {
+                // Get the message and reaction
+                var reaction = await _unitOfWork.ChatRepository.GetMessageReactionAsync(messageId, userId, reactionType);
+                if (reaction == null)
+                {
+                    return (false, "Reaction not found");
+                }
+
+                // Get booking ID for SignalR notification
+                var message = await _unitOfWork.ChatRepository.GetMessageByIdAsync(messageId);
+                if (message == null)
+                {
+                    return (false, "Message not found");
+                }
+
+                // Remove the reaction
+                await _unitOfWork.ChatRepository.RemoveMessageReactionAsync(reaction);
+
+                // Notify via SignalR
+                var responseData = new
+                {
+                    MessageId = messageId,
+                    ReactionType = reactionType,
+                    UserId = userId
+                };
+
+                await _chatHubContext.Clients.Group($"booking-{message.BookingId}")
+                    .SendAsync("MessageReactionRemoved", responseData);
+
+                return (true, "Reaction removed");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to remove reaction: {ex.Message}");
+            }
+        }
+
+        // Upload voice message
+        public async Task<(bool Success, string Message, ChatMessageDto Data)> UploadVoiceMessageAsync(
+            int bookingId, int senderId, IFormFile audioFile)
+        {
+            try
+            {
+                // Check if user is authorized to send messages in this booking
+                var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(bookingId, senderId);
+                if (!isAuthorized)
+                {
+                    return (false, "You don't have permission to send messages in this chat", null);
+                }
+
+                // Validate file
+                if (audioFile == null || audioFile.Length == 0)
+                {
+                    return (false, "No audio file provided", null);
+                }
+
+                // Check file type
+                var allowedTypes = new[] { "audio/mpeg", "audio/wav", "audio/webm", "audio/ogg" };
+                if (!allowedTypes.Contains(audioFile.ContentType))
+                {
+                    return (false, "Only audio files (mp3, wav, webm, ogg) are allowed", null);
+                }
+
+                // Check file size (max 5MB)
+                if (audioFile.Length > 5 * 1024 * 1024)
+                {
+                    return (false, "Audio file size exceeds the 5MB limit", null);
+                }
+
+                // Get conversation ID
+                var conversation = await _unitOfWork.ChatRepository.GetConversationByBookingIdAsync(bookingId);
+                if (conversation == null)
+                {
+                    return (false, "Chat conversation not found", null);
+                }
+
+                // Create a new message
+                var message = new ChatMessage
+                {
+                    BookingId = bookingId,
+                    ConversationId = conversation.ConversationId,
+                    SenderId = senderId,
+                    MessageText = "[Voice Message]", // Placeholder text
+                    IsVoiceMessage = true,
+                    SentAt = DateTime.UtcNow
+                };
+
+                await _unitOfWork.ChatRepository.AddMessageAsync(message);
+
+                // Create a unique filename
+                var fileName = $"voice_{Guid.NewGuid()}{Path.GetExtension(audioFile.FileName)}";
+                var filePath = Path.Combine("uploads", "voice", fileName);
+                var fullPath = Path.Combine(_uploadsBasePath, "voice", fileName);
+
+                // Ensure directory exists
+                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+
+                // Save file
+                using (var stream = new FileStream(fullPath, FileMode.Create))
+                {
+                    await audioFile.CopyToAsync(stream);
+                }
+
+                // Create attachment for the voice message
+                var attachment = new ChatAttachment
+                {
+                    MessageId = message.MessageId,
+                    FilePath = filePath.Replace('\\', '/'),
+                    FileName = fileName,
+                    FileSize = (int)audioFile.Length,
+                    ContentType = audioFile.ContentType,
+                    IsVoiceMessage = true
+                };
+
+                await _unitOfWork.ChatAttachmentRepository.AddAttachmentAsync(attachment);
+
+                // Update conversation's LastMessageAt
+                conversation.LastMessageAt = message.SentAt;
+                _unitOfWork.ChatRepository.UpdateConversation(conversation);
+
+                await _unitOfWork.SaveAsync();
+
+                // Map to DTO and add URL
+                var messageDto = _mapper.Map<ChatMessageDto>(message);
+
+                // Add the attachment
+                var attachmentDto = _mapper.Map<ChatAttachmentDto>(attachment);
+                var baseUrl = $"{_hostEnvironment.WebRootPath}/";
+                attachmentDto.FullUrl = $"{baseUrl}{attachment.FilePath}";
+                messageDto.Attachments.Add(attachmentDto);
+
+                // Notify clients via SignalR
+                await _chatHubContext.Clients.Group($"booking-{bookingId}")
+                    .SendAsync("ReceiveMessage", messageDto);
+
+                return (true, "Voice message sent successfully", messageDto);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to send voice message: {ex.Message}", null);
+            }
+        }
+
+        // Get online status of conversation participants
+        public async Task<(bool Success, string Message, object Data)> GetOnlineStatusAsync(
+            int bookingId, int userId)
+        {
+            try
+            {
+                // Check if user is part of the booking
+                var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(bookingId, userId);
+                if (!isAuthorized)
+                {
+                    return (false, "You don't have permission to access this conversation", null);
+                }
+
+                // Get booking with participants
+                var booking = await _unitOfWork.BookingRepository.GetBookingWithParticipantsAsync(bookingId);
+                if (booking == null)
+                {
+                    return (false, "Booking not found", null);
+                }
+
+                // Use ChatHub.IsUserConnectedToGroup directly instead of the extension method
+                string groupName = $"booking-{bookingId}";
+                bool mentorIsOnline = ChatHub.IsUserConnectedToGroup(booking.MentorId.ToString(), groupName);
+                bool menteeIsOnline = ChatHub.IsUserConnectedToGroup(booking.MenteeId.ToString(), groupName);
+
+                var responseData = new
+                {
+                    MentorId = booking.MentorId,
+                    MentorName = booking.Mentor?.FullName,
+                    MentorIsOnline = mentorIsOnline,
+
+                    MenteeId = booking.MenteeId,
+                    MenteeName = booking.Mentee?.FullName,
+                    MenteeIsOnline = menteeIsOnline
+                };
+
+                return (true, "Online status retrieved successfully", responseData);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to get online status: {ex.Message}", null);
+            }
+        }
+
 
     }
 }

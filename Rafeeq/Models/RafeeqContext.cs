@@ -49,6 +49,8 @@ public partial class RafeeqContext : DbContext
     
     public virtual DbSet<ChatConversation> ChatConversations { get; set; }
     public virtual DbSet<MessageReadStatus> MessageReadStatuses { get; set; }
+    public virtual DbSet<MessageReaction> MessageReactions { get; set; }
+
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {

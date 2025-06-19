@@ -20,6 +20,8 @@ public partial class ChatMessage
     public int? SenderId { get; set; }
 
     public string MessageText { get; set; }
+    public bool IsEdited { get; set; }
+    public bool IsVoiceMessage { get; set; }
 
     public bool? IsRead { get; set; }
 
@@ -43,4 +45,9 @@ public partial class ChatMessage
     [ForeignKey("SenderId")]
     [InverseProperty("ChatMessages")]
     public virtual User Sender { get; set; }
+   
+
+    // Add navigation property for reactions
+    [InverseProperty("Message")]
+    public virtual ICollection<MessageReaction> Reactions { get; set; } = new List<MessageReaction>();
 }
