@@ -199,6 +199,14 @@ namespace Rafeeq.Repositories.Bookings
         }
 
 
+        
+        public async Task<Booking> GetBookingWithParticipantsAsync(int bookingId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Mentor)
+                .Include(b => b.Mentee)
+                .FirstOrDefaultAsync(b => b.BookingId == bookingId && b.IsDeleted != true);
+        }
 
     }
 }

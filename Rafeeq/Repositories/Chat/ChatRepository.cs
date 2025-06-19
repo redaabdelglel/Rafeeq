@@ -79,7 +79,77 @@ namespace Rafeeq.Repositories.Chat
             return await _context.Bookings
                 .AnyAsync(b => b.BookingId == bookingId &&
                          (b.MentorId == userId || b.MenteeId == userId) &&
-                         b.IsDeleted != true); 
+                         b.IsDeleted != true);
         }
+        // Get all conversations for a user
+        public async Task<IEnumerable<ChatConversation>> GetConversationsForUserAsync(int userId)
+        {
+            return await _context.ChatConversations
+                .Include(c => c.Mentor)
+                .Include(c => c.Mentee)
+                .Include(c => c.Booking)
+                .Where(c => (c.MentorId == userId || c.MenteeId == userId) && c.IsActive == true)
+                .OrderByDescending(c => c.LastMessageAt)
+                .ToListAsync();
+        }
+
+        // Get unread message count for a specific conversation
+        public async Task<int> GetUnreadMessageCountInConversationAsync(int conversationId, int userId)
+        {
+            return await _context.ChatMessages
+                .Where(m => m.ConversationId == conversationId && m.SenderId != userId)
+                .Where(m => !m.ReadStatuses.Any(rs => rs.UserId == userId))
+                .CountAsync();
+        }
+
+        // Get messages for a conversation
+        public async Task<IEnumerable<ChatMessage>> GetMessagesByConversationIdAsync(int conversationId)
+        {
+            return await _context.ChatMessages
+                .Include(m => m.Sender)
+                .Include(m => m.ChatAttachments)
+                .Include(m => m.ReadStatuses)
+                .Where(m => m.ConversationId == conversationId)
+                .OrderByDescending(m => m.SentAt)
+                .Take(15) // Limit to the most recent 15 messages
+                .ToListAsync();
+        }
+
+        // Get conversation by booking ID
+        public async Task<ChatConversation> GetConversationByBookingIdAsync(int bookingId)
+        {
+            return await _context.ChatConversations
+                .FirstOrDefaultAsync(c => c.BookingId == bookingId);
+        }
+
+        // Mark all messages as read in a conversation
+        public async Task<int> MarkAllMessagesAsReadAsync(int conversationId, int userId)
+        {
+            // Get all unread messages sent by other users
+            var unreadMessages = await _context.ChatMessages
+                .Where(m => m.ConversationId == conversationId && m.SenderId != userId)
+                .Where(m => !m.ReadStatuses.Any(rs => rs.UserId == userId))
+                .ToListAsync();
+
+            if (unreadMessages.Count == 0)
+            {
+                return 0; // No messages to mark as read
+            }
+
+            // Create read statuses for all unread messages
+            foreach (var message in unreadMessages)
+            {
+                _context.MessageReadStatuses.Add(new MessageReadStatus
+                {
+                    MessageId = message.MessageId,
+                    UserId = userId,
+                    ReadAt = DateTime.UtcNow
+                });
+            }
+
+            await _context.SaveChangesAsync();
+            return unreadMessages.Count;
+        }
+
     }
 }

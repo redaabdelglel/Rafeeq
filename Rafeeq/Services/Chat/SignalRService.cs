@@ -38,5 +38,11 @@ namespace Rafeeq.Services.Chat
             await _chatHubContext.Clients.Group($"booking-{bookingId}")
                 .SendAsync("UserLeft", userName);
         }
+        public async Task NotifyAllMessagesRead(int bookingId, int userId)
+        {
+            await _chatHubContext.Clients.Group($"booking-{bookingId}")
+                .SendAsync("AllMessagesRead", userId);
+        }
+
     }
 }

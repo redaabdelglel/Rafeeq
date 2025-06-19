@@ -82,5 +82,24 @@ namespace Rafeeq.Hubs
                 // Log exception but don't expose details to client
             }
         }
+        // Tell the server that a user read all messages in a conversation
+        public async Task MarkAllMessagesAsRead(int bookingId)
+        {
+            try
+            {
+                // Get user ID from claims
+                var userId = int.Parse(Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                if (userId == 0) return;
+
+                // Notify others in the group
+                await Clients.OthersInGroup($"booking-{bookingId}")
+                    .SendAsync("AllMessagesRead", userId);
+            }
+            catch (Exception)
+            {
+                // Log exception but don't expose details to client
+            }
+        }
+
     }
 }

@@ -167,5 +167,92 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred while uploading the attachment", error = ex.Message });
             }
         }
+        // GET: api/chat/conversations
+        [HttpGet("conversations")]
+        public async Task<IActionResult> GetConversations()
+        {
+            try
+            {
+                // Get user ID from claims
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                if (userId == 0)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
+                }
+
+                var result = await _chatService.GetUserConversationsAsync(userId);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+
+                return Ok(new { success = true, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting user conversations");
+                return StatusCode(500, new { success = false, message = "An error occurred while retrieving conversations", error = ex.Message });
+            }
+        }
+
+        // GET: api/chat/conversation/{bookingId}/participants
+        [HttpGet("conversation/{bookingId}/participants")]
+        public async Task<IActionResult> GetConversationParticipants(int bookingId)
+        {
+            try
+            {
+                // Get user ID from claims
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                if (userId == 0)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
+                }
+
+                var result = await _chatService.GetConversationParticipantsAsync(bookingId, userId);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+
+                return Ok(new { success = true, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting conversation participants for booking {bookingId}");
+                return StatusCode(500, new { success = false, message = "An error occurred while retrieving conversation participants", error = ex.Message });
+            }
+        }
+
+        // PUT: api/chat/conversation/{bookingId}/read-all
+        [HttpPut("conversation/{bookingId}/read-all")]
+        public async Task<IActionResult> MarkAllMessagesAsRead(int bookingId)
+        {
+            try
+            {
+                // Get user ID from claims
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                if (userId == 0)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
+                }
+
+                var result = await _chatService.MarkAllMessagesAsReadAsync(bookingId, userId);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+
+                return Ok(new { success = true, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error marking all messages as read for booking {bookingId}");
+                return StatusCode(500, new { success = false, message = "An error occurred while marking messages as read", error = ex.Message });
+            }
+        }
+
     }
 }

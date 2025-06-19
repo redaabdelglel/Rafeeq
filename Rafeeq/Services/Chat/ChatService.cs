@@ -251,5 +251,132 @@ namespace Rafeeq.Services.Chat
                 return (false, $"Failed to upload attachment: {ex.Message}", null);
             }
         }
+        // Get all conversations for the current user
+        public async Task<(bool Success, string Message, IEnumerable<ChatConversationDto> Data)> GetUserConversationsAsync(int userId)
+        {
+            try
+            {
+                // Get all conversations where user is either mentor or mentee
+                var conversations = await _unitOfWork.ChatRepository.GetConversationsForUserAsync(userId);
+                if (conversations == null || !conversations.Any())
+                {
+                    return (true, "No conversations found", new List<ChatConversationDto>());
+                }
+
+                // Map to DTOs
+                var conversationDtos = _mapper.Map<IEnumerable<ChatConversationDto>>(conversations);
+
+                // For each conversation, get the last message and unread count
+                foreach (var dto in conversationDtos)
+                {
+                    // Get last message (already sorted by SentAt DESC in the repository)
+                    var messages = await _unitOfWork.ChatRepository.GetMessagesByConversationIdAsync(dto.ConversationId);
+                    var lastMessage = messages.FirstOrDefault();
+                    if (lastMessage != null)
+                    {
+                        dto.LastMessage = _mapper.Map<ChatMessageDto>(lastMessage);
+                    }
+
+                    // Get unread count for this conversation
+                    dto.UnreadCount = await _unitOfWork.ChatRepository.GetUnreadMessageCountInConversationAsync(dto.ConversationId, userId);
+                }
+
+                return (true, "Conversations retrieved successfully", conversationDtos);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to get conversations: {ex.Message}", null);
+            }
+        }
+
+        // Get conversation participants
+        public async Task<(bool Success, string Message, object Data)> GetConversationParticipantsAsync(int bookingId, int userId)
+        {
+            try
+            {
+                // Check if user is part of the booking
+                var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(bookingId, userId);
+                if (!isAuthorized)
+                {
+                    return (false, "You don't have permission to view this conversation", null);
+                }
+
+                // Get booking with mentor and mentee details
+                var booking = await _unitOfWork.BookingRepository.GetBookingWithParticipantsAsync(bookingId);
+                if (booking == null)
+                {
+                    return (false, "Booking not found", null);
+                }
+
+                // Create response object with participant details
+                var result = new
+                {
+                    BookingId = booking.BookingId,
+                    SessionType = booking.SessionType,
+                    StartDateTime = booking.StartDateTime,
+                    EndDateTime = booking.EndDateTime,
+                    Status = booking.Status,
+                    GoogleMeetLink = booking.GoogleMeetLink,
+                    TotalAmount = booking.TotalAmount,
+                    Mentor = new
+                    {
+                        UserId = booking.Mentor.UserId,
+                        FullName = booking.Mentor.FullName,
+                        ProfilePicture = booking.Mentor.ProfilePicture,
+                        HourlyRate = booking.Mentor.HourlyRate
+                    },
+                    Mentee = new
+                    {
+                        UserId = booking.Mentee.UserId,
+                        FullName = booking.Mentee.FullName,
+                        ProfilePicture = booking.Mentee.ProfilePicture
+                    }
+                };
+
+                return (true, "Conversation participants retrieved successfully", result);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to get conversation participants: {ex.Message}", null);
+            }
+        }
+
+        // Mark all messages as read in a conversation
+        public async Task<(bool Success, string Message)> MarkAllMessagesAsReadAsync(int bookingId, int userId)
+        {
+            try
+            {
+                // Check if user is part of the booking
+                var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(bookingId, userId);
+                if (!isAuthorized)
+                {
+                    return (false, "You don't have permission to access this conversation");
+                }
+
+                // Get conversation ID from booking ID
+                var conversation = await _unitOfWork.ChatRepository.GetConversationByBookingIdAsync(bookingId);
+                if (conversation == null)
+                {
+                    return (false, "Conversation not found");
+                }
+
+                // Mark all unread messages as read
+                var markedCount = await _unitOfWork.ChatRepository.MarkAllMessagesAsReadAsync(conversation.ConversationId, userId);
+
+                // If any messages were marked as read, notify via SignalR
+                if (markedCount > 0)
+                {
+                    await _chatHubContext.Clients.Group($"booking-{bookingId}")
+                        .SendAsync("AllMessagesRead", userId);
+                }
+
+                return (true, $"{markedCount} messages marked as read");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to mark messages as read: {ex.Message}");
+            }
+        }
+
     }
 }
