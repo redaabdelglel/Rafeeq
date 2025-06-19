@@ -27,8 +27,6 @@ namespace Rafeeq.Controllers
        
         [HttpGet("profile")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserProfileDto))]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetUserProfile()
         {
             var userProfile = await _userProfileService.GetUserProfileAsync(User);
@@ -43,9 +41,6 @@ namespace Rafeeq.Controllers
         [HttpPut("mentee")] 
         [Authorize(Policy = "MenteePolicy")] 
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserProfileDto))]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateMenteeProfile([FromBody] UpdateMenteeProfileDto updateDto)
         {
             if (!ModelState.IsValid)
@@ -67,9 +62,6 @@ namespace Rafeeq.Controllers
         [HttpPut("mentor")] 
         [Authorize(Policy = "MentorPolicy")] 
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserProfileDto))]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateMentorProfile([FromBody] UpdateMentorProfileDto updateDto)
         {
             if (!ModelState.IsValid)
@@ -87,39 +79,34 @@ namespace Rafeeq.Controllers
             return Ok(updatedProfile);
         }
 
-        //[HttpPost("update-photo-by-url")]
-        //[ProducesResponseType(StatusCodes.Status200OK)]
-        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
-        //[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        //public async Task<IActionResult> UpdateProfilePictureByUrl([FromBody] string profilePictureUrl)
-        //{
-        //    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        //    if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-        //    {
-        //        return Unauthorized("User ID not found in token.");
-        //    }
+        [HttpPost("update-photo-by-url")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        public async Task<IActionResult> UpdateProfilePictureByUrl([FromBody] string profilePictureUrl)
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                return Unauthorized("User ID not found in token.");
+            }
 
-        //    if (string.IsNullOrEmpty(profilePictureUrl))
-        //    {
-        //        return BadRequest("Profile picture URL cannot be empty.");
-        //    }
+            if (string.IsNullOrEmpty(profilePictureUrl))
+            {
+                return BadRequest("Profile picture URL cannot be empty.");
+            }
 
-        //    var result = await _userProfileService.UpdateUserProfilePictureAsync(userId, profilePictureUrl);
-        //    if (!result)
-        //    {
-        //        return BadRequest("Failed to update profile picture with URL.");
-        //    }
-        //    return Ok("Profile picture URL updated successfully.");
-        //}
+            var result = await _userProfileService.UpdateUserProfilePictureAsync(userId, profilePictureUrl);
+            if (!result)
+            {
+                return BadRequest("Failed to update profile picture with URL.");
+            }
+            return Ok("Profile picture URL updated successfully.");
+        }
 
-      
+
         [HttpPost("upload-photo")] 
         [Authorize(Policy = "MentorOrMenteePolicy")] 
         [Consumes("multipart/form-data")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))] 
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UploadProfilePictureFile([FromForm] ProfilePictureUploadRequest request)
         {
             if (request == null || request.File == null || request.File.Length == 0)
@@ -165,8 +152,6 @@ namespace Rafeeq.Controllers
 
         [HttpPut("change-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
         {
             if (!ModelState.IsValid)
@@ -192,9 +177,6 @@ namespace Rafeeq.Controllers
         [HttpPut("toggle-mentor-interviewer-status")]
         [Authorize(Policy = "MentorPolicy")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> ToggleMentorInterviewerStatus([FromQuery] bool isInterviewer)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -215,9 +197,6 @@ namespace Rafeeq.Controllers
         [HttpPut("hourly-rate")]
         [Authorize(Policy = "MentorPolicy")]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         public async Task<IActionResult> UpdateHourlyRate([FromQuery] decimal hourlyRate)
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -239,33 +218,5 @@ namespace Rafeeq.Controllers
             return Ok("Hourly rate updated successfully.");
         }
 
-
-        //[HttpGet("mentors/{mentorId}")]
-        //[AllowAnonymous]
-        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(MentorDto))]
-        //[ProducesResponseType(StatusCodes.Status404NotFound)]
-        //public async Task<IActionResult> GetMentorPublicProfile(int mentorId)
-        //{
-        //    var mentor = await _userProfileService.GetMentorPublicProfileAsync(mentorId);
-        //    if (mentor == null)
-        //    {
-        //        return NotFound("Mentor not found or is not active.");
-        //    }
-        //    return Ok(mentor);
-        //}
-
-
-        //[HttpGet("mentors")]
-        //[AllowAnonymous]
-        //[ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<MentorDto>))]
-        //public async Task<IActionResult> GetAllMentors(
-        //    [FromQuery] string? skill,
-        //    [FromQuery] decimal? minRate,
-        //    [FromQuery] decimal? maxRate,
-        //    [FromQuery] int? rating)
-        //{
-        //    var mentors = await _userProfileService.GetAllMentorsAsync(skill, minRate, maxRate, rating);
-        //    return Ok(mentors);
-        //}
     }
 }

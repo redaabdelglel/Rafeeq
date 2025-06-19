@@ -1,18 +1,14 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore; // REQUIRED for Include() and ThenInclude()
-using Microsoft.AspNetCore.Http; // For IFormFile
+using Microsoft.EntityFrameworkCore; 
+using Microsoft.AspNetCore.Http; 
 using Rafeeq.DTOs.Users;
 using Rafeeq.Models;
 using Rafeeq.UnitOfWork;
-using Rafeeq.Helpers; // For PasswordHasher
-using Rafeeq.Repositories.Users;
+using Rafeeq.Helpers; 
 using System.Security.Claims;
-using System.Linq;
-using System.Threading.Tasks;
-using System.IO; // For file operations like Path.Combine, FileStream, Directory.CreateDirectory
-using System; // For Guid
 
-// Ensure these DTOs are correctly referenced if needed for mappings
+
+
 using Rafeeq.DTOs.Skills;
 using Rafeeq.DTOs.Availability;
 
@@ -37,15 +33,14 @@ namespace Rafeeq.Services.UserProfile
                 return null;
             }
 
-            // --- CRUCIAL FIX: Ensure ALL nested navigation properties are eagerly loaded ---
-            // This prevents lazy-loading issues that can manifest as AutoMapper errors
+          
             var user = await _unitOfWork.UserRepository.GetQuery()
                                        .Include(u => u.Role)
-                                       .Include(u => u.MentorSkills) // Load the join table
-                                           .ThenInclude(ms => ms.Skill) // Load the actual Skill entity within MentorSkills
-                                       .Include(u => u.MenteeSkills) // Load the join table
-                                           .ThenInclude(mes => mes.Skill) // Load the actual Skill entity within MenteeSkills
-                                       .Include(u => u.Availabilities) // If you need availability, ensure it's loaded
+                                       .Include(u => u.MentorSkills)
+                                           .ThenInclude(ms => ms.Skill) 
+                                       .Include(u => u.MenteeSkills) 
+                                           .ThenInclude(mes => mes.Skill) 
+                                       .Include(u => u.Availabilities) 
                                        .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (user == null)
@@ -53,28 +48,22 @@ namespace Rafeeq.Services.UserProfile
                 return null;
             }
 
-            // Now, when _mapper.Map<UserProfileDto>(user) is called,
-            // the MentorSkills and MenteeSkills collections, and their nested Skill objects,
-            // are guaranteed to be loaded in memory, allowing AutoMapper to map them correctly.
+     
             var userProfileDto = _mapper.Map<UserProfileDto>(user);
 
-            // Populate role-specific fields for display
             if (user.Role?.RoleName == "Mentor")
             {
                 userProfileDto.HourlyRate = user.HourlyRate;
                 userProfileDto.IsInterviewer = user.IsInterviewer;
-                // No need to map MentorSkills here manually if mapping done by AutoMapper Profile
-                // userProfileDto.MentorSkills = user.MentorSkills.Select(ms => _mapper.Map<SkillDto>(ms.Skill)).ToList();
+            
             }
             else if (user.Role?.RoleName == "Mentee")
             {
-                // No need to map MenteeSkills here manually if mapping done by AutoMapper Profile
-                // userProfileDto.MenteeSkills = user.MenteeSkills.Select(ms => _mapper.Map<SkillDto>(ms.Skill)).ToList();
+                userProfileDto.MenteeSkills = user.MenteeSkills.Select(ms => _mapper.Map<SkillDto>(ms.Skill)).ToList();
             }
             return userProfileDto;
         }
 
-        // --- Other methods (Update, Upload, Change Password, etc.) remain unchanged ---
 
         public async Task<bool> UpdateUserProfileAsync(ClaimsPrincipal userClaims, UpdateMenteeProfileDto dto)
         {
@@ -86,7 +75,7 @@ namespace Rafeeq.Services.UserProfile
 
             var user = await _unitOfWork.UserRepository.GetQuery()
                                        .Include(u => u.Role)
-                                       .Include(u => u.MenteeSkills) // Ensure MenteeSkills is loaded for modification
+                                       .Include(u => u.MenteeSkills) 
                                        .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (user == null || user.Role?.RoleName != "Mentee")
@@ -153,7 +142,7 @@ namespace Rafeeq.Services.UserProfile
 
             var user = await _unitOfWork.UserRepository.GetQuery()
                                        .Include(u => u.Role)
-                                       .Include(u => u.MentorSkills) // Ensure MentorSkills is loaded for modification
+                                       .Include(u => u.MentorSkills) 
                                        .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (user == null || user.Role?.RoleName != "Mentor")
@@ -278,7 +267,7 @@ namespace Rafeeq.Services.UserProfile
                 await file.CopyToAsync(stream);
             }
 
-            var baseUrl = "https://localhost:7001"; // Use your actual base URL
+            var baseUrl = "https://localhost:7001"; 
             var fileUrl = $"{baseUrl}/Uploads/ProfilePictures/{fileName}";
 
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
@@ -315,7 +304,6 @@ namespace Rafeeq.Services.UserProfile
             return true;
         }
 
-        // --- User/Mentor Listing/Search Methods (Moved from UserService) ---
         public async Task<Models.User?> GetUserByIdAsync(int userId)
         {
             return await _unitOfWork.UserRepository.GetByIdAsync(userId);

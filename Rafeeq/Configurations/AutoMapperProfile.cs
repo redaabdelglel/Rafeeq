@@ -38,7 +38,6 @@ namespace Rafeeq.Configurations
             CreateMap<User, UserProfileDto>()
                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.RoleName))
-               // FIX: Explicitly project collections. This is less "magic" but often fixes stubborn issues.
                .ForMember(dest => dest.MentorSkills, opt => opt.MapFrom(src =>
                    src.MentorSkills != null
                        ? src.MentorSkills.Select(ms => new SkillDto { Id = ms.SkillId, Name = (ms.Skill != null ? ms.Skill.Name : null) }).ToList()
@@ -47,7 +46,6 @@ namespace Rafeeq.Configurations
                    src.MenteeSkills != null
                        ? src.MenteeSkills.Select(ms => new SkillDto { Id = ms.SkillId ?? 0, Name = (ms.Skill != null ? ms.Skill.Name : null) }).ToList()
                        : new List<SkillDto>()))
-               // Map the simplified 'Skills' list of names
                .ForMember(dest => dest.Skills, opt => opt.MapFrom(src =>
                    (src.IsMentor == true && src.MentorSkills != null)
                        ? src.MentorSkills.Where(ms => ms.Skill != null).Select(ms => ms.Skill.Name).ToList()
@@ -64,42 +62,8 @@ namespace Rafeeq.Configurations
                 .ForMember(destination => destination.PasswordHash, opt =>
                    opt.MapFrom(src => BCrypt.Net.BCrypt.HashPassword(src.Password)))
                .ForMember(destination => destination.ProfilePicture, opt => opt.Condition(src => src.ProfilePicture != null))
-               .ForMember(destination => destination.Bio, opt => opt.Condition(src => src.Bio != null))
-               .ForMember(dest => dest.IsEmailVerified, opt => opt.Ignore())
-               .ForMember(dest => dest.RoleId, opt => opt.Ignore())
-               .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-               .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-               .ForMember(dest => dest.ExternalId, opt => opt.Ignore())
-               .ForMember(dest => dest.ExternalType, opt => opt.Ignore())
-               .ForMember(dest => dest.ExternalToken, opt => opt.Ignore())
-               .ForMember(dest => dest.IsMentor, opt => opt.Ignore())
-               .ForMember(dest => dest.IsInterviewer, opt => opt.Ignore())
-               .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
-               .ForMember(dest => dest.HourlyRate, opt => opt.Ignore())
-               .ForMember(dest => dest.Availabilities, opt => opt.Ignore())
-               .ForMember(dest => dest.BookingMentees, opt => opt.Ignore())
-               .ForMember(dest => dest.BookingMentors, opt => opt.Ignore())
-               .ForMember(dest => dest.ChatMessages, opt => opt.Ignore())
-               .ForMember(dest => dest.MenteeSkills, opt => opt.Ignore()) 
-               .ForMember(dest => dest.MentorSkills, opt => opt.Ignore())
-               .ForMember(dest => dest.Notifications, opt => opt.Ignore())
-               .ForMember(dest => dest.ReviewReviewedUsers, opt => opt.Ignore())
-               .ForMember(dest => dest.ReviewReviewers, opt => opt.Ignore())
-               .ForMember(dest => dest.UserTokens, opt => opt.Ignore())
-               .ForMember(dest => dest.CVs, opt => opt.Ignore())
-               .ForMember(dest => dest.CVComments, opt => opt.Ignore());
-
-
-
-
-
-
-
-
-
-
-
-
+               .ForMember(destination => destination.Bio, opt => opt.Condition(src => src.Bio != null));
+       
 
             // UpdateMentorProfileDto to User
             CreateMap<UpdateMentorProfileDto, User>()
@@ -110,29 +74,8 @@ namespace Rafeeq.Configurations
                .ForMember(destination => destination.ProfilePicture, opt => opt.Condition(src => src.ProfilePicture != null))
                .ForMember(destination => destination.Bio, opt => opt.Condition(src => src.Bio != null))
                .ForMember(destination => destination.HourlyRate, opt => opt.Condition(src => src.HourlyRate.HasValue))
-               .ForMember(destination => destination.IsInterviewer, opt => opt.Condition(src => src.IsInterviewer.HasValue))
-               .ForMember(dest => dest.Availabilities, opt => opt.Ignore())
-               .ForMember(dest => dest.BookingMentees, opt => opt.Ignore())
-               .ForMember(dest => dest.BookingMentors, opt => opt.Ignore())
-               .ForMember(dest => dest.ChatMessages, opt => opt.Ignore())
-               .ForMember(dest => dest.MenteeSkills, opt => opt.Ignore())
-               .ForMember(dest => dest.MentorSkills, opt => opt.Ignore()) 
-               .ForMember(dest => dest.Notifications, opt => opt.Ignore())
-               .ForMember(dest => dest.ReviewReviewedUsers, opt => opt.Ignore())
-               .ForMember(dest => dest.ReviewReviewers, opt => opt.Ignore())
-               .ForMember(dest => dest.UserTokens, opt => opt.Ignore())
-               .ForMember(dest => dest.CVs, opt => opt.Ignore())
-               .ForMember(dest => dest.CVComments, opt => opt.Ignore())
-               .ForMember(dest => dest.IsEmailVerified, opt => opt.Ignore())
-               .ForMember(dest => dest.RoleId, opt => opt.Ignore())
-               .ForMember(dest => dest.IsActive, opt => opt.Ignore())
-               .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-               .ForMember(dest => dest.ExternalId, opt => opt.Ignore())
-               .ForMember(dest => dest.ExternalType, opt => opt.Ignore())
-               .ForMember(dest => dest.ExternalToken, opt => opt.Ignore())
-               .ForMember(dest => dest.IsMentor, opt => opt.Ignore())
-               .ForMember(dest => dest.IsDeleted, opt => opt.Ignore());
-
+               .ForMember(destination => destination.IsInterviewer, opt => opt.Condition(src => src.IsInterviewer.HasValue));
+ 
 
 
 
