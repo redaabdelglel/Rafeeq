@@ -87,30 +87,30 @@ namespace Rafeeq.Controllers
             return Ok(updatedProfile);
         }
 
-        [HttpPost("update-photo-by-url")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        public async Task<IActionResult> UpdateProfilePictureByUrl([FromBody] string profilePictureUrl)
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
-            {
-                return Unauthorized("User ID not found in token.");
-            }
+        //[HttpPost("update-photo-by-url")]
+        //[ProducesResponseType(StatusCodes.Status200OK)]
+        //[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        //public async Task<IActionResult> UpdateProfilePictureByUrl([FromBody] string profilePictureUrl)
+        //{
+        //    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+        //    {
+        //        return Unauthorized("User ID not found in token.");
+        //    }
 
-            if (string.IsNullOrEmpty(profilePictureUrl))
-            {
-                return BadRequest("Profile picture URL cannot be empty.");
-            }
+        //    if (string.IsNullOrEmpty(profilePictureUrl))
+        //    {
+        //        return BadRequest("Profile picture URL cannot be empty.");
+        //    }
 
-            var result = await _userProfileService.UpdateUserProfilePictureAsync(userId, profilePictureUrl);
-            if (!result)
-            {
-                return BadRequest("Failed to update profile picture with URL.");
-            }
-            return Ok("Profile picture URL updated successfully.");
-        }
+        //    var result = await _userProfileService.UpdateUserProfilePictureAsync(userId, profilePictureUrl);
+        //    if (!result)
+        //    {
+        //        return BadRequest("Failed to update profile picture with URL.");
+        //    }
+        //    return Ok("Profile picture URL updated successfully.");
+        //}
 
       
         [HttpPost("upload-photo")] 
@@ -154,7 +154,7 @@ namespace Rafeeq.Controllers
                 {
                     return StatusCode(StatusCodes.Status500InternalServerError, "Failed to upload or save profile picture.");
                 }
-                return Ok(uploadedUrl); 
+                return Ok(uploadedUrl);
             }
             catch (Exception ex)
             {
