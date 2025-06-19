@@ -14,6 +14,7 @@ using Rafeeq.DTOs.Payments;
 using Rafeeq.DTOs.Reviews;
 using Rafeeq.DTOs.CV;
 using Rafeeq.DTOs.Availability;
+using Rafeeq.DTOs.Mentee;
 
 namespace Rafeeq.Configurations
 {
@@ -221,8 +222,20 @@ namespace Rafeeq.Configurations
             .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.DayOfWeek));
 
 
-            
+            // Mentee bookings mapping
+            CreateMap<Booking, MenteeBookingDto>()
+                .ForMember(dest => dest.MentorName,
+                    opt => opt.MapFrom(src => src.Mentor.FullName));
+
+            CreateMap<Booking, MenteeBookingDetailsDto>()
+                .IncludeBase<Booking, MenteeBookingDto>()
+                .ForMember(dest => dest.MentorProfilePicture,
+                    opt => opt.MapFrom(src => src.Mentor.ProfilePicture))
+                .ForMember(dest => dest.MentorBio,
+                    opt => opt.MapFrom(src => src.Mentor.Bio));
+
         }
+    
     }
 }
 

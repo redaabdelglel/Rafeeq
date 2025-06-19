@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Rafeeq.DTOs.Availability;
 
 namespace Rafeeq.Controllers
 {
@@ -154,6 +155,28 @@ namespace Rafeeq.Controllers
                 throw new UnauthorizedAccessException("User ID claim is missing or invalid.");
             }
             return userId;
+        }
+
+        [HttpGet("mentors/{mentorId}")]
+        [ProducesResponseType(typeof(List<AvailableSlotDto>), 200)]
+        [ProducesResponseType(404)]
+        public async Task<IActionResult> GetMentorAvailability(
+            int mentorId,
+            [FromQuery] int daysAhead = 14)
+        {
+            try
+            {
+                var availability = await _unitOfWork.Mentors.GetMentorAvailabilityAsync(mentorId, daysAhead);
+                if (availability == null || !availability.Any())
+                    return NotFound("No availability found for this mentor");
+
+                return Ok(availability);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting availability for mentor {MentorId}", mentorId);
+                return StatusCode(500, "Error retrieving availability");
+            }
         }
     }
 }
