@@ -1,10 +1,15 @@
-﻿// In Controllers/SkillsController.cs
+﻿
+using Microsoft.AspNetCore.Mvc;
+using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using AutoMapper;
 using Rafeeq.DTOs.Skills;
 using Rafeeq.Models;
 using Rafeeq.UnitOfWork;
+using Rafeeq.Services.Skills;
 using System.Collections.Generic;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace Rafeeq.Controllers
@@ -15,11 +20,13 @@ namespace Rafeeq.Controllers
     {
         private readonly UnitOfWorkManager _unitOfWork;
         private readonly IMapper _mapper;
+        private readonly ISkillService _skillService;
 
-        public SkillsController(UnitOfWorkManager unitOfWork, IMapper mapper)
+        public SkillsController(UnitOfWorkManager unitOfWork, IMapper mapper, ISkillService skillService)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
+            _skillService = skillService;
         }
 
         // GET: api/Skills
@@ -95,5 +102,71 @@ namespace Rafeeq.Controllers
 
             return StatusCode(500, "Failed to delete skill");
         }
+        // POST: api/skills/user
+        [HttpPost("user")]
+        [Authorize]
+        public async Task<IActionResult> AddSkillToUser([FromBody] AddSkillDto addSkillDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            if (userId == 0)
+            {
+                return Unauthorized(new { success = false, message = "User not authenticated properly" });
+            }
+
+            var success = await _skillService.AddSkillToUserAsync(userId, addSkillDto.SkillId);
+
+            if (!success)
+            {
+                return BadRequest(new { success = false, message = "Failed to add skill to user. The skill might not exist." });
+            }
+
+            // Get updated skills list
+            var skills = await _skillService.GetUserSkillsAsync(userId);
+            return Ok(new { success = true, message = "Skill added successfully to user", skills });
+        }
+
+        // DELETE: api/skills/user/{skillId}
+        [HttpDelete("user/{skillId}")]
+        [Authorize]
+        public async Task<IActionResult> RemoveSkillFromUser(int skillId)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            if (userId == 0)
+            {
+                return Unauthorized(new { success = false, message = "User not authenticated properly" });
+            }
+
+            var success = await _skillService.RemoveSkillFromUserAsync(userId, skillId);
+
+            if (!success)
+            {
+                return BadRequest(new { success = false, message = "Failed to remove skill from user. The skill might not be associated with the user." });
+            }
+
+            // Get updated skills list
+            var skills = await _skillService.GetUserSkillsAsync(userId);
+            return Ok(new { success = true, message = "Skill removed successfully from user", skills });
+        }
+
+        // GET: api/skills/user
+        [HttpGet("user")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<UserSkillDto>>> GetUserSkills()
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            if (userId == 0)
+            {
+                return Unauthorized(new { success = false, message = "User not authenticated properly" });
+            }
+
+            var skills = await _skillService.GetUserSkillsAsync(userId);
+            return Ok(new { success = true, data = skills });
+        }
     }
 }
+  

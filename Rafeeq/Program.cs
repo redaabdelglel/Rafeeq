@@ -110,12 +110,10 @@ builder.Services.AddHttpClient();
 // Register UnitOfWork
 builder.Services.AddScoped<UnitOfWorkManager>();
 
-////
-// configuration for Google Meet settings
-builder.Services.Configure<GoogleMeetSettings>(builder.Configuration.GetSection("GoogleMeetSettings"));
 
-// Register Google Meet service
-builder.Services.AddScoped<IGoogleMeetService, GoogleMeetService>();
+// google meet
+builder.Services.AddGoogleMeetConfiguration(builder.Configuration);
+
 
 // Register repositories
 builder.Services.AddScoped<IMenteeBookingRepository, MenteeBookingRepository>();
