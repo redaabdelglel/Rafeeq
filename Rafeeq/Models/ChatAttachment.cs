@@ -14,6 +14,8 @@ public partial class ChatAttachment
     public int AttachmentId { get; set; }
 
     public int? MessageId { get; set; }
+    public bool IsVoiceMessage { get; set; } = false;
+
 
     [Required]
     [StringLength(255)]
