@@ -207,14 +207,17 @@ namespace Rafeeq.Repositories.Bookings
                 .Include(b => b.Mentee)
                 .FirstOrDefaultAsync(b => b.BookingId == bookingId && b.IsDeleted != true);
         }
-        
+
+        // Get all bookings for a user (either as mentor or mentee)
         public async Task<IEnumerable<Booking>> GetBookingsForUserAsync(int userId)
         {
             return await _context.Bookings
-                .Where(b => (b.MentorId == userId || b.MenteeId == userId) &&
-                           !b.IsDeleted.GetValueOrDefault(false))
+                .Include(b => b.Mentor)
+                .Include(b => b.Mentee)
+                .Where(b => (b.MentorId == userId || b.MenteeId == userId) && b.IsDeleted == false)
                 .ToListAsync();
         }
+
 
     }
 }

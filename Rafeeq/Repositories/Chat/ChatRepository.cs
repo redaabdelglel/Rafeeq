@@ -259,6 +259,21 @@ namespace Rafeeq.Repositories.Chat
         {
             _context.ChatConversations.Update(conversation);
         }
+        // Create a new chat conversation
+        public async Task<ChatConversation> CreateConversationAsync(ChatConversation conversation)
+        {
+            await _context.ChatConversations.AddAsync(conversation);
+            await _context.SaveChangesAsync();
+            return conversation;
+        }
+
+        // Update an existing chat conversation
+        public async Task<bool> UpdateConversationAsync(ChatConversation conversation)
+        {
+            _context.ChatConversations.Update(conversation);
+            await _context.SaveChangesAsync();
+            return true;
+        }
 
 
     }

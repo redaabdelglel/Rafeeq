@@ -14,12 +14,18 @@ namespace Rafeeq.Hubs
     {
         private readonly UnitOfWorkManager _unitOfWork;
         private readonly ChatService _chatService;
+        private readonly ILogger<ChatHub> _logger;
 
-        public ChatHub(UnitOfWorkManager unitOfWork, ChatService chatService)
+        public ChatHub(
+     UnitOfWorkManager unitOfWork,
+     ChatService chatService,
+     ILogger<ChatHub> logger)
         {
             _unitOfWork = unitOfWork;
             _chatService = chatService;
+            _logger = logger;
         }
+
 
         // No longer needed as we'll use the ChatService for message sending
         // public async Task SendMessage(int bookingId, string message, int senderId)
@@ -160,33 +166,7 @@ namespace Rafeeq.Hubs
         private static readonly ConcurrentDictionary<string, List<string>> _userConnectionMap =
             new ConcurrentDictionary<string, List<string>>();
 
-        public override async Task OnConnectedAsync()
-        {
-            // Get user ID from claims
-            var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!string.IsNullOrEmpty(userId))
-            {
-                // Add connection to user's connections list
-                _userConnectionMap.AddOrUpdate(
-                    userId,
-                    new List<string> { Context.ConnectionId },
-                    (key, existingList) =>
-                    {
-                        existingList.Add(Context.ConnectionId);
-                        return existingList;
-                    });
-
-                // Broadcast user's online status to relevant conversations
-                var bookings = await _unitOfWork.BookingRepository.GetBookingsForUserAsync(int.Parse(userId));
-                foreach (var booking in bookings)
-                {
-                    await Clients.Group($"booking-{booking.BookingId}").SendAsync("UserOnline", userId);
-                }
-            }
-
-            await base.OnConnectedAsync();
-        }
-
+        
         public override async Task OnDisconnectedAsync(Exception exception)
         {
             // Get user ID from claims
@@ -228,6 +208,54 @@ namespace Rafeeq.Hubs
             }
             return false;
         }
+        // In ChatHub.cs, add better error handling
+        public override async Task OnConnectedAsync()
+        {
+            try
+            {
+                // Get user ID from claims
+                var userId = Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    // Add connection to user's connections list
+                    _userConnectionMap.AddOrUpdate(
+                        userId,
+                        new List<string> { Context.ConnectionId },
+                        (key, existingList) =>
+                        {
+                            existingList.Add(Context.ConnectionId);
+                            return existingList;
+                        });
+
+                    // Log successful connection
+                    _logger.LogInformation($"User {userId} connected with connectionId {Context.ConnectionId}");
+
+                    // Broadcast user's online status to relevant conversations
+                    var bookings = await _unitOfWork.BookingRepository.GetBookingsForUserAsync(int.Parse(userId));
+                    foreach (var booking in bookings)
+                    {
+                        await Clients.Group($"booking-{booking.BookingId}").SendAsync("UserOnline", userId);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning($"Connection attempt without user ID: {Context.ConnectionId}");
+                }
+
+                await base.OnConnectedAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error in OnConnectedAsync: {ex.Message}");
+                await base.OnConnectedAsync();
+            }
+        }
+        // This should be in ChatHub.cs
+        public static int GetConnectionCount()
+        {
+            return _userConnectionMap?.Count ?? 0;
+        }
+
 
     }
 }

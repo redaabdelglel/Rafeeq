@@ -106,10 +106,37 @@ namespace Rafeeq.Services.Chat
                     return (false, "You don't have permission to send messages in this chat", null);
                 }
 
-                // Create new message
+                // Check if conversation already exists, create if not
+                var conversation = await _unitOfWork.ChatRepository.GetConversationByBookingIdAsync(dto.BookingId);
+                if (conversation == null)
+                {
+                    // Get booking details to create conversation
+                    var booking = await _unitOfWork.BookingRepository.GetBookingWithParticipantsAsync(dto.BookingId);
+                    if (booking == null)
+                    {
+                        return (false, "Booking not found", null);
+                    }
+
+                    // Create new conversation
+                    conversation = new ChatConversation
+                    {
+                        BookingId = dto.BookingId,
+                        MentorId = booking.MentorId,
+                        MenteeId = booking.MenteeId,
+                        LastMessageAt = DateTime.UtcNow,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow
+                    };
+
+                    // Save the new conversation
+                    conversation = await _unitOfWork.ChatRepository.CreateConversationAsync(conversation);
+                }
+
+                // Create new message with conversation ID
                 var message = new ChatMessage
                 {
                     BookingId = dto.BookingId,
+                    ConversationId = conversation.ConversationId, // Link to conversation
                     SenderId = senderId,
                     MessageText = dto.MessageText,
                     IsRead = false,
@@ -118,6 +145,10 @@ namespace Rafeeq.Services.Chat
 
                 // Save to database
                 var savedMessage = await _unitOfWork.ChatRepository.AddMessageAsync(message);
+
+                // Update conversation's LastMessageAt
+                conversation.LastMessageAt = message.SentAt;
+                await _unitOfWork.ChatRepository.UpdateConversationAsync(conversation);
 
                 // Get the complete message with sender details
                 var completeMessage = await _unitOfWork.ChatRepository.GetMessageByIdAsync(savedMessage.MessageId);
@@ -136,6 +167,7 @@ namespace Rafeeq.Services.Chat
                 return (false, $"Failed to send message: {ex.Message}", null);
             }
         }
+
 
         // Mark message as read
         public async Task<(bool Success, string Message)> MarkMessageAsReadAsync(int messageId, int userId)
@@ -822,6 +854,61 @@ namespace Rafeeq.Services.Chat
             catch (Exception ex)
             {
                 return (false, $"Failed to get online status: {ex.Message}", null);
+            }
+        }
+
+        public async Task<(bool Success, string Message, IEnumerable<ChatConversationDto> Data)> GetBookingsAsPotentialConversationsAsync(int userId)
+        {
+            try
+            {
+                // Get all bookings for this user (either as mentor or mentee)
+                var bookings = await _unitOfWork.BookingRepository.GetBookingsForUserAsync(userId);
+                if (bookings == null || !bookings.Any())
+                {
+                    return (true, "No bookings found", new List<ChatConversationDto>());
+                }
+
+                var conversationDtos = new List<ChatConversationDto>();
+
+                foreach (var booking in bookings)
+                {
+                    // Check if there's already a conversation for this booking
+                    var existingConversation = await _unitOfWork.ChatRepository.GetConversationByBookingIdAsync(booking.BookingId);
+                    if (existingConversation != null)
+                    {
+                        continue; // Skip if conversation already exists
+                    }
+
+                    // Create a potential conversation DTO with null-safe operations
+                    var conversationDto = new ChatConversationDto
+                    {
+                        ConversationId = 0, // Will be created when first message is sent
+                        BookingId = booking.BookingId,
+                        MentorId = booking.MentorId.GetValueOrDefault(),
+                        MentorName = booking.Mentor?.FullName ?? "Unknown Mentor",
+                        MentorProfilePicture = booking.Mentor?.ProfilePicture ?? "",
+                        MenteeId = booking.MenteeId.GetValueOrDefault(),
+                        MenteeName = booking.Mentee?.FullName ?? "Unknown Mentee",
+                        MenteeProfilePicture = booking.Mentee?.ProfilePicture ?? "",
+                        // Use null-conditional operator with coalesce to avoid issues with nullable DateTime
+                        LastMessageAt = booking.StartDateTime ?? DateTime.UtcNow,
+                        IsActive = true,
+                        CreatedAt = booking.CreatedAt ?? DateTime.UtcNow,
+                        UnreadCount = 0,
+                        // Add the session type from booking
+                        SessionType = booking.SessionType ?? "Mentorship", // Default to "Mentorship" if null
+                        SessionStatus = booking.Status ?? "Pending" // Include status as well
+                                                                    // LastMessage will be null
+                    };
+
+                    conversationDtos.Add(conversationDto);
+                }
+
+                return (true, "Potential conversations retrieved successfully", conversationDtos);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to get potential conversations: {ex.Message}", null);
             }
         }
 

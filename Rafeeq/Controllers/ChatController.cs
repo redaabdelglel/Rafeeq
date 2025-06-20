@@ -8,6 +8,8 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
+using Rafeeq.Hubs;
+using Microsoft.AspNetCore.SignalR;
 
 
 namespace Rafeeq.Controllers
@@ -20,16 +22,22 @@ namespace Rafeeq.Controllers
         private readonly ChatService _chatService;
         private readonly ILogger<ChatController> _logger;
         private readonly IWebHostEnvironment _hostingEnvironment;
+        private readonly IHubContext<ChatHub> _chatHubContext;
+
+
+
 
 
         public ChatController(
     ChatService chatService,
     ILogger<ChatController> logger,
-    IWebHostEnvironment hostingEnvironment)
+    IWebHostEnvironment hostingEnvironment,
+    IHubContext<ChatHub> chatHubContext) // Add this parameter
         {
             _chatService = chatService;
             _logger = logger;
             _hostingEnvironment = hostingEnvironment;
+            _chatHubContext = chatHubContext; // Initialize the field
         }
 
 
@@ -554,6 +562,49 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred while getting online status", error = ex.Message });
             }
         }
+
+        // GET: api/chat/potential-conversations
+        [HttpGet("potential-conversations")]
+        public async Task<IActionResult> GetPotentialConversations()
+        {
+            try
+            {
+                // Get user ID from claims
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                if (userId == 0)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
+                }
+
+                var result = await _chatService.GetBookingsAsPotentialConversationsAsync(userId);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+
+                return Ok(new { success = true, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting potential conversations");
+                return StatusCode(500, new { success = false, message = "An error occurred while retrieving potential conversations", error = ex.Message });
+            }
+        }
+        [HttpGet("debug/signalr-status")]
+        public IActionResult GetSignalRStatus()
+        {
+            bool isConfigured = _chatHubContext != null;
+
+            return Ok(new
+            {
+                success = true,
+                isHubConfigured = isConfigured,
+                hubAvailable = "SignalR hub context is available",
+                serverTime = DateTime.UtcNow
+            });
+        }
+
 
 
 
