@@ -200,7 +200,7 @@ namespace Rafeeq.Configurations
 
             CreateMap<CreateCVCommentDTO, CVComment>();
 
-           
+
             CreateMap<Availability, AvailabilityDto>()
                 .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.DayOfWeek));
 
@@ -237,6 +237,27 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.ResponseDate, opt => opt.MapFrom(src => src.ResponseDate))
                 .ForMember(dest => dest.ResponseMessage, opt => opt.MapFrom(src => src.ResponseMessage))
                 .ForMember(dest => dest.ResponderName, opt => opt.MapFrom(src => src.Responder != null ? src.Responder.FullName : null));
+
+            
+            CreateMap<ChatConversation, ChatConversationDto>()
+                .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName))
+                .ForMember(dest => dest.MentorProfilePicture, opt => opt.MapFrom(src => src.Mentor.ProfilePicture))
+                .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Mentee.FullName))
+                .ForMember(dest => dest.MenteeProfilePicture, opt => opt.MapFrom(src => src.Mentee.ProfilePicture))
+                .ForMember(dest => dest.LastMessage, opt => opt.Ignore())
+                .ForMember(dest => dest.UnreadCount, opt => opt.Ignore());
+
+            // Update the existing ChatMessage to ChatMessageDto mapping
+            CreateMap<ChatMessage, ChatMessageDto>()
+                .ForMember(dest => dest.SenderName, opt => opt.MapFrom(src => src.Sender.FullName))
+                .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.Sender.ProfilePicture))
+                .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.ChatAttachments))
+                .ForMember(dest => dest.ReadByUserIds, opt => opt.MapFrom(src =>
+                    src.ReadStatuses.Select(rs => rs.UserId.ToString())));
+
+            CreateMap<MessageReadStatus, string>()
+                .ConvertUsing(src => src.UserId.ToString());
+
         }
     
     }
