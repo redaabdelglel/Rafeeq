@@ -13,6 +13,9 @@ namespace Rafeeq.Repositories.RepositoryBase
         void Remove(T entity);
         void RemoveRange(IEnumerable<T> entities);
         void Update(T entity);
-        Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType);
+
+
+        IQueryable<T> GetQuery();
+        //Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType);
     }
 }
