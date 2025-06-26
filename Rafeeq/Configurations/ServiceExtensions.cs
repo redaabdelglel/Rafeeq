@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Configuration;
 using Rafeeq.Services.Admin;
 using Rafeeq.Services.Auth;
 using Rafeeq.Services.Users;
@@ -13,8 +14,6 @@ using Rafeeq.Services.CV;
 using Rafeeq.Repositories.Auth;
 using Rafeeq.Repositories.RepositoryBase;
 using Rafeeq.Repositories.Users;
-using Microsoft.Extensions.Configuration;
-using Rafeeq.Configurations;
 using Rafeeq.Services.Contact;
 using Rafeeq.Services.UserProfile;
 
@@ -28,6 +27,7 @@ namespace Rafeeq.Configurations
             services.AddScoped(typeof(IRepositoryBase<>), typeof(RepositoryBase<>)); // Generic base repository
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<IUserTokenRepository, UserTokenRepository>(); // Added for Auth
+
             // Auth Services
             services.AddScoped<AuthService>();
             services.AddScoped<JwtService>();
@@ -36,15 +36,14 @@ namespace Rafeeq.Configurations
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IEmailService, EmailService>();
-            // User Services
 
             // UserProfile Services
             services.AddScoped<UserProfileService>(); 
             services.AddScoped<IUserProfileService, UserProfileService>(); 
 
+            // User Services
             services.AddScoped<UserService>();
             services.AddScoped<IUserService, UserService>();
-
             services.AddScoped<MentorService>();
 
             // Core Feature Services
@@ -53,14 +52,12 @@ namespace Rafeeq.Configurations
             services.AddScoped<AvailabilityService>();
             services.AddScoped<BookingService>();
             services.AddScoped<MeetingService>();
+            services.AddScoped<GoogleMeetService>();  
             services.AddScoped<PaymentService>();
             services.AddScoped<StripeService>();
             services.AddScoped<ChatService>();
             services.AddScoped<ReviewService>();
             services.AddScoped<NotificationService>();
-            
-            
-
 
             // Admin Services
             services.AddScoped<AdminService>();
@@ -68,17 +65,23 @@ namespace Rafeeq.Configurations
             // CV Services
             services.AddScoped<CVService>();
 
-
-            // Chat  services 
+            // Chat services 
             services.AddScoped<SignalRService>();
 
             return services;
         }
 
-        //  Stripe configuration
+        // Stripe configuration
         public static IServiceCollection AddStripeConfiguration(this IServiceCollection services, IConfiguration configuration)
         {
             services.Configure<StripeSettings>(configuration.GetSection("StripeSettings"));
+            return services;
+        }
+
+        // Google Meet configuration
+        public static IServiceCollection AddGoogleMeetConfiguration(this IServiceCollection services, IConfiguration configuration)
+        {
+            services.Configure<GoogleMeetSettings>(configuration.GetSection("GoogleMeetSettings"));
             return services;
         }
     }

@@ -37,9 +37,23 @@ namespace Rafeeq.Repositories.Chat
             return await _context.ChatAttachments.FindAsync(attachmentId);
         }
 
-        // Check if attachment belongs to a message that belongs to a booking for this user
+        // Check if user is authorized to access attachment
         public async Task<bool> IsUserAuthorizedForAttachmentAsync(int attachmentId, int userId)
         {
+            // Try to get authorization via the conversation first (new schema)
+            var attachmentWithConversation = await _context.ChatAttachments
+                .Include(a => a.Message)
+                    .ThenInclude(m => m.Conversation)
+                .FirstOrDefaultAsync(a => a.AttachmentId == attachmentId);
+
+            // If conversation exists, check authorization through it
+            if (attachmentWithConversation?.Message?.Conversation != null)
+            {
+                return attachmentWithConversation.Message.Conversation.MentorId == userId ||
+                       attachmentWithConversation.Message.Conversation.MenteeId == userId;
+            }
+
+            // Fallback to the old method (through BookingId) for backward compatibility
             var attachment = await _context.ChatAttachments
                 .Include(a => a.Message)
                 .FirstOrDefaultAsync(a => a.AttachmentId == attachmentId);
@@ -53,5 +67,7 @@ namespace Rafeeq.Repositories.Chat
 
             return booking != null;
         }
+
+
     }
 }

@@ -124,9 +124,100 @@ namespace Rafeeq.Repositories.Bookings
         {
             booking.UpdatedAt = DateTime.UtcNow;
             _context.Bookings.Update(booking);
-            
+
+        }
+       
+
+        // Get upcoming bookings for mentor
+        public async Task<IEnumerable<Booking>> GetUpcomingMentorBookingsAsync(int mentorId)
+        {
+            var currentTime = DateTime.UtcNow;
+            return await _context.Bookings
+                .Include(b => b.Mentor)
+                .Include(b => b.Mentee)
+                .Where(b => b.MentorId == mentorId
+                        && b.IsDeleted != true
+                        && b.StartDateTime > currentTime
+                        && (b.Status == "Confirmed" || b.Status == "Pending"))
+                .OrderBy(b => b.StartDateTime)
+                .ToListAsync();
         }
 
-    
+        // Get completed bookings for mentor
+        public async Task<IEnumerable<Booking>> GetCompletedMentorBookingsAsync(int mentorId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Mentor)
+                .Include(b => b.Mentee)
+                .Where(b => b.MentorId == mentorId
+                        && b.IsDeleted != true
+                        && b.Status == "Completed")
+                .OrderByDescending(b => b.EndDateTime)
+                .ToListAsync();
+        }
+
+        // Get upcoming bookings for mentee 
+        public async Task<IEnumerable<Booking>> GetUpcomingMenteeBookingsAsync(int menteeId)
+        {
+            var currentTime = DateTime.UtcNow;
+            return await _context.Bookings
+                .Include(b => b.Mentor)
+                .Include(b => b.Mentee)
+                .Where(b => b.MenteeId == menteeId
+                        && b.IsDeleted != true
+                        && b.StartDateTime > currentTime
+                        && (b.Status == "Confirmed" || b.Status == "Pending"))
+                .OrderBy(b => b.StartDateTime)
+                .ToListAsync();
+        }
+
+        // Get completed bookings for mentee
+        public async Task<IEnumerable<Booking>> GetCompletedMenteeBookingsAsync(int menteeId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Mentor)
+                .Include(b => b.Mentee)
+                .Where(b => b.MenteeId == menteeId
+                        && b.IsDeleted != true
+                        && b.Status == "Completed")
+                .OrderByDescending(b => b.EndDateTime)
+                .ToListAsync();
+        }
+
+        // Check for overlapping bookings (excluding current booking)
+        public async Task<bool> HasOverlappingBookingsAsync(
+            int mentorId, DateTime startDateTime, DateTime endDateTime, int excludeBookingId = 0)
+        {
+            return await _context.Bookings
+                .AnyAsync(b => b.MentorId == mentorId
+                          && b.BookingId != excludeBookingId
+                          && b.IsDeleted != true
+                          && b.Status != "Cancelled"
+                          && ((startDateTime <= b.StartDateTime && b.StartDateTime < endDateTime) ||
+                              (startDateTime < b.EndDateTime && b.EndDateTime <= endDateTime) ||
+                              (b.StartDateTime <= startDateTime && endDateTime <= b.EndDateTime)));
+        }
+
+
+        
+        public async Task<Booking> GetBookingWithParticipantsAsync(int bookingId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Mentor)
+                .Include(b => b.Mentee)
+                .FirstOrDefaultAsync(b => b.BookingId == bookingId && b.IsDeleted != true);
+        }
+
+        // Get all bookings for a user (either as mentor or mentee)
+        public async Task<IEnumerable<Booking>> GetBookingsForUserAsync(int userId)
+        {
+            return await _context.Bookings
+                .Include(b => b.Mentor)
+                .Include(b => b.Mentee)
+                .Where(b => (b.MentorId == userId || b.MenteeId == userId) && b.IsDeleted == false)
+                .ToListAsync();
+        }
+
+
     }
 }

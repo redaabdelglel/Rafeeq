@@ -48,7 +48,7 @@ namespace Rafeeq.Controllers
             }
         }
 
-        // Add a test endpoint that doesn't require specific permissions
+      
         [HttpGet("test")]
         public IActionResult Test()
         {
