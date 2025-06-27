@@ -19,7 +19,7 @@ namespace Rafeeq.Controllers
         }
         // GET: api/reviews/mentor/{mentorid}
         [HttpGet("mentor/{id}")]
-        public async Task<ActionResult<IEnumerable<ReviewDto>>> GetMentorReviews(int id)
+        public async Task<ActionResult<IEnumerable<ReviewDateDto>>> GetMentorReviews(int id)
         {
             if (id <= 0)
             {
@@ -34,11 +34,11 @@ namespace Rafeeq.Controllers
             }
 
 
-            return Ok(_mapper.Map<IEnumerable<ReviewDto>>(reviews));
+            return Ok(_mapper.Map<IEnumerable<ReviewDateDto>>(reviews));
         }
         // GET: api/reviews/mentee/{menteeid}
         [HttpGet("mentee/{id}")]
-        public async Task<ActionResult<IEnumerable<ReviewDto>>> GetMenteeReviews(int id)
+        public async Task<ActionResult<IEnumerable<ReviewDateDto>>> GetMenteeReviews(int id)
         {
             if (id <= 0)
             {
@@ -49,7 +49,7 @@ namespace Rafeeq.Controllers
             {
                 return NotFound("No reviews found for this mentee.");
             }
-            return Ok(_mapper.Map<IEnumerable<ReviewDto>>(reviews));
+            return Ok(_mapper.Map<IEnumerable<ReviewDateDto>>(reviews));
 
         }
     }

@@ -161,12 +161,10 @@ namespace Rafeeq.Configurations
     .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
     .ForMember(dest => dest.HourlyRate, opt => opt.MapFrom(src => src.HourlyRate));
 
-            //review mapping
-                //CreateMap<Review, ReviewDto>()
 
-                //.ForMember(dest => dest.ReviewerName, op => op.MapFrom(src => src.Reviewer.FullName))
-                // .ForMember(dest => dest.ReviewedUserName, op => op.MapFrom(src => src.Reviewer.FullName)).ReverseMap();
 
+            //review mapping mentor and mentee
+            CreateMap<Review, ReviewDateDto>().ReverseMap();
         }
     }
 }
