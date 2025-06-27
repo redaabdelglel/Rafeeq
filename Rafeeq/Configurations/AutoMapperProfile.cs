@@ -241,6 +241,11 @@ namespace Rafeeq.Configurations
 
             CreateMap<MessageReadStatus, string>()
                 .ConvertUsing(src => src.UserId.ToString());
+            
+
+            CreateMap<MessageReaction, MessageReactionInfoDto>()
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName));
+
 
         }
     }

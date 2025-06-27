@@ -605,7 +605,35 @@ namespace Rafeeq.Controllers
             });
         }
 
+        
 
+       
+        [HttpGet("messages/{messageId}/reactions")]
+        public async Task<IActionResult> GetMessageReactions(int messageId)
+        {
+            try
+            {
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                if (userId == 0)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
+                }
+
+                var result = await _chatService.GetMessageReactionsAsync(messageId, userId);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+
+                return Ok(new { success = true, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error getting reactions for message {messageId}");
+                return StatusCode(500, new { success = false, message = "An error occurred while retrieving reactions", error = ex.Message });
+            }
+        }
 
 
     }

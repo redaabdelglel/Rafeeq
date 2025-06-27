@@ -256,6 +256,39 @@ namespace Rafeeq.Hubs
             return _userConnectionMap?.Count ?? 0;
         }
 
+        // Add to ChatHub.cs
+        public async Task RequestMoreMessages(int bookingId, int page, int pageSize)
+        {
+            try
+            {
+                // Get user ID from claims
+                var userId = int.Parse(Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                if (userId == 0) return;
+
+                // Verify user is authorized to join this booking chat
+                var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(bookingId, userId);
+                if (!isAuthorized) return;
+
+                // Get messages through the chat service
+                var result = await _chatService.GetChatHistoryAsync(bookingId, userId, page, pageSize);
+
+                if (result.Success)
+                {
+                    // Send the messages only to the requesting client
+                    await Clients.Caller.SendAsync("ReceiveMoreMessages", result.Data, new
+                    {
+                        currentPage = page,
+                        pageSize = pageSize,
+                        totalItems = result.TotalMessages,
+                        totalPages = (int)Math.Ceiling(result.TotalMessages / (double)pageSize)
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error requesting more messages for booking {bookingId}");
+            }
+        }
 
     }
 }

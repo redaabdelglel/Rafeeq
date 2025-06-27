@@ -911,6 +911,60 @@ namespace Rafeeq.Services.Chat
                 return (false, $"Failed to get potential conversations: {ex.Message}", null);
             }
         }
+        // Update in ChatService.cs
+        public async Task<(bool Success, string Message, IEnumerable<ChatMessageDto> Data, int TotalMessages)> GetChatHistoryAsync(
+            int bookingId, int userId, int page = 1, int pageSize = 20)
+        {
+            // Check if user is part of the booking
+            var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(bookingId, userId);
+            if (!isAuthorized)
+            {
+                return (false, "You don't have permission to view this chat", null, 0);
+            }
+
+            // Get paginated messages
+            var result = await _unitOfWork.ChatRepository.GetMessagesByBookingIdWithPaginationAsync(bookingId, page, pageSize);
+            var messages = result.Messages;
+            var totalCount = result.TotalCount;
+
+            // Map to DTOs
+            var messageDtos = _mapper.Map<IEnumerable<ChatMessageDto>>(messages);
+
+            return (true, "Chat history retrieved successfully", messageDtos, totalCount);
+        }
+        // Add to ChatService.cs
+        public async Task<(bool Success, string Message, IEnumerable<MessageReactionInfoDto> Data)>
+            GetMessageReactionsAsync(int messageId, int userId)
+        {
+            try
+            {
+                // Get the message
+                var message = await _unitOfWork.ChatRepository.GetMessageByIdAsync(messageId);
+                if (message == null)
+                {
+                    return (false, "Message not found", null);
+                }
+
+                // Check if user is authorized to see reactions
+                var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(message.BookingId.Value, userId);
+                if (!isAuthorized)
+                {
+                    return (false, "You don't have permission to view reactions for this message", null);
+                }
+
+                // Get reactions
+                var reactions = await _unitOfWork.ChatRepository.GetReactionsForMessageAsync(messageId);
+
+                // Map to DTOs
+                var reactionDtos = _mapper.Map<IEnumerable<MessageReactionInfoDto>>(reactions);
+
+                return (true, "Message reactions retrieved successfully", reactionDtos);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to get message reactions: {ex.Message}", null);
+            }
+        }
 
 
     }

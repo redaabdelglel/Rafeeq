@@ -241,7 +241,7 @@ public partial class RafeeqContext : DbContext
         modelBuilder.Entity<MessageReadStatus>(entity =>
         {
             entity.HasKey(e => e.ReadStatusId).HasName("PK__MessageR__B19EAD9154C14476");
-            entity.ToTable("MessageReadStatus"); // Add this line to specify the table name
+            entity.ToTable("MessageReadStatus"); 
 
             entity.Property(e => e.ReadAt).HasDefaultValueSql("(getdate())");
 
