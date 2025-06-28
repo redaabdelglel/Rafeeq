@@ -241,6 +241,7 @@ public partial class RafeeqContext : DbContext
         modelBuilder.Entity<MessageReadStatus>(entity =>
         {
             entity.HasKey(e => e.ReadStatusId).HasName("PK__MessageR__B19EAD9154C14476");
+            entity.ToTable("MessageReadStatus"); 
 
             entity.Property(e => e.ReadAt).HasDefaultValueSql("(getdate())");
 
@@ -250,6 +251,7 @@ public partial class RafeeqContext : DbContext
             entity.HasOne(d => d.User).WithMany()
                 .HasConstraintName("FK__MessageRe__UserI__XXXXX");
         });
+
 
         OnModelCreatingPartial(modelBuilder);
     }
