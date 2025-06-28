@@ -252,26 +252,25 @@ public partial class RafeeqContext : DbContext
         });
         modelBuilder.Entity<Article>(entity =>
         {
-            entity.HasKey(e => e.ArticleId).HasName("PK_Articles_9C6C4A03XXXXXXXX");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.HasKey(e => e.ArticleId);
             entity.Property(e => e.IsPublished).HasDefaultValue(true);
             entity.Property(e => e.ViewCount).HasDefaultValue(0);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
 
             entity.HasOne(d => d.Author)
-                .WithMany(p => p.Articles)
-                .HasConstraintName("FK_ArticlesAuthor_XXXXXXXX");
+                  .WithMany(p => p.Articles)
+                  .HasForeignKey(d => d.AuthorId)
+                  .OnDelete(DeleteBehavior.NoAction);
         });
 
-        // Configure FAQ entity
-        modelBuilder.Entity<FAQ>(entity =>
+        modelBuilder.Entity<FAQ>(entity => 
         {
-            entity.HasKey(e => e.FAQId).HasName("PK_FAQ_7ED977F4XXXXXXXX");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.ToTable("FAQ"); 
+            entity.HasKey(e => e.FAQId);
+            entity.Property(e => e.SortOrder).HasDefaultValue(0);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.ViewCount).HasDefaultValue(0);
-            entity.Property(e => e.SortOrder).HasDefaultValue(0);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
         });
 
 
