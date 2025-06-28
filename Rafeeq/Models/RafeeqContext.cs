@@ -50,7 +50,8 @@ public partial class RafeeqContext : DbContext
     public virtual DbSet<ChatConversation> ChatConversations { get; set; }
     public virtual DbSet<MessageReadStatus> MessageReadStatuses { get; set; }
     public virtual DbSet<MessageReaction> MessageReactions { get; set; }
-
+    public virtual DbSet<Article> Articles { get; set; }
+    public virtual DbSet<FAQ> FAQs { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -241,7 +242,7 @@ public partial class RafeeqContext : DbContext
         modelBuilder.Entity<MessageReadStatus>(entity =>
         {
             entity.HasKey(e => e.ReadStatusId).HasName("PK__MessageR__B19EAD9154C14476");
-            entity.ToTable("MessageReadStatus"); 
+            entity.ToTable("MessageReadStatus");
 
             entity.Property(e => e.ReadAt).HasDefaultValueSql("(getdate())");
 
@@ -251,6 +252,30 @@ public partial class RafeeqContext : DbContext
             entity.HasOne(d => d.User).WithMany()
                 .HasConstraintName("FK__MessageRe__UserI__XXXXX");
         });
+        modelBuilder.Entity<Article>(entity =>
+        {
+            entity.HasKey(e => e.ArticleId).HasName("PK__Articles__9C6C4A03XXXXXXXX");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsPublished).HasDefaultValue(true);
+            entity.Property(e => e.ViewCount).HasDefaultValue(0);
+
+            entity.HasOne(d => d.Author)
+                .WithMany(p => p.Articles)
+                .HasConstraintName("FK__Articles__Author__XXXXXXXX");
+        });
+
+        // Configure FAQ entity
+        modelBuilder.Entity<FAQ>(entity =>
+        {
+            entity.HasKey(e => e.FAQId).HasName("PK__FAQ__7ED977F4XXXXXXXX");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.ViewCount).HasDefaultValue(0);
+            entity.Property(e => e.SortOrder).HasDefaultValue(0);
+        });
+
 
 
         OnModelCreatingPartial(modelBuilder);

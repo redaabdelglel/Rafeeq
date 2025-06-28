@@ -90,7 +90,12 @@ public partial class User
 
     [InverseProperty("User")]
     public virtual ICollection<UserToken> UserTokens { get; set; } = new List<UserToken>();
+    //new things for faq and articles 
+    [InverseProperty("Author")]
+    public virtual ICollection<Article> Articles { get; set; } = new List<Article>();
+
     
+
     public ICollection<MenteeCV> CVs { get; set; }
     public ICollection<CVComment> CVComments { get; set; }
 
