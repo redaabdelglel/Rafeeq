@@ -117,14 +117,15 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Mentee.FullName));
 
 
-
+            // Reviews mapping
+            CreateMap<Review, ReviewDto>();
+            CreateMap<ReviewDto, CreateReviewDto>();
+            //review mapping mentor and mentee
+            CreateMap<Review, ReviewDateDto>().ReverseMap();
 
             // Availability mappings
 
 
-            // Reviews mapping
-            CreateMap<Review, ReviewDto>();
-            CreateMap<ReviewDto, CreateReviewDto>();
 
 
             CreateMap<Models.Availability, AvailabilityDto>();
