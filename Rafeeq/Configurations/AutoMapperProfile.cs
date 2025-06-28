@@ -125,13 +125,23 @@ namespace Rafeeq.Configurations
             CreateMap<AddCVCommentDto, CVComment>();
 
             // Chat mappings
+            
             CreateMap<ChatMessage, ChatMessageDto>()
                 .ForMember(dest => dest.SenderName, opt => opt.MapFrom(src => src.Sender.FullName))
                 .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.Sender.ProfilePicture))
-                .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.ChatAttachments));
+                .ForMember(dest => dest.IsVoiceMessage, opt => opt.MapFrom(src => src.IsVoiceMessage)) // ADD THIS LINE
+                .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.ChatAttachments))
+                .ForMember(dest => dest.ReadByUserIds, opt => opt.MapFrom(src =>
+                    src.ReadStatuses.Select(rs => rs.UserId.ToString())));
+
+
+            // In your AutoMapperProfile.cs, update the ChatAttachment mapping:
 
             CreateMap<ChatAttachment, ChatAttachmentDto>()
-                .ForMember(dest => dest.FullUrl, opt => opt.MapFrom(src => $"{src.FilePath}"));
+                .ForMember(dest => dest.IsVoiceMessage, opt => opt.MapFrom(src => src.IsVoiceMessage))
+                .ForMember(dest => dest.FullUrl, opt => opt.Ignore()); 
+
+
 
             CreateMap<SendMessageDto, ChatMessage>()
                 .ForMember(dest => dest.SentAt, opt => opt.MapFrom(src => DateTime.UtcNow))
@@ -231,16 +241,7 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.LastMessage, opt => opt.Ignore())
                 .ForMember(dest => dest.UnreadCount, opt => opt.Ignore());
 
-            // Update the existing ChatMessage to ChatMessageDto mapping
-            CreateMap<ChatMessage, ChatMessageDto>()
-                .ForMember(dest => dest.SenderName, opt => opt.MapFrom(src => src.Sender.FullName))
-                .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.Sender.ProfilePicture))
-                .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.ChatAttachments))
-                .ForMember(dest => dest.ReadByUserIds, opt => opt.MapFrom(src =>
-                    src.ReadStatuses.Select(rs => rs.UserId.ToString())));
-
-            CreateMap<MessageReadStatus, string>()
-                .ConvertUsing(src => src.UserId.ToString());
+          
             
 
             CreateMap<MessageReaction, MessageReactionInfoDto>()

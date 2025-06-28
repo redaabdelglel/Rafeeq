@@ -20,7 +20,7 @@ namespace Rafeeq.Repositories.Chat
         {
             return await _context.ChatMessages
                 .Include(m => m.Sender)
-                .Include(m => m.ChatAttachments)
+                .Include(m => m.ChatAttachments) 
                 .Where(m => m.BookingId == bookingId)
                 .OrderBy(m => m.SentAt)
                 .ToListAsync();
@@ -39,9 +39,11 @@ namespace Rafeeq.Repositories.Chat
         {
             return await _context.ChatMessages
                 .Include(m => m.Sender)
-                .Include(m => m.ChatAttachments)
+                .Include(m => m.ChatAttachments) 
+                .Include(m => m.Conversation)
                 .FirstOrDefaultAsync(m => m.MessageId == messageId);
         }
+
 
         // Mark a message as read
         public async Task<bool> MarkMessageAsReadAsync(int messageId)
