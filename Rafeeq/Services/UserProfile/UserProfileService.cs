@@ -292,6 +292,7 @@ namespace Rafeeq.Services.UserProfile
 
             if (!PasswordHasher.VerifyPassword(currentPassword, user.PasswordHash))
             {
+                Console.WriteLine($"userId{userId}::: CurrentPassword {currentPassword} :::::hashPassword {user.PasswordHash}");
                 return false;
             }
 
