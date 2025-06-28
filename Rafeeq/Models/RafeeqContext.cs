@@ -1,6 +1,4 @@
-﻿
-#nullable disable
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,15 +6,16 @@ namespace Rafeeq.Models;
 
 public partial class RafeeqContext : DbContext
 {
-    public RafeeqContext()
-    {
-    }
-
     public RafeeqContext(DbContextOptions<RafeeqContext> options)
         : base(options)
     {
     }
 
+    public virtual DbSet<ContactMessage> ContactMessages { get; set; }
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<ContactMessage>(entity =>
     public virtual DbSet<Availability> Availabilities { get; set; }
 
     public virtual DbSet<Booking> Bookings { get; set; }
@@ -159,27 +158,21 @@ public partial class RafeeqContext : DbContext
         });
 
         modelBuilder.Entity<Role>(entity =>
-        {
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A4662431D");
-        });
 
-        modelBuilder.Entity<Skill>(entity =>
         {
-            entity.HasKey(e => e.SkillId).HasName("PK__Skills__DFA0918765B9AA60");
-        });
+            entity.HasKey(e => e.MessageId).HasName("PK__ContactM__C87C0C9C908CDC94");
 
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C54AD77F5");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Email).HasMaxLength(100);
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
-            entity.Property(e => e.IsEmailVerified).HasDefaultValue(false);
-            entity.Property(e => e.IsInterviewer).HasDefaultValue(false);
-            entity.Property(e => e.IsMentor).HasDefaultValue(false);
-
-            entity.HasOne(d => d.Role).WithMany(p => p.Users).HasConstraintName("FK__Users__RoleId__3B75D760");
+            entity.Property(e => e.Name).HasMaxLength(100);
+            entity.Property(e => e.ResponseDate).HasColumnType("datetime");
+            entity.Property(e => e.Status)
+                .HasMaxLength(50)
+                .HasDefaultValue("New");
+            entity.Property(e => e.Subject).HasMaxLength(200);
         });
         modelBuilder.Entity<MenteeCV>(entity =>
         {
@@ -275,7 +268,6 @@ public partial class RafeeqContext : DbContext
             entity.Property(e => e.ViewCount).HasDefaultValue(0);
             entity.Property(e => e.SortOrder).HasDefaultValue(0);
         });
-
 
 
         OnModelCreatingPartial(modelBuilder);
