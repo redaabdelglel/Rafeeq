@@ -197,13 +197,10 @@ GET    /api/payments/history             # Get payment history
 GET    /api/payments/{id}                # Get payment details
 GET    /api/payments/mentor-earnings     # Get mentor earnings summary
 
-// Email Service Endpoints (3 endpoints)
-POST   /api/emails/send                  # Service endpoint to send emails
-GET    /api/emails/templates             # Get list of available email templates
-GET    /api/emails/preview/{templateId}  # Preview an email template with test data
+
 ```
 
-Pages (8 total)
+Pages (7 total)
 
 1. Dashboard Page (Mentor View)
 What You Need to Implement:
@@ -281,25 +278,7 @@ What You Need to Implement:
 - Implement real-time notification updates via SignalR
 - Create empty state for no notifications
 
-8. Email System (Backend Implementation)
-What You Need to Implement:
-- Create an EmailService class that handles:
-  - Connecting to email provider (SMTP or API like SendGrid)
-  - Loading HTML email templates from storage
-  - Generating emails with dynamic content
-  - Handling email sending failures and retries
-- Implement these email templates as HTML/CSS:
-  - Welcome/registration email
-  - Email verification template
-  - Password reset template
-  - Booking confirmation email
-  - Session reminder email
-  - Payment receipt email
-  - New message notification
-  - Review notification
-- Create a background service for scheduled emails (reminders)
-- Design the email templates to be responsive and professional
-- Implement an internal API for other team members to use your email service
+
 
 ## Member 4(dareen): UI Focus, Static Pages & Payment UI
 
@@ -355,7 +334,7 @@ Implementation Details:
 - Design review list component with filtering options
 - Implement review summary statistics component
 - Create "Write a review" form component
-- Design empty states for no reviews
+- Design empty states for no reviews 
 - Ensure all components are responsive
 - Create loading states for async data
 
@@ -514,19 +493,20 @@ Shared Dependencies Management
 
 
    ## schema :
-1. CREATE DATABASE Rafeeq;
+-- 1. CREATE DATABASE
+CREATE DATABASE Rafeeq;
 GO
 
 USE Rafeeq;
 GO
 
--- 1. Roles Table
+-- 2. Roles Table
 CREATE TABLE Roles (
     RoleId INT PRIMARY KEY IDENTITY(1,1),
-    RoleName NVARCHAR(50) NOT NULL -- e.g., Admin, Mentor, Mentee
+    RoleName NVARCHAR(50) NOT NULL
 );
 
--- 2. Users Table (with corrected syntax)
+-- 3. Users Table
 CREATE TABLE Users (
     UserId INT PRIMARY KEY IDENTITY(1,1),
     FullName NVARCHAR(100) NOT NULL,
@@ -539,7 +519,7 @@ CREATE TABLE Users (
     IsActive BIT DEFAULT 1,
     CreatedAt DATETIME DEFAULT GETDATE(),
     ExternalId NVARCHAR(100) NULL,
-    ExternalType NVARCHAR(50) NULL,  -- 'Google', 'Facebook', 'LinkedIn'
+    ExternalType NVARCHAR(50) NULL,
     ExternalToken NVARCHAR(MAX) NULL,
     IsMentor BIT DEFAULT 0,
     IsInterviewer BIT DEFAULT 0,
@@ -547,44 +527,44 @@ CREATE TABLE Users (
     HourlyRate DECIMAL(10,2) NULL
 );
 
--- 3. Skills Table
+-- 4. Skills Table
 CREATE TABLE Skills (
     SkillId INT PRIMARY KEY IDENTITY(1,1),
     Name NVARCHAR(100) NOT NULL
 );
 
--- 4. MentorSkills Table
+-- 5. MentorSkills Table
 CREATE TABLE MentorSkills (
     MentorSkillId INT PRIMARY KEY IDENTITY(1,1),
     UserId INT FOREIGN KEY REFERENCES Users(UserId),
     SkillId INT FOREIGN KEY REFERENCES Skills(SkillId)
 );
 
--- 5. MenteeSkills Table
+-- 6. MenteeSkills Table
 CREATE TABLE MenteeSkills (
     MenteeSkillId INT PRIMARY KEY IDENTITY(1,1),
     UserId INT FOREIGN KEY REFERENCES Users(UserId),
     SkillId INT FOREIGN KEY REFERENCES Skills(SkillId)
 );
 
--- 6. Availability Table
+-- 7. Availability Table
 CREATE TABLE Availability (
     AvailabilityId INT PRIMARY KEY IDENTITY(1,1),
     UserId INT FOREIGN KEY REFERENCES Users(UserId),
-    DayOfWeek INT,  -- 0 = Sunday, 6 = Saturday
+    DayOfWeek INT,
     StartTime TIME,
     EndTime TIME
 );
 
--- 7. Bookings Table
+-- 8. Bookings Table
 CREATE TABLE Bookings (
     BookingId INT PRIMARY KEY IDENTITY(1,1),
     MentorId INT FOREIGN KEY REFERENCES Users(UserId),
     MenteeId INT FOREIGN KEY REFERENCES Users(UserId),
-    SessionType NVARCHAR(50), -- 'Mentorship' or 'Interview'
+    SessionType NVARCHAR(50),
     StartDateTime DATETIME,
     EndDateTime DATETIME,
-    Status NVARCHAR(50) DEFAULT 'Pending', -- Pending, Confirmed, Completed, Cancelled
+    Status NVARCHAR(50) DEFAULT 'Pending',
     GoogleMeetLink NVARCHAR(255),
     PaymentStatus NVARCHAR(50) DEFAULT 'Unpaid',
     TotalAmount DECIMAL(10, 2),
@@ -594,7 +574,7 @@ CREATE TABLE Bookings (
     IsDeleted BIT DEFAULT 0
 );
 
--- 8. Reviews Table
+-- 9. Reviews Table
 CREATE TABLE Reviews (
     ReviewId INT PRIMARY KEY IDENTITY(1,1),
     ReviewerId INT FOREIGN KEY REFERENCES Users(UserId),
@@ -606,27 +586,60 @@ CREATE TABLE Reviews (
     UpdatedAt DATETIME NULL
 );
 
--- 9. ChatMessages Table
+-- 10. ChatConversations Table
+CREATE TABLE ChatConversations (
+    ConversationId INT PRIMARY KEY IDENTITY(1,1),
+    BookingId INT FOREIGN KEY REFERENCES Bookings(BookingId),
+    MentorId INT FOREIGN KEY REFERENCES Users(UserId),
+    MenteeId INT FOREIGN KEY REFERENCES Users(UserId),
+    LastMessageAt DATETIME DEFAULT GETDATE(),
+    IsActive BIT DEFAULT 1,
+    CreatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- 11. ChatMessages Table
 CREATE TABLE ChatMessages (
     MessageId INT PRIMARY KEY IDENTITY(1,1),
     BookingId INT FOREIGN KEY REFERENCES Bookings(BookingId),
     SenderId INT FOREIGN KEY REFERENCES Users(UserId),
     MessageText NVARCHAR(MAX),
     IsRead BIT DEFAULT 0,
-    SentAt DATETIME DEFAULT GETDATE()
+    SentAt DATETIME DEFAULT GETDATE(),
+    ConversationId INT FOREIGN KEY REFERENCES ChatConversations(ConversationId),
+    IsEdited BIT DEFAULT 0,
+    IsVoiceMessage BIT DEFAULT 0
 );
 
--- 10. Payments Table
+-- 12. ChatAttachments Table
+CREATE TABLE ChatAttachments (
+    AttachmentId INT PRIMARY KEY IDENTITY(1,1),
+    MessageId INT FOREIGN KEY REFERENCES ChatMessages(MessageId),
+    FilePath NVARCHAR(255) NOT NULL,
+    FileName NVARCHAR(100) NOT NULL,
+    FileSize INT NOT NULL,
+    ContentType NVARCHAR(100) NOT NULL,
+    IsVoiceMessage BIT DEFAULT 0
+);
+
+-- 13. MessageReadStatus Table
+CREATE TABLE MessageReadStatus (
+    ReadStatusId INT PRIMARY KEY IDENTITY(1,1),
+    MessageId INT FOREIGN KEY REFERENCES ChatMessages(MessageId),
+    UserId INT FOREIGN KEY REFERENCES Users(UserId),
+    ReadAt DATETIME DEFAULT GETDATE()
+);
+
+-- 14. Payments Table
 CREATE TABLE Payments (
     PaymentId INT PRIMARY KEY IDENTITY(1,1),
     BookingId INT FOREIGN KEY REFERENCES Bookings(BookingId),
     AmountPaid DECIMAL(10,2),
-    PaymentMethod NVARCHAR(50), -- Stripe, etc.
+    PaymentMethod NVARCHAR(50),
     TransactionId NVARCHAR(255),
     PaymentDate DATETIME DEFAULT GETDATE()
 );
 
--- 11. Notifications Table
+-- 15. Notifications Table
 CREATE TABLE Notifications (
     NotificationId INT PRIMARY KEY IDENTITY(1,1),
     UserId INT FOREIGN KEY REFERENCES Users(UserId),
@@ -637,28 +650,18 @@ CREATE TABLE Notifications (
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
--- 12. UserTokens Table
+-- 16. UserTokens Table
 CREATE TABLE UserTokens (
     TokenId INT PRIMARY KEY IDENTITY(1,1),
     UserId INT FOREIGN KEY REFERENCES Users(UserId),
-    TokenType NVARCHAR(50) NOT NULL,  -- 'EmailVerification', 'PasswordReset'
+    TokenType NVARCHAR(50) NOT NULL,
     TokenValue NVARCHAR(255) NOT NULL,
     ExpiryDate DATETIME NOT NULL,
     IsUsed BIT DEFAULT 0,
     CreatedAt DATETIME DEFAULT GETDATE()
 );
 
--- 13. ChatAttachments Table
-CREATE TABLE ChatAttachments (
-    AttachmentId INT PRIMARY KEY IDENTITY(1,1),
-    MessageId INT FOREIGN KEY REFERENCES ChatMessages(MessageId),
-    FilePath NVARCHAR(255) NOT NULL,
-    FileName NVARCHAR(100) NOT NULL,
-    FileSize INT NOT NULL,
-    ContentType NVARCHAR(100) NOT NULL
-);
-
--- 14. CV Management Table
+-- 17. MenteeCVs Table
 CREATE TABLE MenteeCVs (
     CVId INT PRIMARY KEY IDENTITY(1,1),
     UserId INT FOREIGN KEY REFERENCES Users(UserId),
@@ -670,7 +673,7 @@ CREATE TABLE MenteeCVs (
     IsActive BIT DEFAULT 1
 );
 
--- 15. CV Comments Table
+-- 18. CVComments Table
 CREATE TABLE CVComments (
     CommentId INT PRIMARY KEY IDENTITY(1,1),
     CVId INT FOREIGN KEY REFERENCES MenteeCVs(CVId),
@@ -680,5 +683,62 @@ CREATE TABLE CVComments (
     UpdatedAt DATETIME NULL
 );
 
--- Default Roles
+-- 19. ContactMessages Table
+CREATE TABLE ContactMessages (
+    MessageId INT PRIMARY KEY IDENTITY(1,1),
+    Name NVARCHAR(100) NOT NULL,
+    Email NVARCHAR(100) NOT NULL,
+    Subject NVARCHAR(200) NULL,
+    Message NVARCHAR(MAX) NOT NULL,
+    Status NVARCHAR(50) DEFAULT 'New',
+    IsDeleted BIT DEFAULT 0,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    ResponseDate DATETIME NULL,
+    ResponseMessage NVARCHAR(MAX) NULL,
+    RespondedBy INT NULL FOREIGN KEY REFERENCES Users(UserId)
+);
+
+-- 20. Indexes
+CREATE INDEX IX_ChatMessages_ConversationId ON ChatMessages(ConversationId);
+CREATE INDEX IX_ChatMessages_SenderId ON ChatMessages(SenderId);
+CREATE INDEX IX_ChatConversations_BookingId ON ChatConversations(BookingId);
+CREATE INDEX IX_ChatConversations_MentorId ON ChatConversations(MentorId);
+CREATE INDEX IX_ChatConversations_MenteeId ON ChatConversations(MenteeId);
+CREATE INDEX IX_MessageReadStatus_MessageId ON MessageReadStatus(MessageId);
+CREATE INDEX IX_MessageReadStatus_UserId ON MessageReadStatus(UserId);
+
+-- 21. Default Roles
 INSERT INTO Roles (RoleName) VALUES ('Admin'), ('Mentor'), ('Mentee');
+CREATE TABLE MessageReactions (
+    ReactionId INT PRIMARY KEY IDENTITY(1,1),
+    MessageId INT FOREIGN KEY REFERENCES ChatMessages(MessageId),
+    UserId INT FOREIGN KEY REFERENCES Users(UserId),
+    ReactionType NVARCHAR(50),
+    CreatedAt DATETIME
+);
+
+-- Articles Table for Knowledge Base
+CREATE TABLE Articles (
+    ArticleId INT PRIMARY KEY IDENTITY(1,1),
+    Title NVARCHAR(300) NOT NULL,
+    Content NVARCHAR(MAX) NOT NULL,
+    Summary NVARCHAR(500),
+    Category NVARCHAR(100), -- 'Mentoring', 'Career', 'Interview', 'CV'
+    AuthorId INT FOREIGN KEY REFERENCES Users(UserId),
+    IsPublished BIT DEFAULT 1,
+    ViewCount INT DEFAULT 0,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    UpdatedAt DATETIME NULL
+);
+
+-- FAQ Table for Help Center
+CREATE TABLE FAQ (
+    FAQId INT PRIMARY KEY IDENTITY(1,1),
+    Question NVARCHAR(500) NOT NULL,
+    Answer NVARCHAR(MAX) NOT NULL,
+    Category NVARCHAR(100), -- 'Getting Started', 'Payments', 'Technical', 'Booking'
+    SortOrder INT DEFAULT 0,
+    IsActive BIT DEFAULT 1,
+    ViewCount INT DEFAULT 0,
+    CreatedAt DATETIME DEFAULT GETDATE()
+);

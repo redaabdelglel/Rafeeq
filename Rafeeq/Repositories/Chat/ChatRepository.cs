@@ -20,7 +20,7 @@ namespace Rafeeq.Repositories.Chat
         {
             return await _context.ChatMessages
                 .Include(m => m.Sender)
-                .Include(m => m.ChatAttachments)
+                .Include(m => m.ChatAttachments) 
                 .Where(m => m.BookingId == bookingId)
                 .OrderBy(m => m.SentAt)
                 .ToListAsync();
@@ -39,9 +39,11 @@ namespace Rafeeq.Repositories.Chat
         {
             return await _context.ChatMessages
                 .Include(m => m.Sender)
-                .Include(m => m.ChatAttachments)
+                .Include(m => m.ChatAttachments) 
+                .Include(m => m.Conversation)
                 .FirstOrDefaultAsync(m => m.MessageId == messageId);
         }
+
 
         // Mark a message as read
         public async Task<bool> MarkMessageAsReadAsync(int messageId)
@@ -254,6 +256,7 @@ namespace Rafeeq.Repositories.Chat
                 .ToListAsync();
         }
 
+
         // Update conversation
         public void UpdateConversation(ChatConversation conversation)
         {
@@ -267,7 +270,7 @@ namespace Rafeeq.Repositories.Chat
             return conversation;
         }
 
-        // Update an existing chat conversation
+        
         public async Task<bool> UpdateConversationAsync(ChatConversation conversation)
         {
             _context.ChatConversations.Update(conversation);
@@ -275,6 +278,31 @@ namespace Rafeeq.Repositories.Chat
             return true;
         }
 
+        
+        public async Task<(IEnumerable<ChatMessage> Messages, int TotalCount)> GetMessagesByBookingIdWithPaginationAsync(
+            int bookingId, int page, int pageSize)
+        {
+            // Get total count of messages
+            var totalCount = await _context.ChatMessages
+                .Where(m => m.BookingId == bookingId)
+                .CountAsync();
+
+            // Get paginated messages
+            var messages = await _context.ChatMessages
+                .Include(m => m.Sender)
+                .Include(m => m.ChatAttachments)
+                .Include(m => m.ReadStatuses)
+                .Where(m => m.BookingId == bookingId)
+                .OrderByDescending(m => m.SentAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Return both the messages and the total count
+            return (messages.OrderBy(m => m.SentAt), totalCount);
+        }
+        
+        
 
     }
 }
