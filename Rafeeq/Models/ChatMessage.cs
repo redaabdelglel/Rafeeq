@@ -15,9 +15,13 @@ public partial class ChatMessage
 
     public int? BookingId { get; set; }
 
+    public int? ConversationId { get; set; }
+
     public int? SenderId { get; set; }
 
     public string MessageText { get; set; }
+    public bool IsEdited { get; set; }
+    public bool IsVoiceMessage { get; set; }
 
     public bool? IsRead { get; set; }
 
@@ -28,10 +32,22 @@ public partial class ChatMessage
     [InverseProperty("ChatMessages")]
     public virtual Booking Booking { get; set; }
 
+    [ForeignKey("ConversationId")]
+    [InverseProperty("Messages")]
+    public virtual ChatConversation Conversation { get; set; }
+
     [InverseProperty("Message")]
     public virtual ICollection<ChatAttachment> ChatAttachments { get; set; } = new List<ChatAttachment>();
+
+    [InverseProperty("Message")]
+    public virtual ICollection<MessageReadStatus> ReadStatuses { get; set; } = new List<MessageReadStatus>();
 
     [ForeignKey("SenderId")]
     [InverseProperty("ChatMessages")]
     public virtual User Sender { get; set; }
+   
+
+    // Add navigation property for reactions
+    [InverseProperty("Message")]
+    public virtual ICollection<MessageReaction> Reactions { get; set; } = new List<MessageReaction>();
 }

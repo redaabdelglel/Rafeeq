@@ -16,6 +16,149 @@ public partial class RafeeqContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<ContactMessage>(entity =>
+    public virtual DbSet<Availability> Availabilities { get; set; }
+
+    public virtual DbSet<Booking> Bookings { get; set; }
+
+    public virtual DbSet<ChatAttachment> ChatAttachments { get; set; }
+
+    public virtual DbSet<ChatMessage> ChatMessages { get; set; }
+
+    public virtual DbSet<MenteeSkill> MenteeSkills { get; set; }
+
+    public virtual DbSet<MentorSkill> MentorSkills { get; set; }
+
+    public virtual DbSet<Notification> Notifications { get; set; }
+
+    public virtual DbSet<Payment> Payments { get; set; }
+
+    public virtual DbSet<Review> Reviews { get; set; }
+
+    public virtual DbSet<Role> Roles { get; set; }
+
+    public virtual DbSet<Skill> Skills { get; set; }
+
+    public virtual DbSet<User> Users { get; set; }
+
+    public virtual DbSet<UserToken> UserTokens { get; set; }
+    public virtual DbSet<MenteeCV> MenteeCVs { get; set; }
+    public virtual DbSet<CVComment> CVComments { get; set; }
+
+    public virtual DbSet<ContactMessage> ContactMessages { get; set; }
+    
+    public virtual DbSet<ChatConversation> ChatConversations { get; set; }
+    public virtual DbSet<MessageReadStatus> MessageReadStatuses { get; set; }
+    public virtual DbSet<MessageReaction> MessageReactions { get; set; }
+    public virtual DbSet<Article> Articles { get; set; }
+    public virtual DbSet<FAQ> FAQs { get; set; }
+
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+
+        if (!optionsBuilder.IsConfigured)
+        {
+            optionsBuilder.UseSqlServer("Server=db20643.public.databaseasp.net; Database=db20643; User Id=db20643; Password=tD@2-b4KxQ?3; Encrypt=True; TrustServerCertificate=True; MultipleActiveResultSets=True;");
+        }
+    }
+
+
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Availability>(entity =>
+        {
+            entity.HasKey(e => e.AvailabilityId).HasName("PK__Availabi__DA3979B1C654E814");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Availabilities).HasConstraintName("FK__Availabil__UserI__4CA06362");
+        });
+
+        modelBuilder.Entity<Booking>(entity =>
+        {
+            entity.HasKey(e => e.BookingId).HasName("PK__Bookings__73951AED008D420C");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            entity.Property(e => e.PaymentStatus).HasDefaultValue("Unpaid");
+            entity.Property(e => e.Status).HasDefaultValue("Pending");
+
+            entity.HasOne(d => d.Mentee).WithMany(p => p.BookingMentees).HasConstraintName("FK__Bookings__Mentee__5070F446");
+
+            entity.HasOne(d => d.Mentor).WithMany(p => p.BookingMentors).HasConstraintName("FK__Bookings__Mentor__4F7CD00D");
+        });
+
+        modelBuilder.Entity<ChatAttachment>(entity =>
+        {
+            entity.HasKey(e => e.AttachmentId).HasName("PK__ChatAtta__442C64BE4F573056");
+
+            entity.HasOne(d => d.Message).WithMany(p => p.ChatAttachments).HasConstraintName("FK__ChatAttac__Messa__70DDC3D8");
+        });
+
+        modelBuilder.Entity<ChatMessage>(entity =>
+        {
+            entity.HasKey(e => e.MessageId).HasName("PK__ChatMess__C87C0C9CDDF239B2");
+
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+            entity.Property(e => e.SentAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Booking).WithMany(p => p.ChatMessages).HasConstraintName("FK__ChatMessa__Booki__5DCAEF64");
+
+            entity.HasOne(d => d.Sender).WithMany(p => p.ChatMessages).HasConstraintName("FK__ChatMessa__Sende__5EBF139D");
+            entity.HasOne(d => d.Conversation).WithMany(p => p.Messages)
+               .HasConstraintName("FK__ChatMessa__Conve__XXXXX");
+        });
+
+        modelBuilder.Entity<MenteeSkill>(entity =>
+        {
+            entity.HasKey(e => e.MenteeSkillId).HasName("PK__MenteeSk__8AC70FF0D5795623");
+
+            entity.HasOne(d => d.Skill).WithMany(p => p.MenteeSkills).HasConstraintName("FK__MenteeSki__Skill__49C3F6B7");
+
+            entity.HasOne(d => d.User).WithMany(p => p.MenteeSkills).HasConstraintName("FK__MenteeSki__UserI__48CFD27E");
+        });
+
+        modelBuilder.Entity<MentorSkill>(entity =>
+        {
+            entity.HasKey(e => e.MentorSkillId).HasName("PK__MentorSk__814986AD639F79B4");
+
+            entity.HasOne(d => d.Skill).WithMany(p => p.MentorSkills).HasConstraintName("FK__MentorSki__Skill__45F365D3");
+
+            entity.HasOne(d => d.User).WithMany(p => p.MentorSkills).HasConstraintName("FK__MentorSki__UserI__44FF419A");
+        });
+
+        modelBuilder.Entity<Notification>(entity =>
+        {
+            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E12817FB374");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsRead).HasDefaultValue(false);
+
+            entity.HasOne(d => d.User).WithMany(p => p.Notifications).HasConstraintName("FK__Notificat__UserI__6754599E");
+        });
+
+        modelBuilder.Entity<Payment>(entity =>
+        {
+            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A383E8C0C2F");
+
+            entity.Property(e => e.PaymentDate).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Booking).WithMany(p => p.Payments).HasConstraintName("FK__Payments__Bookin__6383C8BA");
+        });
+
+        modelBuilder.Entity<Review>(entity =>
+        {
+            entity.HasKey(e => e.ReviewId).HasName("PK__Reviews__74BC79CEE8C74737");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Booking).WithMany(p => p.Reviews).HasConstraintName("FK__Reviews__Booking__59063A47");
+
+            entity.HasOne(d => d.ReviewedUser).WithMany(p => p.ReviewReviewedUsers).HasConstraintName("FK__Reviews__Reviewe__5812160E");
+
+            entity.HasOne(d => d.Reviewer).WithMany(p => p.ReviewReviewers).HasConstraintName("FK__Reviews__Reviewe__571DF1D5");
+        });
+
+        modelBuilder.Entity<Role>(entity =>
+
         {
             entity.HasKey(e => e.MessageId).HasName("PK__ContactM__C87C0C9C908CDC94");
 
@@ -31,6 +174,101 @@ public partial class RafeeqContext : DbContext
                 .HasDefaultValue("New");
             entity.Property(e => e.Subject).HasMaxLength(200);
         });
+        modelBuilder.Entity<MenteeCV>(entity =>
+        {
+            entity.HasKey(e => e.CVId);
+            entity.Property(e => e.UploadDate).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.HasOne(d => d.User).WithMany(p => p.CVs).HasConstraintName("FK__MenteeCVs__UserI__XXXX");
+        });
+
+        modelBuilder.Entity<CVComment>(entity =>
+        {
+            entity.HasKey(e => e.CommentId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.HasOne(d => d.CV).WithMany(p => p.Comments).HasConstraintName("FK__CVComment__CVId__XXXX");
+            entity.HasOne(d => d.Mentor).WithMany(p => p.CVComments).HasConstraintName("FK__CVComment__Mentor__XXXX");
+        });
+
+        modelBuilder.Entity<UserToken>(entity =>
+        {
+            entity.HasKey(e => e.TokenId).HasName("PK__UserToke__658FEEEAA975E301");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsUsed).HasDefaultValue(false);
+
+            entity.HasOne(d => d.User).WithMany(p => p.UserTokens).HasConstraintName("FK__UserToken__UserI__6C190EBB");
+        });
+
+       
+        modelBuilder.Entity<ContactMessage>(entity =>
+        {
+            entity.HasKey(e => e.MessageId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Status).HasDefaultValue("New");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            entity.HasOne(d => d.Responder)
+                .WithMany()
+                .HasForeignKey(d => d.RespondedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+        // Configure ChatConversations entity
+        modelBuilder.Entity<ChatConversation>(entity =>
+        {
+            entity.HasKey(e => e.ConversationId).HasName("PK__ChatConv__C95C11C4E86EA4A7");
+
+            entity.Property(e => e.LastMessageAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Booking).WithMany()
+                .HasConstraintName("FK__ChatConv__Booki__XXXXX");
+
+            entity.HasOne(d => d.Mentor).WithMany()
+                .HasConstraintName("FK__ChatConv__Mento__XXXXX");
+
+            entity.HasOne(d => d.Mentee).WithMany()
+                .HasConstraintName("FK__ChatConv__Mente__XXXXX");
+        });
+        // Configure MessageReadStatus entity
+        modelBuilder.Entity<MessageReadStatus>(entity =>
+        {
+            entity.HasKey(e => e.ReadStatusId).HasName("PK__MessageR__B19EAD9154C14476");
+            entity.ToTable("MessageReadStatus");
+
+            entity.Property(e => e.ReadAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Message).WithMany(p => p.ReadStatuses)
+                .HasConstraintName("FK__MessageRe__Messa__XXXXX");
+
+            entity.HasOne(d => d.User).WithMany()
+                .HasConstraintName("FK__MessageRe__UserI__XXXXX");
+        });
+        modelBuilder.Entity<Article>(entity =>
+        {
+            entity.HasKey(e => e.ArticleId).HasName("PK__Articles__9C6C4A03XXXXXXXX");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsPublished).HasDefaultValue(true);
+            entity.Property(e => e.ViewCount).HasDefaultValue(0);
+
+            entity.HasOne(d => d.Author)
+                .WithMany(p => p.Articles)
+                .HasConstraintName("FK__Articles__Author__XXXXXXXX");
+        });
+
+        // Configure FAQ entity
+        modelBuilder.Entity<FAQ>(entity =>
+        {
+            entity.HasKey(e => e.FAQId).HasName("PK__FAQ__7ED977F4XXXXXXXX");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.ViewCount).HasDefaultValue(0);
+            entity.Property(e => e.SortOrder).HasDefaultValue(0);
+        });
+
 
         OnModelCreatingPartial(modelBuilder);
     }
