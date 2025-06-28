@@ -13,6 +13,7 @@ using Rafeeq.Services.Bookings;
 using Rafeeq.Repositories.Mentee;
 using Microsoft.AspNetCore.Authorization;
 using Rafeeq.Helpers;
+using Microsoft.Extensions.FileProviders;
 
 var builder = WebApplication.CreateBuilder(args);
 var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<Program>();
@@ -147,6 +148,13 @@ builder.Services.AddAuthentication(options =>
             return Task.CompletedTask;
         }
     };
+})
+.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["GoogleAuthSettings:ClientId"];
+    options.ClientSecret = builder.Configuration["GoogleAuthSettings:ClientSecret"];
+    options.CallbackPath = "/signin-google";
+
 });
 
 // Configure Authorization
@@ -251,6 +259,14 @@ logger.LogInformation("CORS middleware configured");
 
 // ? STEP 4: Other middleware
 app.UseHttpsRedirection();
+
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(
+        Path.Combine(builder.Environment.ContentRootPath, "Uploads")), 
+    RequestPath = "/Uploads" 
+});
 app.UseRouting();
 
 // ? STEP 5: Authentication/Authorization AFTER static files
