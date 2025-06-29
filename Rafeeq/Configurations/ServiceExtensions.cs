@@ -15,6 +15,9 @@ using Rafeeq.Repositories.Auth;
 using Rafeeq.Repositories.RepositoryBase;
 using Rafeeq.Repositories.Users;
 using Rafeeq.Services.Contact;
+using Rafeeq.Services.UserProfile;
+using Rafeeq.Services.Articles;
+using Rafeeq.Services.FAQ;
 
 namespace Rafeeq.Configurations
 {
@@ -36,6 +39,17 @@ namespace Rafeeq.Configurations
             services.AddScoped<IJwtService, JwtService>();
             services.AddScoped<IEmailService, EmailService>();
 
+            // UserProfile Services
+            services.AddScoped<UserProfileService>(); 
+            services.AddScoped<IUserProfileService, UserProfileService>();
+
+
+          
+
+            // NEW: Articles and FAQ Services
+            services.AddScoped<IArticleService, ArticleService>();
+            services.AddScoped<IFAQService, FAQService>();
+
             // User Services
             services.AddScoped<UserService>();
             services.AddScoped<IUserService, UserService>();
@@ -47,7 +61,7 @@ namespace Rafeeq.Configurations
             services.AddScoped<AvailabilityService>();
             services.AddScoped<BookingService>();
             services.AddScoped<MeetingService>();
-            services.AddScoped<GoogleMeetService>();  
+            services.AddScoped<GoogleMeetService>();
             services.AddScoped<PaymentService>();
             services.AddScoped<StripeService>();
             services.AddScoped<ChatService>();
@@ -60,8 +74,8 @@ namespace Rafeeq.Configurations
             // CV Services
             services.AddScoped<CVService>();
 
-            // Chat services 
-            services.AddScoped<SignalRService>();
+            // ✅ Chat & SignalR services 
+            services.AddScoped<SignalRService>(); 
 
             return services;
         }
@@ -81,3 +95,4 @@ namespace Rafeeq.Configurations
         }
     }
 }
+

@@ -12,18 +12,32 @@ namespace Rafeeq.Repositories.Reviews
         {
             _context = context;
         }
-        public async Task<IEnumerable<Review>> GetReviewsByMentorIdAsync(int mentorId)
+
+        public async Task<IEnumerable<ReviewDateDto>> GetReviewsByMentorIdAsync(int mentorId)
         {
             if (mentorId <= 0)
             {
                 throw new ArgumentException("Invalid mentor ID.", nameof(mentorId));
             }
+
             return await _context.Reviews
                 .Include(r => r.Reviewer)
                 .Include(r => r.ReviewedUser)
-                .Where(r => r.Reviewer.Role.RoleName == "Mentor")
+                .Where(r => r.ReviewedUser.Role.RoleName == "Mentor")
+                .Select(r => new ReviewDateDto
+                {
+                    ReviewId = r.ReviewId,
+                    ReviewerId = r.ReviewerId,
+                    ReviewedUserId = r.ReviewedUserId,
+                    CreatedAt = r.CreatedAt,
+                    Rating = r.Rating,
+                    Comment = r.Comment,
+                    BookingId = r.BookingId ?? 0
+                })
                 .ToListAsync();
         }
+
+
         public async Task<IEnumerable<Review>> GetReviewsByMenteeIdAsync(int menteeId)
         {
             if (menteeId <= 0)
@@ -33,30 +47,12 @@ namespace Rafeeq.Repositories.Reviews
             return await _context.Reviews
                 .Include(r => r.Reviewer)
                 .Include(r => r.ReviewedUser)
-                .Where(r => r.Reviewer.Role.RoleName == "Mentee")
+                .Where(r => r.ReviewedUser.Role.RoleName == "Mentee")
                 .ToListAsync();
         }
-        // Add a new review
-        public async Task<Review> AddAsync(CreateReviewDto review)
-        {
-            if (review == null)
-            {
-                throw new ArgumentNullException(nameof(review), "Review data is required.");
-            }
-            var newReview = new Review
-            {
-                ReviewerId = review.ReviewerId,
-                ReviewedUserId = review.ReviewedUserId,
-                BookingId = review.BookingId,
-                Rating = review.Rating,
-                Comment = review.Comment,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-            _context.Reviews.Add(newReview);
-            await _context.SaveChangesAsync();
-            return newReview;
-        }
+
+
+
 
         //get all reviews
         public async Task<IEnumerable<ReviewDto>> GetAllReviewsAsync()
@@ -75,7 +71,7 @@ namespace Rafeeq.Repositories.Reviews
                     ReviewedUserName = r.Reviewer.FullName,
                     ReviewerName = r.Reviewer.FullName
 
-                    
+
                 })
                 .ToListAsync();
         }

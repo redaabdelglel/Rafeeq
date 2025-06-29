@@ -2,12 +2,14 @@
 using Rafeeq.Models;
 using Rafeeq.Repositories;
 using Rafeeq.Repositories.admin;
+using Rafeeq.Repositories.Articles;
 using Rafeeq.Repositories.Auth;
 using Rafeeq.Repositories.Availability;
 using Rafeeq.Repositories.Bookings;
 using Rafeeq.Repositories.Chat;
 using Rafeeq.Repositories.Contact;
 using Rafeeq.Repositories.CV;
+using Rafeeq.Repositories.FAQ;
 using Rafeeq.Repositories.Mentee;
 using Rafeeq.Repositories.Notifications;
 using Rafeeq.Repositories.Payments;
@@ -41,8 +43,9 @@ namespace Rafeeq.UnitOfWork
         private RoleRepository _roleRepository;
         private AdminRepositary _adminRepositary;
         private BookingRepository _bookingRepository;
-        
 
+        private ArticleRepository _articleRepository;
+        private FAQRepository _faqRepository;
 
         public UnitOfWorkManager(RafeeqContext context)
         {
@@ -239,7 +242,29 @@ namespace Rafeeq.UnitOfWork
                 return _roleRepository;
             }
         }
-      
+
+
+
+        //  ArticleRepository
+        public ArticleRepository ArticleRepository
+        {
+            get
+            {
+                if (_articleRepository == null) { _articleRepository = new ArticleRepository(context); }
+                return _articleRepository;
+            }
+        }
+
+        //  FAQRepository
+        public FAQRepository FAQRepository
+        {
+            get
+            {
+                if (_faqRepository == null) { _faqRepository = new FAQRepository(context); }
+                return _faqRepository;
+            }
+        }
+
         public void Save()
         {
             context.SaveChanges();

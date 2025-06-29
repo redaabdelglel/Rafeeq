@@ -14,6 +14,7 @@ namespace Rafeeq.DTOs.Chat
         public string MessageText { get; set; }
         public bool IsRead { get; set; }
         public DateTime SentAt { get; set; }
+        public bool IsVoiceMessage { get; set; }
         public List<string> ReadByUserIds { get; set; } = new List<string>();
         public List<ChatAttachmentDto> Attachments { get; set; } = new List<ChatAttachmentDto>();
     }

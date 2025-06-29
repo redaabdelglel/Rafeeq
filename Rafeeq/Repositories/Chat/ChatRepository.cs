@@ -20,7 +20,7 @@ namespace Rafeeq.Repositories.Chat
         {
             return await _context.ChatMessages
                 .Include(m => m.Sender)
-                .Include(m => m.ChatAttachments)
+                .Include(m => m.ChatAttachments) 
                 .Where(m => m.BookingId == bookingId)
                 .OrderBy(m => m.SentAt)
                 .ToListAsync();
@@ -39,9 +39,11 @@ namespace Rafeeq.Repositories.Chat
         {
             return await _context.ChatMessages
                 .Include(m => m.Sender)
-                .Include(m => m.ChatAttachments)
+                .Include(m => m.ChatAttachments) 
+                .Include(m => m.Conversation)
                 .FirstOrDefaultAsync(m => m.MessageId == messageId);
         }
+
 
         // Mark a message as read
         public async Task<bool> MarkMessageAsReadAsync(int messageId)
@@ -151,37 +153,66 @@ namespace Rafeeq.Repositories.Chat
             return unreadMessages.Count;
         }
         // Delete a message by ID
+        // Delete a message by ID
         public async Task<bool> DeleteMessageAsync(int messageId)
         {
-            var message = await _context.ChatMessages.FindAsync(messageId);
-            if (message == null)
-                return false;
+            // ✅ FIXED: Use the execution strategy to handle transactions properly
+            var strategy = _context.Database.CreateExecutionStrategy();
 
-            // Remove any attachments first
-            var attachments = await _context.ChatAttachments
-                .Where(a => a.MessageId == messageId)
-                .ToListAsync();
-
-            if (attachments.Any())
+            return await strategy.ExecuteAsync(async () =>
             {
-                _context.ChatAttachments.RemoveRange(attachments);
-            }
+                using var transaction = await _context.Database.BeginTransactionAsync();
+                try
+                {
+                    // Get the message first to check if it exists
+                    var message = await _context.ChatMessages
+                        .Include(m => m.ChatAttachments)
+                        .Include(m => m.ReadStatuses)
+                        .Include(m => m.Reactions) // Include reactions if they exist
+                        .FirstOrDefaultAsync(m => m.MessageId == messageId);
 
-            // Remove any read statuses
-            var readStatuses = await _context.MessageReadStatuses
-                .Where(rs => rs.MessageId == messageId)
-                .ToListAsync();
+                    if (message == null)
+                        return false;
 
-            if (readStatuses.Any())
-            {
-                _context.MessageReadStatuses.RemoveRange(readStatuses);
-            }
+                    // STEP 1: Remove message reactions first (if any)
+                    if (message.Reactions != null && message.Reactions.Any())
+                    {
+                        _context.MessageReactions.RemoveRange(message.Reactions);
+                    }
 
-            // Remove the message
-            _context.ChatMessages.Remove(message);
-            await _context.SaveChangesAsync();
-            return true;
+                    // STEP 2: Remove message read statuses
+                    if (message.ReadStatuses != null && message.ReadStatuses.Any())
+                    {
+                        _context.MessageReadStatuses.RemoveRange(message.ReadStatuses);
+                    }
+
+                    // STEP 3: Remove attachments
+                    if (message.ChatAttachments != null && message.ChatAttachments.Any())
+                    {
+                        _context.ChatAttachments.RemoveRange(message.ChatAttachments);
+                    }
+
+                    // STEP 4: Remove the message itself
+                    _context.ChatMessages.Remove(message);
+
+                    // Save all changes
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    // Log the specific error for debugging
+                    Console.WriteLine($"Error deleting message {messageId}: {ex.Message}");
+                    Console.WriteLine($"Inner exception: {ex.InnerException?.Message}");
+                    throw; // Re-throw to let the service handle it
+                }
+            });
         }
+
+
 
         // Search messages in a conversation
         public async Task<IEnumerable<ChatMessage>> SearchMessagesAsync(int conversationId, string query, int limit)
@@ -254,6 +285,7 @@ namespace Rafeeq.Repositories.Chat
                 .ToListAsync();
         }
 
+
         // Update conversation
         public void UpdateConversation(ChatConversation conversation)
         {
@@ -267,7 +299,7 @@ namespace Rafeeq.Repositories.Chat
             return conversation;
         }
 
-        // Update an existing chat conversation
+        
         public async Task<bool> UpdateConversationAsync(ChatConversation conversation)
         {
             _context.ChatConversations.Update(conversation);
@@ -275,6 +307,31 @@ namespace Rafeeq.Repositories.Chat
             return true;
         }
 
+        
+        public async Task<(IEnumerable<ChatMessage> Messages, int TotalCount)> GetMessagesByBookingIdWithPaginationAsync(
+            int bookingId, int page, int pageSize)
+        {
+            // Get total count of messages
+            var totalCount = await _context.ChatMessages
+                .Where(m => m.BookingId == bookingId)
+                .CountAsync();
+
+            // Get paginated messages
+            var messages = await _context.ChatMessages
+                .Include(m => m.Sender)
+                .Include(m => m.ChatAttachments)
+                .Include(m => m.ReadStatuses)
+                .Where(m => m.BookingId == bookingId)
+                .OrderByDescending(m => m.SentAt)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            // Return both the messages and the total count
+            return (messages.OrderBy(m => m.SentAt), totalCount);
+        }
+        
+        
 
     }
 }

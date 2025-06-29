@@ -7,12 +7,17 @@ namespace Rafeeq.Repositories.RepositoryBase
     {
         Task<T?> GetByIdAsync(int id);
         Task<IEnumerable<T>> GetAllAsync();
+
+
         IEnumerable<T> Find(Expression<Func<T, bool>> expression);
         void Add(T entity);
         void AddRange(IEnumerable<T> entities);
         void Remove(T entity);
         void RemoveRange(IEnumerable<T> entities);
         void Update(T entity);
-        Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType);
+
+
+        IQueryable<T> GetQuery();
+        //Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType);
     }
 }

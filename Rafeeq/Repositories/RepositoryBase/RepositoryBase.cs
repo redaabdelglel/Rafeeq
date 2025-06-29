@@ -37,10 +37,18 @@ namespace Rafeeq.Repositories.RepositoryBase
              return await Context.Set<T>().FindAsync(id);
         }
 
-        public Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType)
+        //public Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType)
+        //{
+        //    throw new NotImplementedException();
+        //}
+
+
+
+        public IQueryable<T> GetQuery()
         {
-            throw new NotImplementedException();
+            return Context.Set<T>().AsQueryable();
         }
+
 
         public void Remove(T entity)
         {
