@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable disable
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -53,14 +54,11 @@ public partial class RafeeqContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-
         if (!optionsBuilder.IsConfigured)
         {
             optionsBuilder.UseSqlServer("Server=db20643.public.databaseasp.net; Database=db20643; User Id=db20643; Password=tD@2-b4KxQ?3; Encrypt=True; TrustServerCertificate=True; MultipleActiveResultSets=True;");
         }
     }
-
-
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -85,13 +83,20 @@ public partial class RafeeqContext : DbContext
             entity.HasOne(d => d.Mentor).WithMany(p => p.BookingMentors).HasConstraintName("FK_BookingsMentor_4F7CD00D");
         });
 
+        // ✅ UPDATED: ChatAttachment configuration with cascade delete
         modelBuilder.Entity<ChatAttachment>(entity =>
         {
             entity.HasKey(e => e.AttachmentId).HasName("PK_ChatAtta_442C64BE4F573056");
 
             entity.HasOne(d => d.Message).WithMany(p => p.ChatAttachments).HasConstraintName("FK_ChatAttacMessa_70DDC3D8");
+            entity.HasOne(d => d.Message)
+                .WithMany(p => p.ChatAttachments)
+                .HasForeignKey(d => d.MessageId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__ChatAttac__Messa__70DDC3D8");
         });
 
+        // ✅ UPDATED: ChatMessage configuration with all cascade relationships
         modelBuilder.Entity<ChatMessage>(entity =>
         {
             entity.HasKey(e => e.MessageId).HasName("PK_ChatMess_C87C0C9CDDF239B2");
@@ -104,6 +109,30 @@ public partial class RafeeqContext : DbContext
             entity.HasOne(d => d.Sender).WithMany(p => p.ChatMessages).HasConstraintName("FK_ChatMessaSende_5EBF139D");
             entity.HasOne(d => d.Conversation).WithMany(p => p.Messages)
                .HasConstraintName("FK_ChatMessaConve_XXXXX");
+            entity.HasOne(d => d.Booking).WithMany(p => p.ChatMessages)
+                .HasConstraintName("FK__ChatMessa__Booki__5DCAEF64");
+
+            entity.HasOne(d => d.Sender).WithMany(p => p.ChatMessages)
+                .HasConstraintName("FK__ChatMessa__Sende__5EBF139D");
+
+            entity.HasOne(d => d.Conversation).WithMany(p => p.Messages)
+                .HasConstraintName("FK__ChatMessa__Conve__XXXXX");
+
+            // ✅ NEW: Configure cascade relationships for all related entities
+            entity.HasMany(m => m.ChatAttachments)
+                .WithOne(a => a.Message)
+                .HasForeignKey(a => a.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(m => m.ReadStatuses)
+                .WithOne(rs => rs.Message)
+                .HasForeignKey(rs => rs.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(m => m.Reactions)
+                .WithOne(r => r.Message)
+                .HasForeignKey(r => r.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<MenteeSkill>(entity =>
@@ -158,6 +187,7 @@ public partial class RafeeqContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
+
             entity.HasKey(e => e.RoleId).HasName("PK_Roles_8AFACE1A4662431D");
         });
 
@@ -178,7 +208,28 @@ public partial class RafeeqContext : DbContext
             entity.Property(e => e.IsMentor).HasDefaultValue(false);
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users).HasConstraintName("FK_UsersRoleId_3B75D760");
+            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A4662431D");
         });
+
+        modelBuilder.Entity<Skill>(entity =>
+        {
+            entity.HasKey(e => e.SkillId).HasName("PK__Skills__DFA0918765B9AA60");
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C54AD77F5");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            entity.Property(e => e.IsEmailVerified).HasDefaultValue(false);
+            entity.Property(e => e.IsInterviewer).HasDefaultValue(false);
+            entity.Property(e => e.IsMentor).HasDefaultValue(false);
+
+            entity.HasOne(d => d.Role).WithMany(p => p.Users).HasConstraintName("FK__Users__RoleId__3B75D760");
+        });
+
         modelBuilder.Entity<MenteeCV>(entity =>
         {
             entity.HasKey(e => e.CVId);
@@ -206,6 +257,7 @@ public partial class RafeeqContext : DbContext
         });
 
 
+
         modelBuilder.Entity<ContactMessage>(entity =>
         {
             entity.HasKey(e => e.MessageId);
@@ -218,6 +270,7 @@ public partial class RafeeqContext : DbContext
                 .HasForeignKey(d => d.RespondedBy)
                 .OnDelete(DeleteBehavior.SetNull);
         });
+
         // Configure ChatConversations entity
         modelBuilder.Entity<ChatConversation>(entity =>
         {
@@ -236,7 +289,8 @@ public partial class RafeeqContext : DbContext
             entity.HasOne(d => d.Mentee).WithMany()
                 .HasConstraintName("FK_ChatConvMente_XXXXX");
         });
-        // Configure MessageReadStatus entity
+
+        // ✅ UPDATED: MessageReadStatus configuration with cascade delete
         modelBuilder.Entity<MessageReadStatus>(entity =>
         {
             entity.HasKey(e => e.ReadStatusId).HasName("PK_MessageR_B19EAD9154C14476");
@@ -249,7 +303,20 @@ public partial class RafeeqContext : DbContext
 
             entity.HasOne(d => d.User).WithMany()
                 .HasConstraintName("FK_MessageReUserI_XXXXX");
+            // ✅ IMPORTANT: Configure cascade delete
+            entity.HasOne(d => d.Message)
+                .WithMany(p => p.ReadStatuses)
+                .HasForeignKey(d => d.MessageId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__MessageRe__Messa__XXXXX");
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.NoAction)
+                .HasConstraintName("FK__MessageRe__UserI__XXXXX");
         });
+
         modelBuilder.Entity<Article>(entity =>
         {
             entity.HasKey(e => e.ArticleId);
@@ -273,6 +340,23 @@ public partial class RafeeqContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
         });
 
+        // ✅ NEW: Configure MessageReaction entity with cascade delete
+        modelBuilder.Entity<MessageReaction>(entity =>
+        {
+            entity.HasKey(e => e.ReactionId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+
+            // ✅ IMPORTANT: Configure cascade delete for reactions
+            entity.HasOne(d => d.Message)
+                .WithMany(p => p.Reactions)
+                .HasForeignKey(d => d.MessageId)
+                .OnDelete(DeleteBehavior.Cascade); // This allows reactions to be deleted when message is deleted
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.NoAction); // Don't delete users when reaction is deleted
+        });
 
 
         OnModelCreatingPartial(modelBuilder);
