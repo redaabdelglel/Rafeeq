@@ -16,6 +16,8 @@ using Rafeeq.Repositories.RepositoryBase;
 using Rafeeq.Repositories.Users;
 using Rafeeq.Services.Contact;
 using Rafeeq.Services.UserProfile;
+using Rafeeq.Services.Articles;
+using Rafeeq.Services.FAQ;
 
 namespace Rafeeq.Configurations
 {
@@ -38,8 +40,15 @@ namespace Rafeeq.Configurations
             services.AddScoped<IEmailService, EmailService>();
 
             // UserProfile Services
-            services.AddScoped<UserProfileService>();
+            services.AddScoped<UserProfileService>(); 
             services.AddScoped<IUserProfileService, UserProfileService>();
+
+
+          
+
+            // NEW: Articles and FAQ Services
+            services.AddScoped<IArticleService, ArticleService>();
+            services.AddScoped<IFAQService, FAQService>();
 
             // User Services
             services.AddScoped<UserService>();
