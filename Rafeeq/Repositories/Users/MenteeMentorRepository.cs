@@ -77,7 +77,7 @@ namespace Rafeeq.Repositories.Users
                 .FirstOrDefaultAsync(u => u.UserId == id && u.IsMentor == true && !(u.IsDeleted ?? false));
 
             // DEBUG: Verify loaded data
-            foreach (var a in mentor.Availabilities)
+            foreach (var a in mentor?.Availabilities)
             {
                 Console.WriteLine($"DB Values - ID: {a.AvailabilityId}, " +
                                  $"DayOfWeek: {a.DayOfWeek}, " +
