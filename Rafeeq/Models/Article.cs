@@ -21,7 +21,7 @@ namespace Rafeeq.Models
         public string? Summary { get; set; }
 
         [StringLength(100)]
-        public string? Category { get; set; } // 'Mentoring', 'Career', 'Interview', 'CV'
+        public string? Category { get; set; } 
 
         public int? AuthorId { get; set; }
 

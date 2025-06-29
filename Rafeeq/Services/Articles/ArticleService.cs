@@ -1,7 +1,8 @@
 ﻿using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Rafeeq.DTOs.Articles;
-using Rafeeq.UnitOfWork;
+using Rafeeq.UnitOfWork; 
+
 
 namespace Rafeeq.Services.Articles
 {
@@ -16,17 +17,36 @@ namespace Rafeeq.Services.Articles
             _mapper = mapper;
         }
 
-        public async Task<IEnumerable<ArticleDto>> GetPublishedArticlesAsync(string? category = null)
+        public async Task<PagedResult<ArticleListDto>> GetPublishedArticlesAsync(
+            string? category = null,
+            string? searchQuery = null, 
+            int pageNumber = 1,
+            int pageSize = 6)
         {
-            var articles = await _unitOfWork.ArticleRepository
-                                            .GetPublishedArticlesQuery(category: category)
-                                            .ToListAsync();
+            var query = _unitOfWork.ArticleRepository
+                                   .GetPublishedArticlesQuery(category: category, searchQuery: searchQuery);
 
-            return articles.Select(a => {
-                var dto = _mapper.Map<ArticleDto>(a);
-                dto.AuthorName = a.Author?.FullName ?? "Unknown Author";
+            var totalCount = await query.CountAsync();
+
+            var articles = await query
+                .OrderByDescending(a => a.CreatedAt) 
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            var articleDtos = articles.Select(a => {
+                var dto = _mapper.Map<ArticleListDto>(a);
+                dto.AuthorName = a.Author?.FullName ?? "Unknown Author"; 
                 return dto;
             }).ToList();
+
+            return new PagedResult<ArticleListDto>
+            {
+                Items = articleDtos,
+                TotalCount = totalCount,
+                PageNumber = pageNumber,
+                PageSize = pageSize
+            };
         }
 
         public async Task<ArticleDto?> GetArticleByIdAsync(int id)
@@ -39,7 +59,7 @@ namespace Rafeeq.Services.Articles
             }
 
             var dto = _mapper.Map<ArticleDto>(article);
-            dto.AuthorName = article.Author?.FullName ?? "Unknown Author";
+            dto.AuthorName = article.Author?.FullName ?? "Unknown Author"; 
             return dto;
         }
 
@@ -48,8 +68,7 @@ namespace Rafeeq.Services.Articles
             var article = await _unitOfWork.ArticleRepository.GetByIdAsync(id);
             if (article != null)
             {
-                article.ViewCount = article.ViewCount + 1; 
-                _unitOfWork.ArticleRepository.Update(article);
+                article.ViewCount = article.ViewCount + 1;
                 await _unitOfWork.SaveAsync();
             }
         }

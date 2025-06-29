@@ -10,7 +10,7 @@ namespace Rafeeq.Repositories.Articles
     {
         public ArticleRepository(RafeeqContext context) : base(context) { }
 
-        public IQueryable<Article> GetPublishedArticlesQuery(string? category = null)
+        public IQueryable<Article> GetPublishedArticlesQuery(string? category = null, string? searchQuery = null)
         {
             var query = Context.Set<Article>()
                                .Where(a => a.IsPublished == true);
@@ -20,6 +20,18 @@ namespace Rafeeq.Repositories.Articles
                 query = query.Where(a => a.Category == category);
             }
 
+            // Apply search query filter
+            if (!string.IsNullOrEmpty(searchQuery))
+            {
+                var lowerCaseQuery = searchQuery.ToLower();
+                query = query.Where(a =>
+                    a.Title.ToLower().Contains(lowerCaseQuery) ||
+                    (a.Summary != null && a.Summary.ToLower().Contains(lowerCaseQuery)) ||
+                    a.Content.ToLower().Contains(lowerCaseQuery)
+                );
+            }
+
+            // Always include Author for projection in service/controller
             return query.Include(a => a.Author);
         }
 

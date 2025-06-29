@@ -1,10 +1,13 @@
-﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Rafeeq.DTOs.Articles;
-using Rafeeq.Services.Articles;
+﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
-namespace Rafeeq.Controllers
+using Rafeeq.Services.Articles; 
+using System;
+
+
+using Microsoft.AspNetCore.Authorization;
+
+namespace Rafeeq.Backend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
@@ -12,37 +15,52 @@ namespace Rafeeq.Controllers
     {
         private readonly IArticleService _articleService;
 
-
         public ArticlesController(IArticleService articleService)
         {
             _articleService = articleService;
         }
 
+     
         [HttpGet]
-        [AllowAnonymous]
-        [ProducesResponseType(typeof(IEnumerable<ArticleDto>), 200)]
-        public async Task<IActionResult> GetArticles([FromQuery] string? category = null)
+        [AllowAnonymous] 
+        public async Task<IActionResult> GetArticles(
+            [FromQuery] string? category = null,
+            [FromQuery] string? searchQuery = null,
+            [FromQuery] int pageNumber = 1,
+            [FromQuery] int pageSize = 6)
         {
-            var articles = await _articleService.GetPublishedArticlesAsync(category);
-            return Ok(articles);
-        }
+            var pagedResult = await _articleService.GetPublishedArticlesAsync(
+                category: category,
+                searchQuery: searchQuery,
+                pageNumber: pageNumber,
+                pageSize: pageSize);
 
+            return Ok(pagedResult);
+        }
 
         [HttpGet("{id}")]
-        [AllowAnonymous]
-        [ProducesResponseType(typeof(ArticleDto), 200)]
-        [ProducesResponseType(404)]
+        [AllowAnonymous] 
         public async Task<IActionResult> GetArticle(int id)
         {
-            var article = await _articleService.GetArticleByIdAsync(id);
-            if (article == null)
+            var articleDto = await _articleService.GetArticleByIdAsync(id);
+
+            if (articleDto == null)
             {
-                return NotFound("Article not found or not published.");
+                return NotFound();
             }
 
-            _ = _articleService.IncrementArticleViewCountAsync(id);
-
-            return Ok(article);
+            return Ok(articleDto);
         }
+
+        [HttpPut("{id}/view")]
+        [AllowAnonymous]
+
+        public async Task<IActionResult> IncrementViewCount(int id)
+        {
+            await _articleService.IncrementArticleViewCountAsync(id);
+            return NoContent();
+        }
+
+    
     }
 }
