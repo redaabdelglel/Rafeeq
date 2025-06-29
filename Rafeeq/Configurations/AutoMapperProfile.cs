@@ -269,10 +269,11 @@ namespace Rafeeq.Configurations
 
 
             // NEW: FAQ Mappings
-            CreateMap<FAQ, FaqDto>()
-                .ForMember(dest => dest.ViewCount, opt => opt.MapFrom(src => src.ViewCount ))
-                .ForMember(dest => dest.SortOrder, opt => opt.MapFrom(src => src.SortOrder));
-
+            CreateMap<Rafeeq.Models.FAQ, Rafeeq.DTOs.FAQ.FaqDto>()
+         .ForMember(dest => dest.ViewCount, opt => opt.MapFrom(src => src.ViewCount))
+         .ForMember(dest => dest.SortOrder, opt => opt.MapFrom(src => src.SortOrder))
+         .ForMember(dest => dest.HelpfulCount, opt => opt.MapFrom(src => src.HelpfulCount))    
+         .ForMember(dest => dest.NotHelpfulCount, opt => opt.MapFrom(src => src.NotHelpfulCount));
 
 
 

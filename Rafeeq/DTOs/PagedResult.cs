@@ -1,4 +1,4 @@
-﻿namespace Rafeeq.DTOs.Articles
+﻿namespace Rafeeq.DTOs
 {
     public class PagedResult<T>
     {

@@ -1,4 +1,5 @@
-﻿using Rafeeq.DTOs.Articles;
+﻿using Rafeeq.DTOs;
+using Rafeeq.DTOs.Articles;
 
 namespace Rafeeq.Services.Articles
 {
