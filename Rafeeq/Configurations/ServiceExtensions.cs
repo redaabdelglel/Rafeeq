@@ -61,7 +61,7 @@ namespace Rafeeq.Configurations
             services.AddScoped<AvailabilityService>();
             services.AddScoped<BookingService>();
             services.AddScoped<MeetingService>();
-            services.AddScoped<GoogleMeetService>();  
+            services.AddScoped<GoogleMeetService>();
             services.AddScoped<PaymentService>();
             services.AddScoped<StripeService>();
             services.AddScoped<ChatService>();
@@ -74,8 +74,8 @@ namespace Rafeeq.Configurations
             // CV Services
             services.AddScoped<CVService>();
 
-            // Chat services 
-            services.AddScoped<SignalRService>();
+            // ✅ Chat & SignalR services 
+            services.AddScoped<SignalRService>(); 
 
             return services;
         }
@@ -95,3 +95,4 @@ namespace Rafeeq.Configurations
         }
     }
 }
+
