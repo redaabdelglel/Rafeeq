@@ -1,4 +1,4 @@
-﻿// In AutoMapperProfile.cs
+// In AutoMapperProfile.cs
 using AutoMapper;
 using Rafeeq.Models;
 using Rafeeq.DTOs.Users;
@@ -12,7 +12,12 @@ using Rafeeq.DTOs.Chat;
 using Rafeeq.DTOs.Notifications;
 using Rafeeq.DTOs.Payments;
 using Rafeeq.DTOs.Reviews;
+using Rafeeq.DTOs.CV;
+using Rafeeq.DTOs.Availability;
+using Rafeeq.DTOs.Mentee;
 using Rafeeq.DTOs.Contact;
+using Rafeeq.DTOs.Articles;
+using Rafeeq.DTOs.FAQ;
 
 namespace Rafeeq.Configurations
 {
@@ -63,7 +68,7 @@ namespace Rafeeq.Configurations
                    opt.MapFrom(src => BCrypt.Net.BCrypt.HashPassword(src.Password)))
                .ForMember(destination => destination.ProfilePicture, opt => opt.Condition(src => src.ProfilePicture != null))
                .ForMember(destination => destination.Bio, opt => opt.Condition(src => src.Bio != null));
-       
+
 
             // UpdateMentorProfileDto to User
             CreateMap<UpdateMentorProfileDto, User>()
@@ -75,7 +80,7 @@ namespace Rafeeq.Configurations
                .ForMember(destination => destination.Bio, opt => opt.Condition(src => src.Bio != null))
                .ForMember(destination => destination.HourlyRate, opt => opt.Condition(src => src.HourlyRate.HasValue))
                .ForMember(destination => destination.IsInterviewer, opt => opt.Condition(src => src.IsInterviewer.HasValue));
- 
+
 
 
 
@@ -140,7 +145,7 @@ namespace Rafeeq.Configurations
             CreateMap<AddCVCommentDto, CVComment>();
 
             // Chat mappings
-            
+
             CreateMap<ChatMessage, ChatMessageDto>()
                 .ForMember(dest => dest.SenderName, opt => opt.MapFrom(src => src.Sender.FullName))
                 .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.Sender.ProfilePicture))
@@ -154,7 +159,7 @@ namespace Rafeeq.Configurations
 
             CreateMap<ChatAttachment, ChatAttachmentDto>()
                 .ForMember(dest => dest.IsVoiceMessage, opt => opt.MapFrom(src => src.IsVoiceMessage))
-                .ForMember(dest => dest.FullUrl, opt => opt.Ignore()); 
+                .ForMember(dest => dest.FullUrl, opt => opt.Ignore());
 
 
 
@@ -226,6 +231,19 @@ namespace Rafeeq.Configurations
             CreateMap<Availability, AvailabilityDto>()
                 .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.DayOfWeek));
 
+
+            // Mentee bookings mapping
+            CreateMap<Booking, MenteeBookingDto>()
+                .ForMember(dest => dest.MentorName,
+                    opt => opt.MapFrom(src => src.Mentor.FullName));
+
+            CreateMap<Booking, MenteeBookingDetailsDto>()
+                .IncludeBase<Booking, MenteeBookingDto>()
+                .ForMember(dest => dest.MentorProfilePicture,
+                    opt => opt.MapFrom(src => src.Mentor.ProfilePicture))
+                .ForMember(dest => dest.MentorBio,
+                    opt => opt.MapFrom(src => src.Mentor.Bio));
+
             // Contact mappings
             CreateMap<ContactMessage, ContactMessageListDto>()
                 .ForMember(dest => dest.MessageId, opt => opt.MapFrom(src => src.MessageId))
@@ -255,12 +273,28 @@ namespace Rafeeq.Configurations
 
 
 
+            // NEW: Article Mappings
+            CreateMap<Article, ArticleDto>()
+            .ForMember(dest => dest.AuthorName,
+                       opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Unknown Author"))
+            .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.AuthorId.HasValue ? src.AuthorId.Value : 0)); 
+
+            CreateMap<Article, ArticleListDto>()
+                .ForMember(dest => dest.AuthorName,
+                           opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Unknown Author"));
+
+
+            // NEW: FAQ Mappings
+            CreateMap<Rafeeq.Models.FAQ, Rafeeq.DTOs.FAQ.FaqDto>()
+         .ForMember(dest => dest.ViewCount, opt => opt.MapFrom(src => src.ViewCount))
+         .ForMember(dest => dest.SortOrder, opt => opt.MapFrom(src => src.SortOrder))
+         .ForMember(dest => dest.HelpfulCount, opt => opt.MapFrom(src => src.HelpfulCount))    
+         .ForMember(dest => dest.NotHelpfulCount, opt => opt.MapFrom(src => src.NotHelpfulCount));
 
 
 
 
 
-   
 
 
 
@@ -271,7 +305,7 @@ namespace Rafeeq.Configurations
 
 
 
-            
+
             CreateMap<ChatConversation, ChatConversationDto>()
                 .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName))
                 .ForMember(dest => dest.MentorProfilePicture, opt => opt.MapFrom(src => src.Mentor.ProfilePicture))
@@ -280,13 +314,14 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.LastMessage, opt => opt.Ignore())
                 .ForMember(dest => dest.UnreadCount, opt => opt.Ignore());
 
-          
-            
+
+
 
             CreateMap<MessageReaction, MessageReactionInfoDto>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName));
 
 
         }
+    
     }
 }
