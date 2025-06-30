@@ -13,41 +13,49 @@ namespace Rafeeq.Repositories.Reviews
             _context = context;
         }
 
-        public async Task<IEnumerable<ReviewDateDto>> GetReviewsByMentorIdAsync(int mentorId)
+        public async Task<IEnumerable<ReviewDateDto>> GetReviewsWrittenByUserAsync(int userId)
         {
-            if (mentorId <= 0)
-            {
-                throw new ArgumentException("Invalid mentor ID.", nameof(mentorId));
-            }
-
             return await _context.Reviews
                 .Include(r => r.Reviewer)
                 .Include(r => r.ReviewedUser)
-                .Where(r => r.ReviewedUser.Role.RoleName == "Mentor")
+                .Where(r => r.ReviewerId == userId)
                 .Select(r => new ReviewDateDto
                 {
                     ReviewId = r.ReviewId,
                     ReviewerId = r.ReviewerId,
+                    ReviewerName = r.Reviewer.FullName,
+                    ReviewerRole = r.Reviewer.Role.RoleName,
                     ReviewedUserId = r.ReviewedUserId,
-                    CreatedAt = r.CreatedAt,
+                    ReviewedUserName = r.ReviewedUser.FullName,
+                    ReviewedUserRole = r.ReviewedUser.Role.RoleName,
+                    BookingId = r.BookingId ?? 0,
                     Rating = r.Rating,
                     Comment = r.Comment,
-                    BookingId = r.BookingId ?? 0
+                    CreatedAt = r.CreatedAt
                 })
                 .ToListAsync();
         }
 
-
-        public async Task<IEnumerable<Review>> GetReviewsByMenteeIdAsync(int menteeId)
+        public async Task<IEnumerable<ReviewDateDto>> GetReviewsAboutUserAsync(int userId)
         {
-            if (menteeId <= 0)
-            {
-                throw new ArgumentException("Invalid mentee ID.", nameof(menteeId));
-            }
             return await _context.Reviews
                 .Include(r => r.Reviewer)
                 .Include(r => r.ReviewedUser)
-                .Where(r => r.ReviewedUser.Role.RoleName == "Mentee")
+                .Where(r => r.ReviewedUserId == userId)
+                .Select(r => new ReviewDateDto
+                {
+                    ReviewId = r.ReviewId,
+                    ReviewerId = r.ReviewerId,
+                    ReviewerName = r.Reviewer.FullName,
+                    ReviewerRole = r.Reviewer.Role.RoleName,
+                    ReviewedUserId = r.ReviewedUserId,
+                    ReviewedUserName = r.ReviewedUser.FullName,
+                    ReviewedUserRole = r.ReviewedUser.Role.RoleName,
+                    BookingId = r.BookingId ?? 0,
+                    Rating = r.Rating,
+                    Comment = r.Comment,
+                    CreatedAt = r.CreatedAt
+                })
                 .ToListAsync();
         }
 
@@ -101,6 +109,17 @@ namespace Rafeeq.Repositories.Reviews
 
             return review;
         }
+
+        public async Task CreateReview(Review review)
+        {
+            if (review == null)
+            {
+                throw new ArgumentNullException(nameof(review), "Review cannot be null.");
+            }
+            _context.Reviews.Add(review);
+            await _context.SaveChangesAsync();
+        }
+
         // delete review by ID
         public async Task<bool> DeleteAsync(int id)
         {
@@ -111,6 +130,13 @@ namespace Rafeeq.Repositories.Reviews
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<Review> GetByBookingIdAsync(int bookingId)
+        {
+            return await _context.Reviews
+                .FirstOrDefaultAsync(r => r.BookingId == bookingId);
+        }
+
 
     }
 }
