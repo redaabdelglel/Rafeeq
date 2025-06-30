@@ -258,6 +258,8 @@ public partial class RafeeqContext : DbContext
 
 
 
+
+
         modelBuilder.Entity<ContactMessage>(entity =>
         {
             entity.HasKey(e => e.MessageId);

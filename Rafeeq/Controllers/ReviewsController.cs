@@ -1,12 +1,15 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Rafeeq.DTOs.Reviews;
+using Rafeeq.Models;
 using Rafeeq.UnitOfWork;
 
 namespace Rafeeq.Controllers
 {
     [Route("api/[controller]")]
+    [AllowAnonymous]
     [ApiController]
     public class ReviewsController : ControllerBase
     {
@@ -17,40 +20,85 @@ namespace Rafeeq.Controllers
             _unitOfWork = unitOfWork;
             _mapper = mapper;
         }
-        // GET: api/reviews/mentor/{mentorid}
-        [HttpGet("mentor/{id}")]
-        public async Task<ActionResult<IEnumerable<ReviewDateDto>>> GetMentorReviews(int id)
-        {
-            if (id <= 0)
-            {
-                return BadRequest("Invalid mentor ID.");
-            }
 
-            var reviews = await _unitOfWork.ReviewRepository.GetReviewsByMentorIdAsync(id);
+        
+        // GET: api/reviews/written-by/{userId}
+        [HttpGet("written-by/{userId}")]
+        public async Task<IActionResult> GetReviewsWrittenByUser(int userId)
+        {
+            if (userId <= 0)
+                return BadRequest("Invalid user ID.");
+
+            var reviews = await _unitOfWork.ReviewRepository.GetReviewsWrittenByUserAsync(userId);
 
             if (reviews == null || !reviews.Any())
-            {
-                return NotFound("No reviews found for this mentor.");
-            }
+                return NotFound("No reviews written by this user.");
 
-
-            return Ok(_mapper.Map<IEnumerable<ReviewDateDto>>(reviews));
+            return Ok(reviews);
         }
-        // GET: api/reviews/mentee/{menteeid}
-        [HttpGet("mentee/{id}")]
-        public async Task<ActionResult<IEnumerable<ReviewDateDto>>> GetMenteeReviews(int id)
+
+        // GET: api/reviews/about/{userId}
+        [HttpGet("about/{userId}")]
+        public async Task<IActionResult> GetReviewsAboutUser(int userId)
         {
-            if (id <= 0)
-            {
-                return BadRequest("Invalid mentee ID.");
-            }
-            var reviews = await _unitOfWork.ReviewRepository.GetReviewsByMenteeIdAsync(id);
-            if (reviews == null || !reviews.Any())
-            {
-                return NotFound("No reviews found for this mentee.");
-            }
-            return Ok(_mapper.Map<IEnumerable<ReviewDateDto>>(reviews));
+            if (userId <= 0)
+                return BadRequest("Invalid user ID.");
 
+            var reviews = await _unitOfWork.ReviewRepository.GetReviewsAboutUserAsync(userId);
+
+            if (reviews == null || !reviews.Any())
+                return NotFound("No reviews written about this user.");
+
+            return Ok(reviews);
         }
+
+
+        [HttpPost]
+        public async Task<IActionResult> CreateReview([FromBody] CreateReviewDto reviewDto)
+        {
+            if (reviewDto == null || reviewDto.BookingId <= 0)
+                return BadRequest("Invalid review data or booking ID.");
+
+            var booking = await _unitOfWork.BookingRepository.GetByIdAsync(reviewDto.BookingId);
+
+            // Booking must exist
+            if (booking == null)
+                return NotFound("Booking not found.");
+
+            // Check if the session is completed
+            if (!string.Equals(booking.Status, "Completed", StringComparison.OrdinalIgnoreCase))
+                return BadRequest("Cannot review. Session is not completed.");
+
+            // Reviewer must be mentee in this booking
+            if (reviewDto.ReviewerId != booking.MenteeId)
+                return BadRequest("Only the mentee who attended the session can review the mentor.");
+
+            // Reviewed user must be the mentor in this booking
+            if (reviewDto.ReviewedUserId != booking.MentorId)
+                return BadRequest("Reviewed user must be the mentor of the session.");
+
+            // Prevent duplicate review for same booking
+            var existingReview = await _unitOfWork.ReviewRepository
+                .GetByBookingIdAsync(reviewDto.BookingId);
+
+            if (existingReview != null)
+                return BadRequest("Review for this booking already exists.");
+
+            var review = new Review
+            {
+                ReviewerId = reviewDto.ReviewerId,
+                ReviewedUserId = reviewDto.ReviewedUserId,
+                BookingId = reviewDto.BookingId,
+                Rating = reviewDto.Rating,
+                Comment = reviewDto.Comment,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            await _unitOfWork.ReviewRepository.CreateReview(review);
+            await _unitOfWork.SaveAsync();
+
+            return Ok("Review created successfully.");
+        }
+
     }
 }
