@@ -12,6 +12,9 @@ using Rafeeq.DTOs.Chat;
 using Rafeeq.DTOs.Notifications;
 using Rafeeq.DTOs.Payments;
 using Rafeeq.DTOs.Reviews;
+using Rafeeq.DTOs.CV;
+using Rafeeq.DTOs.Availability;
+using Rafeeq.DTOs.Mentee;
 using Rafeeq.DTOs.Contact;
 using Rafeeq.DTOs.Articles;
 using Rafeeq.DTOs.FAQ;
@@ -228,6 +231,19 @@ namespace Rafeeq.Configurations
             CreateMap<Availability, AvailabilityDto>()
                 .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.DayOfWeek));
 
+
+            // Mentee bookings mapping
+            CreateMap<Booking, MenteeBookingDto>()
+                .ForMember(dest => dest.MentorName,
+                    opt => opt.MapFrom(src => src.Mentor.FullName));
+
+            CreateMap<Booking, MenteeBookingDetailsDto>()
+                .IncludeBase<Booking, MenteeBookingDto>()
+                .ForMember(dest => dest.MentorProfilePicture,
+                    opt => opt.MapFrom(src => src.Mentor.ProfilePicture))
+                .ForMember(dest => dest.MentorBio,
+                    opt => opt.MapFrom(src => src.Mentor.Bio));
+
             // Contact mappings
             CreateMap<ContactMessage, ContactMessageListDto>()
                 .ForMember(dest => dest.MessageId, opt => opt.MapFrom(src => src.MessageId))
@@ -306,5 +322,6 @@ namespace Rafeeq.Configurations
 
 
         }
+    
     }
 }
