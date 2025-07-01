@@ -76,7 +76,7 @@ namespace Rafeeq.Repositories.Reviews
                     CreatedAt = r.CreatedAt,
                     Rating = r.Rating,
                     Comment = r.Comment,
-                    ReviewedUserName = r.Reviewer.FullName,
+                    ReviewedUserName = r.ReviewedUser.FullName,
                     ReviewerName = r.Reviewer.FullName
 
 

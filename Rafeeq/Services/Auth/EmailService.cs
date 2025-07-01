@@ -1,7 +1,5 @@
-﻿using SendGrid.Helpers.Mail;
-using SendGrid;
 
-
+﻿
 using SendGrid; 
 using SendGrid.Helpers.Mail; 
 namespace Rafeeq.Services.Auth
@@ -10,18 +8,20 @@ namespace Rafeeq.Services.Auth
     {
         private readonly IConfiguration _config;
 
+
         public EmailService(IConfiguration config)
         {
             _config = config;
         }
 
+
         public async Task SendEmailAsync(string toEmail, string subject, string message)
         {
-
-            var sendGridApiKey = _config["SendGrid:ApiKey"];
+            
+            var sendGridApiKey = _config["SendGrid:ApiKey"]; 
 
             var fromEmailAddress = _config["EmailSettings:FromEmailAddress"];
-            var fromName = _config["EmailSettings:FromName"] ?? "Rafeeq Platform";
+            var fromName = _config["EmailSettings:FromName"] ?? "Rafeeq Platform"; 
 
             if (string.IsNullOrEmpty(sendGridApiKey))
             {
@@ -37,8 +37,9 @@ namespace Rafeeq.Services.Auth
             var from = new EmailAddress(fromEmailAddress, fromName);
             var to = new EmailAddress(toEmail);
 
-            var plainTextContent = string.Empty;
-            var htmlContent = message;
+            var plainTextContent = string.Empty; 
+            var htmlContent = message; 
+
 
             var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
 
@@ -46,7 +47,7 @@ namespace Rafeeq.Services.Auth
             {
                 var response = await client.SendEmailAsync(msg);
 
-
+             
                 if (!response.IsSuccessStatusCode)
                 {
                     Console.WriteLine($"SendGrid Email sending failed with status code: {response.StatusCode}");
@@ -58,11 +59,11 @@ namespace Rafeeq.Services.Auth
             catch (Exception ex)
             {
                 Console.WriteLine($"Exception while sending email via SendGrid: {ex.Message}");
-                throw;
+                throw; 
             }
         }
 
-
+      
         public async Task SendPasswordResetEmailAsync(string toEmail, string token)
         {
             var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:4200";
@@ -81,6 +82,7 @@ namespace Rafeeq.Services.Auth
             await SendEmailAsync(toEmail, subject, message);
         }
 
+
         public async Task SendPaymentConfirmationEmailAsync(string toEmail, string userName, int bookingId, decimal amount, DateTime sessionDateTime, string userType)
         {
             var subject = "Rafeeq: Payment Confirmation";
@@ -95,6 +97,7 @@ namespace Rafeeq.Services.Auth
                     <p>Please log in to your dashboard to view more details.</p>
                     <p>Thank you for being part of Rafeeq!</p>
                     ";
+
             }
             else
             {
@@ -111,3 +114,5 @@ namespace Rafeeq.Services.Auth
         }
     }
 }
+
+
