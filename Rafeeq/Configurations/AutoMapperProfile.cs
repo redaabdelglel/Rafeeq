@@ -251,9 +251,10 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.Subject, opt => opt.MapFrom(src => src.Subject))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.Message));
 
-            CreateMap<ContactMessage, ContactMessageDto>()
+                 CreateMap<ContactMessage, ContactMessageDto>()
                 .ForMember(dest => dest.MessageId, opt => opt.MapFrom(src => src.MessageId))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
@@ -261,9 +262,17 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.Message))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
-                .ForMember(dest => dest.ResponseDate, opt => opt.MapFrom(src => src.ResponseDate))
-                .ForMember(dest => dest.ResponseMessage, opt => opt.MapFrom(src => src.ResponseMessage))
+                
                 .ForMember(dest => dest.ResponderName, opt => opt.MapFrom(src => src.Responder != null ? src.Responder.FullName : null));
+            
+            
+            //contact replay
+        CreateMap<ContactReplies, ContactReplyDto>()
+       .ForMember(dest => dest.ReplyId, opt => opt.MapFrom(src => src.ReplyId))
+       .ForMember(dest => dest.ReplyText, opt => opt.MapFrom(src => src.ReplyText))
+       .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+       .ForMember(dest => dest.ResponderName, opt => opt.MapFrom(src =>
+           src.Responder != null ? src.Responder.FullName :"Admin"));
 
 
 
@@ -321,6 +330,8 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName));
 
 
+            //review mapping mentor and mentee
+            CreateMap<Review, ReviewDateDto>().ReverseMap();
         }
     
     }

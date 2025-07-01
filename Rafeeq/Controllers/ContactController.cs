@@ -74,6 +74,9 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred while checking message status", error = ex.Message });
             }
         }
+       
+        
+        // get all messages
         [HttpGet]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllMessages()
@@ -98,6 +101,71 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred while retrieving contact messages", error = ex.Message });
             }
         }
+
+
+
+        
+        // GET: api/contact/responded?email=xxx
+        [HttpGet("responded")]
+        public async Task<IActionResult> GetRespondedMessages([FromQuery] string email)
+        {
+            if (string.IsNullOrEmpty(email))
+                return BadRequest(new { success = false, message = "Email is required" });
+
+            var result = await _contactService.GetRespondedMessagesByEmailAsync(email);
+
+            if (!result.success)
+                return BadRequest(new { success = false, message = result.Message });
+
+            return Ok(new { success = true, data = result.Data });
+        }
+
+        // get all conversation
+
+        [HttpGet("conversation")]
+        public async Task<IActionResult> GetConversation([FromQuery] string email)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(email))
+                {
+                    return BadRequest(new { success = false, message = "Email is required" });
+                }
+
+                var result = await _contactService.GetFullConversationAsync(email);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+
+                return Ok(new { success = true, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving conversation");
+                return StatusCode(500, new { success = false, message = "An error occurred while retrieving the conversation", error = ex.Message });
+            }
+        }
+
+        // PATCH: api/contact/{id}/status?status=Read
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromQuery] string status)
+        {
+            var result = await _contactService.UpdateMessageStatusAsync(id, status);
+            if (!result.Success)
+            {
+                if (result.Message == "Message not found")
+                    return NotFound(new { message = result.Message });
+
+                return BadRequest(new { message = result.Message });
+            }
+
+
+            return Ok(new { message = result.Message });
+        }
+
+
 
     }
 }

@@ -52,6 +52,8 @@ public partial class RafeeqContext : DbContext
     public virtual DbSet<Article> Articles { get; set; }
     public virtual DbSet<FAQ> FAQs { get; set; }
 
+    public virtual DbSet<ContactReplies> ContactReplies { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)

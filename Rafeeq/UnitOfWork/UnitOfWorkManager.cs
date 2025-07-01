@@ -43,9 +43,9 @@ namespace Rafeeq.UnitOfWork
         private RoleRepository _roleRepository;
         private AdminRepositary _adminRepositary;
         private BookingRepository _bookingRepository;
+        private ContactRepository _contactRepository;
+        private ContactRepliesRepository    _contactRepliesRepository;
 
-        private ArticleRepository _articleRepository;
-        private FAQRepository _faqRepository;
 
         public UnitOfWorkManager(RafeeqContext context)
         {
@@ -285,20 +285,33 @@ namespace Rafeeq.UnitOfWork
                 return _adminRepositary;
             }
         }
-        
-        private ContactRepository _contactRepository;
 
         public ContactRepository ContactRepository
         {
             get
             {
-                if (_contactRepository == null)
+                if(_contactRepository == null)
                 {
                     _contactRepository = new ContactRepository(context);
                 }
                 return _contactRepository;
             }
         }
+
+
+        public ContactRepliesRepository ContactRepliesRepository
+        {
+            get
+            {
+                if (_contactRepliesRepository == null)
+                {
+                    _contactRepliesRepository = new ContactRepliesRepository(context);
+                }
+                return _contactRepliesRepository;
+            }
+        }
+
+      
 
     }
 }
