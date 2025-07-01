@@ -1,4 +1,5 @@
-﻿using Rafeeq.DTOs.Skills;
+﻿using Rafeeq.DTOs.Availability;
+using Rafeeq.DTOs.Skills;
 
 namespace Rafeeq.DTOs.Users
 {
@@ -16,5 +17,9 @@ namespace Rafeeq.DTOs.Users
         public bool IsMentor { get; set; }
         public bool? IsInterviewer { get; set; }
         public decimal? HourlyRate { get; set; }
+        public List<SkillDto>? MentorSkills { get; set; }
+        public List<SkillDto>? MenteeSkills { get; set; }
+        public List<string>? Skills { get; set; } 
+        public List<AvailabilityDto>? Availabilities { get; set; }
     }
 }

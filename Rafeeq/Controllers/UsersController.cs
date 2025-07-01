@@ -129,5 +129,118 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred while toggling mentor status", error = ex.Message });
             }
         }
+        
+        [HttpGet("profile")]
+        [Authorize]
+        public async Task<IActionResult> GetUserProfile()
+        {
+            try
+            {
+                // Get the current user ID from claims
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+                if (userId == 0)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
+                }
+
+                var profile = await _userService.GetUserProfileAsync(userId);
+
+                if (profile == null)
+                {
+                    return NotFound(new { success = false, message = "User profile not found" });
+                }
+
+                return Ok(new { success = true, data = profile });
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error retrieving user profile");
+                return StatusCode(500, new { success = false, message = "An error occurred while retrieving user profile", error = ex.Message });
+            }
+        }
+
+        [HttpPut("profile")]
+        [Authorize]
+        public async Task<IActionResult> UpdateUserProfile([FromBody] UpdateProfileDto dto)
+        {
+            try
+            {
+                // Get the current user ID from claims
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+                if (userId == 0)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var success = await _userService.UpdateUserProfileAsync(userId, dto);
+
+                if (!success)
+                {
+                    return BadRequest(new { success = false, message = "Failed to update profile." });
+                }
+
+                // Get updated profile to return in response
+                var updatedProfile = await _userService.GetUserProfileAsync(userId);
+
+                return Ok(new { success = true, message = "Profile updated successfully", data = updatedProfile });
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error updating user profile");
+                return StatusCode(500, new { success = false, message = "An error occurred while updating profile", error = ex.Message });
+            }
+        }
+        [HttpPost("profile-picture")]
+        [Authorize]
+        public async Task<IActionResult> UploadProfilePicture(IFormFile file)
+        {
+            try
+            {
+                // Get the current user ID from claims
+                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+
+                if (userId == 0)
+                {
+                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
+                }
+
+                if (file == null || file.Length == 0)
+                {
+                    return BadRequest(new { success = false, message = "No file was uploaded" });
+                }
+
+                var success = await _userService.UploadProfilePictureAsync(userId, file);
+
+                if (!success)
+                {
+                    return BadRequest(new { success = false, message = "Failed to upload profile picture." });
+                }
+
+                // Get updated profile to return the new profile picture URL
+                var updatedProfile = await _userService.GetUserProfileAsync(userId);
+
+                return Ok(new
+                {
+                    success = true,
+                    message = "Profile picture updated successfully",
+                    profilePictureUrl = updatedProfile.ProfilePicture
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Error uploading profile picture");
+                return StatusCode(500, new { success = false, message = "An error occurred while uploading profile picture", error = ex.Message });
+            }
+        }
+
+
+
     }
 }

@@ -9,5 +9,6 @@
         public bool IsActive { get; set; }
         public string UserFullName { get; set; } // Mentee name
         public List<CVCommentDto> Comments { get; set; }
+        public string DownloadUrl { get; set; }
     }
 }

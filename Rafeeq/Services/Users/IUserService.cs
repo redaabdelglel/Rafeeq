@@ -1,4 +1,5 @@
 ﻿using Rafeeq.DTOs.Users;
+using Rafeeq.Models;
 
 namespace Rafeeq.Services.Users
 {
@@ -12,6 +13,9 @@ namespace Rafeeq.Services.Users
        
         Task<bool> UpdateHourlyRateAsync(int userId, decimal hourlyRate);
         Task<bool> ToggleMentorStatusAsync(int userId, bool isInterviewer);
+         
+
+       
     }
 }
 

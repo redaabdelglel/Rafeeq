@@ -47,8 +47,29 @@ namespace Rafeeq.Repositories.Reviews
             return await _context.Reviews
                 .Include(r => r.Reviewer)
                 .Include(r => r.ReviewedUser)
-                .Where(r => r.ReviewedUser.Role.RoleName == "Mentee")
+                .Where(r => r.Reviewer.Role.RoleName == "Mentee")
                 .ToListAsync();
+        }
+        // Add a new review
+        public async Task<Review> AddAsync(CreateReviewDto review)
+        {
+            if (review == null)
+            {
+                throw new ArgumentNullException(nameof(review), "Review data is required.");
+            }
+            var newReview = new Review
+            {
+                ReviewerId = review.ReviewerId,
+                ReviewedUserId = review.ReviewedUserId,
+                BookingId = review.BookingId,
+                Rating = review.Rating,
+                Comment = review.Comment,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.Reviews.Add(newReview);
+            await _context.SaveChangesAsync();
+            return newReview;
         }
 
 

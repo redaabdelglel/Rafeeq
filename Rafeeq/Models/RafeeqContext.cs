@@ -45,6 +45,13 @@ public partial class RafeeqContext : DbContext
     public virtual DbSet<MenteeCV> MenteeCVs { get; set; }
     public virtual DbSet<CVComment> CVComments { get; set; }
 
+    public virtual DbSet<ContactMessage> ContactMessages { get; set; }
+    
+    public virtual DbSet<ChatConversation> ChatConversations { get; set; }
+    public virtual DbSet<MessageReadStatus> MessageReadStatuses { get; set; }
+    public virtual DbSet<MessageReaction> MessageReactions { get; set; }
+    public virtual DbSet<ContactReplies> ContactReplies { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
 
@@ -96,6 +103,8 @@ public partial class RafeeqContext : DbContext
             entity.HasOne(d => d.Booking).WithMany(p => p.ChatMessages).HasConstraintName("FK__ChatMessa__Booki__5DCAEF64");
 
             entity.HasOne(d => d.Sender).WithMany(p => p.ChatMessages).HasConstraintName("FK__ChatMessa__Sende__5EBF139D");
+            entity.HasOne(d => d.Conversation).WithMany(p => p.Messages)
+               .HasConstraintName("FK__ChatMessa__Conve__XXXXX");
         });
 
         modelBuilder.Entity<MenteeSkill>(entity =>
@@ -197,6 +206,50 @@ public partial class RafeeqContext : DbContext
             entity.HasOne(d => d.User).WithMany(p => p.UserTokens).HasConstraintName("FK__UserToken__UserI__6C190EBB");
         });
 
+       
+        modelBuilder.Entity<ContactMessage>(entity =>
+        {
+            entity.HasKey(e => e.MessageId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Status).HasDefaultValue("New");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            entity.HasOne(d => d.Responder)
+                .WithMany()
+                .HasForeignKey(d => d.RespondedBy)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+        // Configure ChatConversations entity
+        modelBuilder.Entity<ChatConversation>(entity =>
+        {
+            entity.HasKey(e => e.ConversationId).HasName("PK__ChatConv__C95C11C4E86EA4A7");
+
+            entity.Property(e => e.LastMessageAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Booking).WithMany()
+                .HasConstraintName("FK__ChatConv__Booki__XXXXX");
+
+            entity.HasOne(d => d.Mentor).WithMany()
+                .HasConstraintName("FK__ChatConv__Mento__XXXXX");
+
+            entity.HasOne(d => d.Mentee).WithMany()
+                .HasConstraintName("FK__ChatConv__Mente__XXXXX");
+        });
+        // Configure MessageReadStatus entity
+        modelBuilder.Entity<MessageReadStatus>(entity =>
+        {
+            entity.HasKey(e => e.ReadStatusId).HasName("PK__MessageR__B19EAD9154C14476");
+
+            entity.Property(e => e.ReadAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Message).WithMany(p => p.ReadStatuses)
+                .HasConstraintName("FK__MessageRe__Messa__XXXXX");
+
+            entity.HasOne(d => d.User).WithMany()
+                .HasConstraintName("FK__MessageRe__UserI__XXXXX");
+        });
 
         OnModelCreatingPartial(modelBuilder);
     }
