@@ -16,7 +16,7 @@ namespace Rafeeq.Controllers
     public class UserProfileController : ControllerBase
     {
 
-        private  IUserProfileService _userProfileService;
+        private IUserProfileService _userProfileService;
         private readonly IMapper _mapper;
 
         public UserProfileController(IUserProfileService userProfileService, IMapper mapper)
@@ -24,7 +24,7 @@ namespace Rafeeq.Controllers
             _userProfileService = userProfileService;
             _mapper = mapper;
         }
-       
+
         [HttpGet("profile")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserProfileDto))]
         public async Task<IActionResult> GetUserProfile()
@@ -37,9 +37,9 @@ namespace Rafeeq.Controllers
             return Ok(userProfile);
         }
 
-        
-        [HttpPut("mentee")] 
-        [Authorize(Policy = "MenteePolicy")] 
+
+        [HttpPut("mentee")]
+        [Authorize(Policy = "MenteePolicy")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserProfileDto))]
         public async Task<IActionResult> UpdateMenteeProfile([FromBody] UpdateMenteeProfileDto updateDto)
         {
@@ -58,9 +58,9 @@ namespace Rafeeq.Controllers
             return Ok(updatedProfile);
         }
 
-       
-        [HttpPut("mentor")] 
-        [Authorize(Policy = "MentorPolicy")] 
+
+        [HttpPut("mentor")]
+        [Authorize(Policy = "MentorPolicy")]
         [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(UserProfileDto))]
         public async Task<IActionResult> UpdateMentorProfile([FromBody] UpdateMentorProfileDto updateDto)
         {
@@ -103,10 +103,10 @@ namespace Rafeeq.Controllers
         }
 
 
-        [HttpPost("upload-photo")] 
-        [Authorize(Policy = "MentorOrMenteePolicy")] 
+        [HttpPost("upload-photo")]
+        [Authorize(Policy = "MentorOrMenteePolicy")]
         [Consumes("multipart/form-data")]
-        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))] 
+        [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(string))]
         public async Task<IActionResult> UploadProfilePictureFile([FromForm] ProfilePictureUploadRequest request)
         {
             if (request == null || request.File == null || request.File.Length == 0)
@@ -122,7 +122,7 @@ namespace Rafeeq.Controllers
 
             var file = request.File;
 
-            if (file.Length > 5 * 1024 * 1024) 
+            if (file.Length > 5 * 1024 * 1024)
             {
                 return BadRequest("File size exceeds 5MB limit.");
             }
@@ -156,7 +156,7 @@ namespace Rafeeq.Controllers
         {
             if (!ModelState.IsValid)
             {
-                return BadRequest(ModelState); 
+                return BadRequest(ModelState);
             }
 
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -173,7 +173,7 @@ namespace Rafeeq.Controllers
             return Ok("Password changed successfully.");
         }
 
-      
+
         [HttpPut("toggle-mentor-interviewer-status")]
         [Authorize(Policy = "MentorPolicy")]
         [ProducesResponseType(StatusCodes.Status200OK)]

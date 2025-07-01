@@ -1,13 +1,11 @@
 ﻿using AutoMapper;
-using Microsoft.EntityFrameworkCore; 
-using Microsoft.AspNetCore.Http; 
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http;
 using Rafeeq.DTOs.Users;
 using Rafeeq.Models;
 using Rafeeq.UnitOfWork;
-using Rafeeq.Helpers; 
+using Rafeeq.Helpers;
 using System.Security.Claims;
-
-
 
 using Rafeeq.DTOs.Skills;
 using Rafeeq.DTOs.Availability;
@@ -33,29 +31,28 @@ namespace Rafeeq.Services.UserProfile
                 return null;
             }
 
-          
             var user = await _unitOfWork.UserRepository.GetQuery()
-                                       .Include(u => u.Role)
-                                       .Include(u => u.MentorSkills)
-                                           .ThenInclude(ms => ms.Skill) 
-                                       .Include(u => u.MenteeSkills) 
-                                           .ThenInclude(mes => mes.Skill) 
-                                       .Include(u => u.Availabilities) 
-                                       .FirstOrDefaultAsync(u => u.UserId == userId);
+                                           .Include(u => u.Role)
+                                           .Include(u => u.MentorSkills)
+                                               .ThenInclude(ms => ms.Skill)
+                                           .Include(u => u.MenteeSkills)
+                                               .ThenInclude(mes => mes.Skill)
+                                           .Include(u => u.Availabilities)
+                                           .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (user == null)
             {
                 return null;
             }
 
-     
             var userProfileDto = _mapper.Map<UserProfileDto>(user);
 
             if (user.Role?.RoleName == "Mentor")
             {
                 userProfileDto.HourlyRate = user.HourlyRate;
                 userProfileDto.IsInterviewer = user.IsInterviewer;
-            
+                // MentorSkills are already mapped by AutoMapper based on default configuration
+                // userProfileDto.MentorSkills = user.MentorSkills.Select(ms => _mapper.Map<SkillDto>(ms.Skill)).ToList(); // This might be redundant if AutoMapper handles it
             }
             else if (user.Role?.RoleName == "Mentee")
             {
@@ -74,9 +71,9 @@ namespace Rafeeq.Services.UserProfile
             }
 
             var user = await _unitOfWork.UserRepository.GetQuery()
-                                       .Include(u => u.Role)
-                                       .Include(u => u.MenteeSkills) 
-                                       .FirstOrDefaultAsync(u => u.UserId == userId);
+                                           .Include(u => u.Role)
+                                           .Include(u => u.MenteeSkills)
+                                           .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (user == null || user.Role?.RoleName != "Mentee")
             {
@@ -141,9 +138,9 @@ namespace Rafeeq.Services.UserProfile
             }
 
             var user = await _unitOfWork.UserRepository.GetQuery()
-                                       .Include(u => u.Role)
-                                       .Include(u => u.MentorSkills) 
-                                       .FirstOrDefaultAsync(u => u.UserId == userId);
+                                           .Include(u => u.Role)
+                                           .Include(u => u.MentorSkills)
+                                           .FirstOrDefaultAsync(u => u.UserId == userId);
 
             if (user == null || user.Role?.RoleName != "Mentor")
             {
@@ -267,7 +264,7 @@ namespace Rafeeq.Services.UserProfile
                 await file.CopyToAsync(stream);
             }
 
-            var baseUrl = "https://localhost:7001"; 
+            var baseUrl = "https://localhost:7001";
             var fileUrl = $"{baseUrl}/Uploads/ProfilePictures/{fileName}";
 
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
@@ -295,6 +292,7 @@ namespace Rafeeq.Services.UserProfile
 
             if (!PasswordHasher.VerifyPassword(currentPassword, user.PasswordHash))
             {
+                Console.WriteLine($"userId{userId}::: CurrentPassword {currentPassword} :::::hashPassword {user.PasswordHash}");
                 return false;
             }
 
@@ -317,11 +315,11 @@ namespace Rafeeq.Services.UserProfile
         public async Task<IEnumerable<MentorDto>> GetAllMentorsAsync(string? skill = null, decimal? minRate = null, decimal? maxRate = null, int? rating = null)
         {
             var query = _unitOfWork.UserRepository.GetQuery()
-                                .Include(u => u.Role)
-                                .Include(u => u.MentorSkills)!
-                                    .ThenInclude(ms => ms.Skill)
-                                .Include(u => u.Availabilities)
-                                .Where(u => u.IsMentor == true && u.IsActive == true);
+                                 .Include(u => u.Role)
+                                 .Include(u => u.MentorSkills)!
+                                     .ThenInclude(ms => ms.Skill)
+                                 .Include(u => u.Availabilities)
+                                 .Where(u => u.IsMentor == true && u.IsActive == true);
 
             if (!string.IsNullOrEmpty(skill))
             {
@@ -345,13 +343,13 @@ namespace Rafeeq.Services.UserProfile
         public async Task<MentorDto?> GetMentorPublicProfileAsync(int mentorId)
         {
             var mentor = await _unitOfWork.UserRepository.GetQuery()
-                                        .Include(u => u.Role)
-                                        .Include(u => u.MentorSkills)!
-                                            .ThenInclude(ms => ms.Skill)
-                                        .Include(u => u.Availabilities)
-                                        .Include(u => u.ReviewReviewedUsers)
-                                        .Where(u => u.UserId == mentorId && u.IsMentor == true && u.IsActive == true)
-                                        .FirstOrDefaultAsync();
+                                         .Include(u => u.Role)
+                                         .Include(u => u.MentorSkills)!
+                                             .ThenInclude(ms => ms.Skill)
+                                         .Include(u => u.Availabilities)
+                                         .Include(u => u.ReviewReviewedUsers)
+                                         .Where(u => u.UserId == mentorId && u.IsMentor == true && u.IsActive == true)
+                                         .FirstOrDefaultAsync();
 
             if (mentor == null)
             {

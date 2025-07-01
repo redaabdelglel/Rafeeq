@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace Rafeeq.Models
 {
+    [Table("MessageReactions")] 
     public class MessageReaction
     {
         [Key]

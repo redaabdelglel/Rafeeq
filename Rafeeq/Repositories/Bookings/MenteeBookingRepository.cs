@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.EntityFrameworkCore;
 using Rafeeq.DTOs.Bookings;
 using Rafeeq.Models;
+using Rafeeq.DTOs.Availability;
 
 namespace Rafeeq.Repositories.Bookings
 {
@@ -17,6 +18,7 @@ namespace Rafeeq.Repositories.Bookings
             Task<Booking> UpdateBookingAsync(Booking booking);
             Task<bool> DeleteBookingAsync(int id);
             Task<bool> SoftDeleteBookingAsync(int id);
+        Task<bool> IsSlotAvailableAsync(int mentorId, DateTime startDateTime, DateTime endDateTime);
 
 
     }
@@ -24,8 +26,7 @@ namespace Rafeeq.Repositories.Bookings
     public class MenteeBookingRepository : IMenteeBookingRepository
     {
             private readonly RafeeqContext _context;
-            private readonly ILogger<MenteeBookingRepository> _logger;  // Add logging
-
+            private readonly ILogger<MenteeBookingRepository> _logger;  
         public MenteeBookingRepository(RafeeqContext context)
         {
             _context = context;
@@ -202,6 +203,99 @@ namespace Rafeeq.Repositories.Bookings
                 .SumAsync(b => b.TotalAmount ?? 0); 
         }
 
+        public async Task<List<AvailabilityDto>> GetMentorAvailabilityAsync(int mentorId, int daysToLookAhead = 30)
+        {
+            var result = new List<AvailabilityDto>();
+            var now = DateTime.UtcNow;
 
+            // Get mentor with their availability and existing bookings
+            var mentor = await _context.Users
+                .Include(u => u.Availabilities)
+                .Include(u => u.BookingMentors)  // Using BookingMentors as per your User model
+                .FirstOrDefaultAsync(u => u.UserId == mentorId && u.IsMentor == true);
+
+            if (mentor == null)
+                return result;
+
+            // Process each availability slot
+            foreach (var availability in mentor.Availabilities.Where(a =>
+                     a.DayOfWeek.HasValue &&
+                     a.StartTime.HasValue &&
+                     a.EndTime.HasValue))
+            {
+                var slot = new AvailabilityDto
+                {
+                    AvailabilityId = availability.AvailabilityId,
+                    UserId = availability.UserId ?? 0,
+                    DayOfWeek = availability.DayOfWeek.Value,
+                    StartTime = availability.StartTime.Value,
+                    EndTime = availability.EndTime.Value
+                };
+
+                // Generate available times for next X days
+                for (int i = 0; i < daysToLookAhead; i++)
+                {
+                    var date = now.AddDays(i);
+
+                    // Only process days matching the availability day
+                    if ((int)date.DayOfWeek == availability.DayOfWeek)
+                    {
+                        var slotStart = date.Date.Add(availability.StartTime.Value);
+                        var slotEnd = date.Date.Add(availability.EndTime.Value);
+
+                        // Check if this time slot is booked
+                        var isBooked = mentor.BookingMentors.Any(b =>
+                            b.IsDeleted != true &&
+                            b.Status != "Cancelled" &&
+                            b.StartDateTime < slotEnd &&
+                            b.EndDateTime > slotStart);
+
+                        if (!isBooked && slotStart > now.AddMinutes(30))
+                        {
+                            // Since we're returning AvailabilityDto, we can't add available times here
+                            // You might want to create a different DTO if you need available times
+                        }
+                    }
+                }
+
+                result.Add(slot);
+            }
+
+            return result;
+        }
+        // MenteeBookingRepository.cs
+        public async Task<bool> IsSlotAvailableAsync(int mentorId, DateTime startDateTime, DateTime endDateTime)
+        {
+            // Get the mentor with their availabilities and existing bookings
+            var mentor = await _context.Users
+                .Include(u => u.Availabilities)
+                .Include(u => u.BookingMentors)  // Using BookingMentors as per your model
+                .FirstOrDefaultAsync(u => u.UserId == mentorId && u.IsMentor == true);
+
+            if (mentor == null)
+                return false;
+
+            // Check if mentor has availability for this day/time
+            var dayOfWeek = (int)startDateTime.DayOfWeek;
+            var startTime = startDateTime.TimeOfDay;
+            var endTime = endDateTime.TimeOfDay;
+
+            var hasAvailability = mentor.Availabilities.Any(a =>
+                a.DayOfWeek == dayOfWeek &&
+                a.StartTime <= startTime &&
+                a.EndTime >= endTime);
+
+            if (!hasAvailability)
+                return false;
+
+            // Check for conflicting bookings
+            var hasConflict = mentor.BookingMentors.Any(b =>
+                b.IsDeleted != true &&
+                b.Status != "Cancelled" &&
+                b.StartDateTime < endDateTime &&
+                b.EndDateTime > startDateTime);
+
+            return !hasConflict;
+        }
     }
  }

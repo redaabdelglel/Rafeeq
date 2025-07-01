@@ -1,5 +1,4 @@
-﻿
-#nullable disable
+﻿#nullable disable
 using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
@@ -46,119 +45,171 @@ public partial class RafeeqContext : DbContext
     public virtual DbSet<CVComment> CVComments { get; set; }
 
     public virtual DbSet<ContactMessage> ContactMessages { get; set; }
-    
+
     public virtual DbSet<ChatConversation> ChatConversations { get; set; }
     public virtual DbSet<MessageReadStatus> MessageReadStatuses { get; set; }
     public virtual DbSet<MessageReaction> MessageReactions { get; set; }
+    public virtual DbSet<Article> Articles { get; set; }
+    public virtual DbSet<FAQ> FAQs { get; set; }
+
     public virtual DbSet<ContactReplies> ContactReplies { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-
         if (!optionsBuilder.IsConfigured)
         {
             optionsBuilder.UseSqlServer("Server=db20643.public.databaseasp.net; Database=db20643; User Id=db20643; Password=tD@2-b4KxQ?3; Encrypt=True; TrustServerCertificate=True; MultipleActiveResultSets=True;");
         }
     }
 
-
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Availability>(entity =>
         {
-            entity.HasKey(e => e.AvailabilityId).HasName("PK__Availabi__DA3979B1C654E814");
+            entity.HasKey(e => e.AvailabilityId).HasName("PK_Availabi_DA3979B1C654E814");
 
-            entity.HasOne(d => d.User).WithMany(p => p.Availabilities).HasConstraintName("FK__Availabil__UserI__4CA06362");
+            entity.HasOne(d => d.User).WithMany(p => p.Availabilities).HasConstraintName("FK_AvailabilUserI_4CA06362");
         });
 
         modelBuilder.Entity<Booking>(entity =>
         {
-            entity.HasKey(e => e.BookingId).HasName("PK__Bookings__73951AED008D420C");
+            entity.HasKey(e => e.BookingId).HasName("PK_Bookings_73951AED008D420C");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.IsDeleted).HasDefaultValue(false);
             entity.Property(e => e.PaymentStatus).HasDefaultValue("Unpaid");
             entity.Property(e => e.Status).HasDefaultValue("Pending");
 
-            entity.HasOne(d => d.Mentee).WithMany(p => p.BookingMentees).HasConstraintName("FK__Bookings__Mentee__5070F446");
+            entity.HasOne(d => d.Mentee).WithMany(p => p.BookingMentees).HasConstraintName("FK_BookingsMentee_5070F446");
 
-            entity.HasOne(d => d.Mentor).WithMany(p => p.BookingMentors).HasConstraintName("FK__Bookings__Mentor__4F7CD00D");
+            entity.HasOne(d => d.Mentor).WithMany(p => p.BookingMentors).HasConstraintName("FK_BookingsMentor_4F7CD00D");
         });
 
+        // ✅ UPDATED: ChatAttachment configuration with cascade delete
         modelBuilder.Entity<ChatAttachment>(entity =>
         {
-            entity.HasKey(e => e.AttachmentId).HasName("PK__ChatAtta__442C64BE4F573056");
+            entity.HasKey(e => e.AttachmentId).HasName("PK_ChatAtta_442C64BE4F573056");
 
-            entity.HasOne(d => d.Message).WithMany(p => p.ChatAttachments).HasConstraintName("FK__ChatAttac__Messa__70DDC3D8");
+            entity.HasOne(d => d.Message).WithMany(p => p.ChatAttachments).HasConstraintName("FK_ChatAttacMessa_70DDC3D8");
+            entity.HasOne(d => d.Message)
+                .WithMany(p => p.ChatAttachments)
+                .HasForeignKey(d => d.MessageId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__ChatAttac__Messa__70DDC3D8");
         });
 
+        // ✅ UPDATED: ChatMessage configuration with all cascade relationships
         modelBuilder.Entity<ChatMessage>(entity =>
         {
-            entity.HasKey(e => e.MessageId).HasName("PK__ChatMess__C87C0C9CDDF239B2");
+            entity.HasKey(e => e.MessageId).HasName("PK_ChatMess_C87C0C9CDDF239B2");
 
             entity.Property(e => e.IsRead).HasDefaultValue(false);
             entity.Property(e => e.SentAt).HasDefaultValueSql("(getdate())");
 
-            entity.HasOne(d => d.Booking).WithMany(p => p.ChatMessages).HasConstraintName("FK__ChatMessa__Booki__5DCAEF64");
+            entity.HasOne(d => d.Booking).WithMany(p => p.ChatMessages).HasConstraintName("FK_ChatMessaBooki_5DCAEF64");
 
-            entity.HasOne(d => d.Sender).WithMany(p => p.ChatMessages).HasConstraintName("FK__ChatMessa__Sende__5EBF139D");
+            entity.HasOne(d => d.Sender).WithMany(p => p.ChatMessages).HasConstraintName("FK_ChatMessaSende_5EBF139D");
             entity.HasOne(d => d.Conversation).WithMany(p => p.Messages)
-               .HasConstraintName("FK__ChatMessa__Conve__XXXXX");
+               .HasConstraintName("FK_ChatMessaConve_XXXXX");
+            entity.HasOne(d => d.Booking).WithMany(p => p.ChatMessages)
+                .HasConstraintName("FK__ChatMessa__Booki__5DCAEF64");
+
+            entity.HasOne(d => d.Sender).WithMany(p => p.ChatMessages)
+                .HasConstraintName("FK__ChatMessa__Sende__5EBF139D");
+
+            entity.HasOne(d => d.Conversation).WithMany(p => p.Messages)
+                .HasConstraintName("FK__ChatMessa__Conve__XXXXX");
+
+            // ✅ NEW: Configure cascade relationships for all related entities
+            entity.HasMany(m => m.ChatAttachments)
+                .WithOne(a => a.Message)
+                .HasForeignKey(a => a.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(m => m.ReadStatuses)
+                .WithOne(rs => rs.Message)
+                .HasForeignKey(rs => rs.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasMany(m => m.Reactions)
+                .WithOne(r => r.Message)
+                .HasForeignKey(r => r.MessageId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<MenteeSkill>(entity =>
         {
-            entity.HasKey(e => e.MenteeSkillId).HasName("PK__MenteeSk__8AC70FF0D5795623");
+            entity.HasKey(e => e.MenteeSkillId).HasName("PK_MenteeSk_8AC70FF0D5795623");
 
-            entity.HasOne(d => d.Skill).WithMany(p => p.MenteeSkills).HasConstraintName("FK__MenteeSki__Skill__49C3F6B7");
+            entity.HasOne(d => d.Skill).WithMany(p => p.MenteeSkills).HasConstraintName("FK_MenteeSkiSkill_49C3F6B7");
 
-            entity.HasOne(d => d.User).WithMany(p => p.MenteeSkills).HasConstraintName("FK__MenteeSki__UserI__48CFD27E");
+            entity.HasOne(d => d.User).WithMany(p => p.MenteeSkills).HasConstraintName("FK_MenteeSkiUserI_48CFD27E");
         });
 
         modelBuilder.Entity<MentorSkill>(entity =>
         {
-            entity.HasKey(e => e.MentorSkillId).HasName("PK__MentorSk__814986AD639F79B4");
+            entity.HasKey(e => e.MentorSkillId).HasName("PK_MentorSk_814986AD639F79B4");
 
-            entity.HasOne(d => d.Skill).WithMany(p => p.MentorSkills).HasConstraintName("FK__MentorSki__Skill__45F365D3");
+            entity.HasOne(d => d.Skill).WithMany(p => p.MentorSkills).HasConstraintName("FK_MentorSkiSkill_45F365D3");
 
-            entity.HasOne(d => d.User).WithMany(p => p.MentorSkills).HasConstraintName("FK__MentorSki__UserI__44FF419A");
+            entity.HasOne(d => d.User).WithMany(p => p.MentorSkills).HasConstraintName("FK_MentorSkiUserI_44FF419A");
         });
 
         modelBuilder.Entity<Notification>(entity =>
         {
-            entity.HasKey(e => e.NotificationId).HasName("PK__Notifica__20CF2E12817FB374");
+            entity.HasKey(e => e.NotificationId).HasName("PK_Notifica_20CF2E12817FB374");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.IsRead).HasDefaultValue(false);
 
-            entity.HasOne(d => d.User).WithMany(p => p.Notifications).HasConstraintName("FK__Notificat__UserI__6754599E");
+            entity.HasOne(d => d.User).WithMany(p => p.Notifications).HasConstraintName("FK_NotificatUserI_6754599E");
         });
 
         modelBuilder.Entity<Payment>(entity =>
         {
-            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A383E8C0C2F");
+            entity.HasKey(e => e.PaymentId).HasName("PK_Payments_9B556A383E8C0C2F");
 
             entity.Property(e => e.PaymentDate).HasDefaultValueSql("(getdate())");
 
-            entity.HasOne(d => d.Booking).WithMany(p => p.Payments).HasConstraintName("FK__Payments__Bookin__6383C8BA");
+            entity.HasOne(d => d.Booking).WithMany(p => p.Payments).HasConstraintName("FK_PaymentsBookin_6383C8BA");
         });
 
         modelBuilder.Entity<Review>(entity =>
         {
-            entity.HasKey(e => e.ReviewId).HasName("PK__Reviews__74BC79CEE8C74737");
+            entity.HasKey(e => e.ReviewId).HasName("PK_Reviews_74BC79CEE8C74737");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
 
-            entity.HasOne(d => d.Booking).WithMany(p => p.Reviews).HasConstraintName("FK__Reviews__Booking__59063A47");
+            entity.HasOne(d => d.Booking).WithMany(p => p.Reviews).HasConstraintName("FK_ReviewsBooking_59063A47");
 
-            entity.HasOne(d => d.ReviewedUser).WithMany(p => p.ReviewReviewedUsers).HasConstraintName("FK__Reviews__Reviewe__5812160E");
+            entity.HasOne(d => d.ReviewedUser).WithMany(p => p.ReviewReviewedUsers).HasConstraintName("FK_ReviewsReviewe_5812160E");
 
-            entity.HasOne(d => d.Reviewer).WithMany(p => p.ReviewReviewers).HasConstraintName("FK__Reviews__Reviewe__571DF1D5");
+            entity.HasOne(d => d.Reviewer).WithMany(p => p.ReviewReviewers).HasConstraintName("FK_ReviewsReviewe_571DF1D5");
         });
 
         modelBuilder.Entity<Role>(entity =>
         {
+
+            entity.HasKey(e => e.RoleId).HasName("PK_Roles_8AFACE1A4662431D");
+        });
+
+        modelBuilder.Entity<Skill>(entity =>
+        {
+            entity.HasKey(e => e.SkillId).HasName("PK_Skills_DFA0918765B9AA60");
+        });
+
+        modelBuilder.Entity<User>(entity =>
+        {
+            entity.HasKey(e => e.UserId).HasName("PK_Users_1788CC4C54AD77F5");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+            entity.Property(e => e.IsEmailVerified).HasDefaultValue(false);
+            entity.Property(e => e.IsInterviewer).HasDefaultValue(false);
+            entity.Property(e => e.IsMentor).HasDefaultValue(false);
+
+            entity.HasOne(d => d.Role).WithMany(p => p.Users).HasConstraintName("FK_UsersRoleId_3B75D760");
             entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A4662431D");
         });
 
@@ -180,33 +231,37 @@ public partial class RafeeqContext : DbContext
 
             entity.HasOne(d => d.Role).WithMany(p => p.Users).HasConstraintName("FK__Users__RoleId__3B75D760");
         });
+
         modelBuilder.Entity<MenteeCV>(entity =>
         {
             entity.HasKey(e => e.CVId);
             entity.Property(e => e.UploadDate).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.HasOne(d => d.User).WithMany(p => p.CVs).HasConstraintName("FK__MenteeCVs__UserI__XXXX");
+            entity.HasOne(d => d.User).WithMany(p => p.CVs).HasConstraintName("FK_MenteeCVsUserI_XXXX");
         });
 
         modelBuilder.Entity<CVComment>(entity =>
         {
             entity.HasKey(e => e.CommentId);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-            entity.HasOne(d => d.CV).WithMany(p => p.Comments).HasConstraintName("FK__CVComment__CVId__XXXX");
-            entity.HasOne(d => d.Mentor).WithMany(p => p.CVComments).HasConstraintName("FK__CVComment__Mentor__XXXX");
+            entity.HasOne(d => d.CV).WithMany(p => p.Comments).HasConstraintName("FK_CVCommentCVId_XXXX");
+            entity.HasOne(d => d.Mentor).WithMany(p => p.CVComments).HasConstraintName("FK_CVCommentMentor_XXXX");
         });
 
         modelBuilder.Entity<UserToken>(entity =>
         {
-            entity.HasKey(e => e.TokenId).HasName("PK__UserToke__658FEEEAA975E301");
+            entity.HasKey(e => e.TokenId).HasName("PK_UserToke_658FEEEAA975E301");
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.IsUsed).HasDefaultValue(false);
 
-            entity.HasOne(d => d.User).WithMany(p => p.UserTokens).HasConstraintName("FK__UserToken__UserI__6C190EBB");
+            entity.HasOne(d => d.User).WithMany(p => p.UserTokens).HasConstraintName("FK_UserTokenUserI_6C190EBB");
         });
 
-       
+
+
+
+
         modelBuilder.Entity<ContactMessage>(entity =>
         {
             entity.HasKey(e => e.MessageId);
@@ -219,37 +274,94 @@ public partial class RafeeqContext : DbContext
                 .HasForeignKey(d => d.RespondedBy)
                 .OnDelete(DeleteBehavior.SetNull);
         });
+
         // Configure ChatConversations entity
         modelBuilder.Entity<ChatConversation>(entity =>
         {
-            entity.HasKey(e => e.ConversationId).HasName("PK__ChatConv__C95C11C4E86EA4A7");
+            entity.HasKey(e => e.ConversationId).HasName("PK_ChatConv_C95C11C4E86EA4A7");
 
             entity.Property(e => e.LastMessageAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
 
             entity.HasOne(d => d.Booking).WithMany()
-                .HasConstraintName("FK__ChatConv__Booki__XXXXX");
+                .HasConstraintName("FK_ChatConvBooki_XXXXX");
 
             entity.HasOne(d => d.Mentor).WithMany()
-                .HasConstraintName("FK__ChatConv__Mento__XXXXX");
+                .HasConstraintName("FK_ChatConvMento_XXXXX");
 
             entity.HasOne(d => d.Mentee).WithMany()
-                .HasConstraintName("FK__ChatConv__Mente__XXXXX");
+                .HasConstraintName("FK_ChatConvMente_XXXXX");
         });
-        // Configure MessageReadStatus entity
+
+        // ✅ UPDATED: MessageReadStatus configuration with cascade delete
         modelBuilder.Entity<MessageReadStatus>(entity =>
         {
-            entity.HasKey(e => e.ReadStatusId).HasName("PK__MessageR__B19EAD9154C14476");
+            entity.HasKey(e => e.ReadStatusId).HasName("PK_MessageR_B19EAD9154C14476");
+            entity.ToTable("MessageReadStatus");
 
             entity.Property(e => e.ReadAt).HasDefaultValueSql("(getdate())");
 
             entity.HasOne(d => d.Message).WithMany(p => p.ReadStatuses)
-                .HasConstraintName("FK__MessageRe__Messa__XXXXX");
+                .HasConstraintName("FK_MessageReMessa_XXXXX");
 
             entity.HasOne(d => d.User).WithMany()
+                .HasConstraintName("FK_MessageReUserI_XXXXX");
+            // ✅ IMPORTANT: Configure cascade delete
+            entity.HasOne(d => d.Message)
+                .WithMany(p => p.ReadStatuses)
+                .HasForeignKey(d => d.MessageId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK__MessageRe__Messa__XXXXX");
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.NoAction)
                 .HasConstraintName("FK__MessageRe__UserI__XXXXX");
         });
+
+        modelBuilder.Entity<Article>(entity =>
+        {
+            entity.HasKey(e => e.ArticleId);
+            entity.Property(e => e.IsPublished).HasDefaultValue(true);
+            entity.Property(e => e.ViewCount).HasDefaultValue(0);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasOne(d => d.Author)
+                  .WithMany(p => p.Articles)
+                  .HasForeignKey(d => d.AuthorId)
+                  .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        modelBuilder.Entity<FAQ>(entity => 
+        {
+            entity.ToTable("FAQ"); 
+            entity.HasKey(e => e.FAQId);
+            entity.Property(e => e.SortOrder).HasDefaultValue(0);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.Property(e => e.ViewCount).HasDefaultValue(0);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+        });
+
+        // ✅ NEW: Configure MessageReaction entity with cascade delete
+        modelBuilder.Entity<MessageReaction>(entity =>
+        {
+            entity.HasKey(e => e.ReactionId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+
+            // ✅ IMPORTANT: Configure cascade delete for reactions
+            entity.HasOne(d => d.Message)
+                .WithMany(p => p.Reactions)
+                .HasForeignKey(d => d.MessageId)
+                .OnDelete(DeleteBehavior.Cascade); // This allows reactions to be deleted when message is deleted
+
+            entity.HasOne(d => d.User)
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.NoAction); // Don't delete users when reaction is deleted
+        });
+
 
         OnModelCreatingPartial(modelBuilder);
     }

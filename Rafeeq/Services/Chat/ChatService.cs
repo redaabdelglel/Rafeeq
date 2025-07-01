@@ -21,45 +21,52 @@ namespace Rafeeq.Services.Chat
         private readonly IMapper _mapper;
         private readonly IHubContext<ChatHub> _chatHubContext;
         private readonly string _uploadsBasePath;
-        private readonly IWebHostEnvironment _hostEnvironment;  
+        private readonly IWebHostEnvironment _hostEnvironment;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
         public ChatService(
-            UnitOfWorkManager unitOfWork,
-            IMapper mapper,
-            IHubContext<ChatHub> chatHubContext,
-            IWebHostEnvironment environment)
+    UnitOfWorkManager unitOfWork,
+    IMapper mapper,
+    IHubContext<ChatHub> chatHubContext,
+    IWebHostEnvironment environment,
+    IHttpContextAccessor httpContextAccessor)
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
             _chatHubContext = chatHubContext;
             _hostEnvironment = environment;
+            _httpContextAccessor = httpContextAccessor;
 
             try
             {
-                // Handle case when WebRootPath is null
-                if (string.IsNullOrEmpty(environment.WebRootPath))
-                {
-                    // Use ContentRootPath as fallback
-                    string contentRoot = environment.ContentRootPath;
-                    _uploadsBasePath = Path.Combine(contentRoot, "wwwroot", "uploads", "chat");
-                }
-                else
-                {
-                    _uploadsBasePath = Path.Combine(environment.WebRootPath, "uploads", "chat");
-                }
+                // ✅ FIXED: Use ContentRootPath + "uploads" to match Program.cs static files
+                _uploadsBasePath = Path.Combine(environment.ContentRootPath, "uploads");
 
-                // Ensure directory exists
+                // Ensure base uploads directory exists
                 if (!Directory.Exists(_uploadsBasePath))
                 {
                     Directory.CreateDirectory(_uploadsBasePath);
                 }
+
+                // ✅ FIXED: Ensure voice subdirectory exists
+                var voiceDir = Path.Combine(_uploadsBasePath, "voice");
+                if (!Directory.Exists(voiceDir))
+                {
+                    Directory.CreateDirectory(voiceDir);
+                }
+
+                // ✅ FIXED: Ensure chat subdirectory exists
+                var chatDir = Path.Combine(_uploadsBasePath, "chat");
+                if (!Directory.Exists(chatDir))
+                {
+                    Directory.CreateDirectory(chatDir);
+                }
             }
             catch (Exception ex)
             {
-                // Fallback to temporary directory if we can't create the directory
-                _uploadsBasePath = Path.Combine(Path.GetTempPath(), "Rafeeq", "uploads", "chat");
+                // Fallback to temporary directory
+                _uploadsBasePath = Path.Combine(Path.GetTempPath(), "Rafeeq", "uploads");
 
-                // Try to create the fallback directory
                 try
                 {
                     if (!Directory.Exists(_uploadsBasePath))
@@ -69,11 +76,11 @@ namespace Rafeeq.Services.Chat
                 }
                 catch
                 {
-                    // Last resort: Just use temporary path
                     _uploadsBasePath = Path.GetTempPath();
                 }
             }
         }
+
 
         // Get chat history for a booking
         public async Task<(bool Success, string Message, IEnumerable<ChatMessageDto> Data)> GetChatHistoryAsync(int bookingId, int userId)
@@ -90,6 +97,9 @@ namespace Rafeeq.Services.Chat
 
             // Map to DTOs
             var messageDtos = _mapper.Map<IEnumerable<ChatMessageDto>>(messages);
+
+            // Set absolute URLs for all attachments
+            SetAbsoluteUrlsForAttachments(messageDtos);
 
             return (true, "Chat history retrieved successfully", messageDtos);
         }
@@ -215,7 +225,7 @@ namespace Rafeeq.Services.Chat
 
         // Upload attachment
         public async Task<(bool Success, string Message, ChatAttachmentDto Data)> UploadAttachmentAsync(
-            int bookingId, int senderId, IFormFile file)
+    int bookingId, int senderId, IFormFile file)
         {
             try
             {
@@ -232,10 +242,14 @@ namespace Rafeeq.Services.Chat
                     return (false, "No file was uploaded", null);
                 }
 
-                // Create file path
+                // ✅ FIXED: Create file path in chat subdirectory
                 var fileName = Path.GetFileName(file.FileName);
                 var uniqueFileName = $"{Guid.NewGuid()}_{fileName}";
-                var filePath = Path.Combine(_uploadsBasePath, uniqueFileName);
+                var chatDir = Path.Combine(_uploadsBasePath, "chat");
+                var filePath = Path.Combine(chatDir, uniqueFileName);
+
+                // ✅ FIXED: Ensure chat directory exists
+                Directory.CreateDirectory(chatDir);
 
                 // Create message first
                 var message = new ChatMessage
@@ -249,12 +263,12 @@ namespace Rafeeq.Services.Chat
 
                 var savedMessage = await _unitOfWork.ChatRepository.AddMessageAsync(message);
 
-                // Create attachment
+                // ✅ FIXED: Create attachment with correct path
                 var attachment = new ChatAttachment
                 {
                     MessageId = savedMessage.MessageId,
                     FileName = fileName,
-                    FilePath = $"/uploads/chat/{uniqueFileName}", // Store as relative URL
+                    FilePath = $"uploads/chat/{uniqueFileName}", // ✅ FIXED: Correct relative path
                     FileSize = (int)file.Length,
                     ContentType = file.ContentType
                 };
@@ -418,8 +432,10 @@ namespace Rafeeq.Services.Chat
         {
             try
             {
-                // Get the attachment
-                var attachment = await _unitOfWork.ChatAttachmentRepository.GetAttachmentByIdAsync(messageId);
+                // ✅ FIXED: Get attachment by messageId, not attachmentId
+                var attachments = await _unitOfWork.ChatAttachmentRepository.GetAttachmentsForMessageAsync(messageId);
+                var attachment = attachments.FirstOrDefault();
+
                 if (attachment == null)
                 {
                     return (false, "Attachment not found", null);
@@ -447,6 +463,7 @@ namespace Rafeeq.Services.Chat
                 return (false, $"Failed to download attachment: {ex.Message}", null);
             }
         }
+
 
         // Delete a message (sender only)
         public async Task<(bool Success, string Message)> DeleteMessageAsync(int messageId, int userId)
@@ -621,11 +638,16 @@ namespace Rafeeq.Services.Chat
                     return (false, "Message not found", null);
                 }
 
-                // Check if user is authorized to access the conversation
-                var isInConversation = message.ConversationId.HasValue &&
-                    (message.Conversation.MentorId == userId || message.Conversation.MenteeId == userId);
+                // Check if user is authorized to access the message
+                // This is a more robust approach that handles when Conversation is null
+                if (!message.BookingId.HasValue)
+                {
+                    return (false, "Invalid message - no booking ID found", null);
+                }
 
-                if (!isInConversation)
+                // Check if user is part of the booking
+                var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(message.BookingId.Value, userId);
+                if (!isAuthorized)
                 {
                     return (false, "You don't have permission to react to this message", null);
                 }
@@ -664,6 +686,7 @@ namespace Rafeeq.Services.Chat
                 return (false, $"Failed to add reaction: {ex.Message}", null);
             }
         }
+
 
         // Remove a reaction from a message
         public async Task<(bool Success, string Message)> RemoveMessageReactionAsync(
@@ -707,6 +730,7 @@ namespace Rafeeq.Services.Chat
             }
         }
 
+       
         // Upload voice message
         public async Task<(bool Success, string Message, ChatMessageDto Data)> UploadVoiceMessageAsync(
             int bookingId, int senderId, IFormFile audioFile)
@@ -752,20 +776,22 @@ namespace Rafeeq.Services.Chat
                     BookingId = bookingId,
                     ConversationId = conversation.ConversationId,
                     SenderId = senderId,
-                    MessageText = "[Voice Message]", // Placeholder text
+                    MessageText = "[Voice Message]",
                     IsVoiceMessage = true,
                     SentAt = DateTime.UtcNow
                 };
 
                 await _unitOfWork.ChatRepository.AddMessageAsync(message);
 
-                // Create a unique filename
-                var fileName = $"voice_{Guid.NewGuid()}{Path.GetExtension(audioFile.FileName)}";
-                var filePath = Path.Combine("uploads", "voice", fileName);
-                var fullPath = Path.Combine(_uploadsBasePath, "voice", fileName);
+                // ✅ FIXED: Create a unique filename
+                var fileName = $"voice_{Guid.NewGuid()}.webm";
 
-                // Ensure directory exists
-                Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+                // ✅ FIXED: Use correct voice directory path
+                var voiceDir = Path.Combine(_uploadsBasePath, "voice");
+                var fullPath = Path.Combine(voiceDir, fileName);
+
+                // ✅ FIXED: Ensure voice directory exists
+                Directory.CreateDirectory(voiceDir);
 
                 // Save file
                 using (var stream = new FileStream(fullPath, FileMode.Create))
@@ -773,11 +799,11 @@ namespace Rafeeq.Services.Chat
                     await audioFile.CopyToAsync(stream);
                 }
 
-                // Create attachment for the voice message
+                // ✅ FIXED: Create attachment with correct relative path
                 var attachment = new ChatAttachment
                 {
                     MessageId = message.MessageId,
-                    FilePath = filePath.Replace('\\', '/'),
+                    FilePath = $"uploads/voice/{fileName}", // ✅ FIXED: Correct relative path
                     FileName = fileName,
                     FileSize = (int)audioFile.Length,
                     ContentType = audioFile.ContentType,
@@ -789,17 +815,16 @@ namespace Rafeeq.Services.Chat
                 // Update conversation's LastMessageAt
                 conversation.LastMessageAt = message.SentAt;
                 _unitOfWork.ChatRepository.UpdateConversation(conversation);
-
                 await _unitOfWork.SaveAsync();
 
-                // Map to DTO and add URL
-                var messageDto = _mapper.Map<ChatMessageDto>(message);
+                // Get the complete message with attachments
+                var completeMessage = await _unitOfWork.ChatRepository.GetMessageByIdAsync(message.MessageId);
 
-                // Add the attachment
-                var attachmentDto = _mapper.Map<ChatAttachmentDto>(attachment);
-                var baseUrl = $"{_hostEnvironment.WebRootPath}/";
-                attachmentDto.FullUrl = $"{baseUrl}{attachment.FilePath}";
-                messageDto.Attachments.Add(attachmentDto);
+                // Map to DTO
+                var messageDto = _mapper.Map<ChatMessageDto>(completeMessage);
+
+                // Set absolute URLs for attachments
+                SetAbsoluteUrlsForAttachments(new[] { messageDto });
 
                 // Notify clients via SignalR
                 await _chatHubContext.Clients.Group($"booking-{bookingId}")
@@ -911,6 +936,133 @@ namespace Rafeeq.Services.Chat
                 return (false, $"Failed to get potential conversations: {ex.Message}", null);
             }
         }
+
+        public async Task<(bool Success, string Message, IEnumerable<ChatMessageDto> Data, int TotalMessages)> GetChatHistoryAsync(
+            int bookingId, int userId, int page = 1, int pageSize = 20)
+        {
+            // Check if user is part of the booking
+            var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(bookingId, userId);
+            if (!isAuthorized)
+            {
+                return (false, "You don't have permission to view this chat", null, 0);
+            }
+
+            // Get paginated messages
+            var result = await _unitOfWork.ChatRepository.GetMessagesByBookingIdWithPaginationAsync(bookingId, page, pageSize);
+            var messages = result.Messages;
+            var totalCount = result.TotalCount;
+
+            // Map to DTOs
+            var messageDtos = _mapper.Map<IEnumerable<ChatMessageDto>>(messages);
+
+            return (true, "Chat history retrieved successfully", messageDtos, totalCount);
+        }
+        // Add to ChatService.cs
+        public async Task<(bool Success, string Message, IEnumerable<MessageReactionInfoDto> Data)>
+            GetMessageReactionsAsync(int messageId, int userId)
+        {
+            try
+            {
+                // Get the message
+                var message = await _unitOfWork.ChatRepository.GetMessageByIdAsync(messageId);
+                if (message == null)
+                {
+                    return (false, "Message not found", null);
+                }
+
+                // Check if user is authorized to see reactions
+                var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(message.BookingId.Value, userId);
+                if (!isAuthorized)
+                {
+                    return (false, "You don't have permission to view reactions for this message", null);
+                }
+
+                // Get reactions
+                var reactions = await _unitOfWork.ChatRepository.GetReactionsForMessageAsync(messageId);
+
+                // Map to DTOs
+                var reactionDtos = _mapper.Map<IEnumerable<MessageReactionInfoDto>>(reactions);
+
+                return (true, "Message reactions retrieved successfully", reactionDtos);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to get message reactions: {ex.Message}", null);
+            }
+        }
+
+
+        public async Task<(bool Success, string Message)> ArchiveConversationAsync(int bookingId, int userId, bool archive)
+        {
+            try
+            {
+                // Check if user is part of the booking
+                var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(bookingId, userId);
+                if (!isAuthorized)
+                {
+                    return (false, "You don't have permission to access this conversation");
+                }
+
+                // Get conversation by booking ID
+                var conversation = await _unitOfWork.ChatRepository.GetConversationByBookingIdAsync(bookingId);
+                if (conversation == null)
+                {
+                    return (false, "Conversation not found");
+                }
+
+                // Update the conversation's active status
+                conversation.IsActive = !archive;
+
+                // Save the changes
+                await _unitOfWork.ChatRepository.UpdateConversationAsync(conversation);
+
+                string actionText = archive ? "archived" : "unarchived";
+                return (true, $"Conversation successfully {actionText}");
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Failed to {(archive ? "archive" : "unarchive")} conversation: {ex.Message}");
+            }
+        }
+
+        private string GenerateAbsoluteUrl(string relativePath)
+        {
+            var request = _httpContextAccessor.HttpContext?.Request;
+            if (request == null) return relativePath;
+
+            var scheme = request.Scheme; // http or https
+            var host = request.Host.Value; // localhost:7001 or your domain
+
+            // Ensure the path starts with /
+            if (!relativePath.StartsWith("/"))
+            {
+                relativePath = "/" + relativePath;
+            }
+
+            return $"{scheme}://{host}{relativePath}";
+        }
+        private void SetAbsoluteUrlsForAttachments(IEnumerable<ChatMessageDto> messageDtos)
+        {
+            foreach (var messageDto in messageDtos)
+            {
+                foreach (var attachment in messageDto.Attachments)
+                {
+                    if (attachment.IsVoiceMessage)
+                    {
+                        // Generate voice streaming URL
+                        var fileName = Path.GetFileName(attachment.FilePath);
+                        attachment.FullUrl = GenerateAbsoluteUrl($"/api/chat/voice/{fileName}");
+                    }
+                    else
+                    {
+                        // Regular attachment URL
+                        attachment.FullUrl = GenerateAbsoluteUrl(attachment.FilePath);
+                    }
+                }
+            }
+        }
+
+
 
 
     }

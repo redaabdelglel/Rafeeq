@@ -5,6 +5,7 @@ using Rafeeq.DTOs.Bookings;
 using Rafeeq.Models;
 using Rafeeq.UnitOfWork;
 using Microsoft.AspNetCore.Authorization;
+using Rafeeq.DTOs.Mentee;
 
 namespace Rafeeq.Controllers
 {
@@ -65,7 +66,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Verify the requested menteeId matches the authenticated user
 
                 var currentUserId = GetCurrentUserId();
                 if (currentUserId != menteeId)
@@ -89,8 +89,7 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Verify the requested menteeId matches the authenticated user
-                var currentUserId = GetCurrentUserId(); // For testing
+                var currentUserId = GetCurrentUserId(); 
 
                 if (currentUserId != menteeId)
                 {
@@ -106,31 +105,294 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, "An error occurred while retrieving completed bookings");
             }
         }
-
-        // POST: api/bookings
-        [HttpPost]
-        public async Task<ActionResult<BookingDto>> CreateBooking(CreateBookingDTO createBookingDTO)
+        // GET: api/mentee-bookings/today
+        [HttpGet("today")]
+        public async Task<ActionResult<IEnumerable<MenteeBookingDto>>> GetTodaysBookings()
         {
             try
             {
-                var userId = GetCurrentUserId();
+                var menteeId = GetCurrentUserId();
+                var today = DateTime.Today;
 
-                var booking = _mapper.Map<Booking>(createBookingDTO);
-                booking.MenteeId = userId;
+                var bookings = await _unitOfWork.Bookings.GetMenteeBookingsAsync(menteeId);
+                var todaysBookings = bookings
+                    .Where(b => b.StartDateTime == today && b.Status != "Cancelled")
+                    .OrderBy(b => b.StartDateTime)
+                    .ToList();
+
+                return Ok(_mapper.Map<IEnumerable<MenteeBookingDto>>(todaysBookings));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting today's bookings for mentee");
+                return StatusCode(500, "An error occurred while retrieving today's bookings");
+            }
+        }
+
+        // GET: api/mentee-bookings/past
+        [HttpGet("past")]
+        public async Task<ActionResult<IEnumerable<MenteeBookingDto>>> GetPastBookings()
+        {
+            try
+            {
+                var menteeId = GetCurrentUserId();
+                var now = DateTime.Now;
+
+                var bookings = await _unitOfWork.Bookings.GetMenteeBookingsAsync(menteeId);
+                var pastBookings = bookings
+                    .Where(b => b.StartDateTime < now)
+                    .OrderByDescending(b => b.StartDateTime)
+                    .ToList();
+
+                return Ok(_mapper.Map<IEnumerable<MenteeBookingDto>>(pastBookings));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting past bookings for mentee");
+                return StatusCode(500, "An error occurred while retrieving past bookings");
+            }
+        }
+        [HttpPost("{id}/cancel")]
+        public async Task<IActionResult> CancelBooking(int id)
+        {
+            try
+            {
+                var menteeId = GetCurrentUserId();
+                var booking = await _unitOfWork.Bookings.GetBookingDetailsAsync(id);
+
+                if (booking == null)
+                {
+                    return NotFound("Booking not found");
+                }
+
+                if (booking.MenteeId != menteeId)
+                {
+                    return Forbid();
+                }
+
+                if (booking.StartDateTime < DateTime.Now)
+                {
+                    return BadRequest("Cannot cancel a session that has already started");
+                }
+
+                booking.Status = "Cancelled";
+                booking.UpdatedAt = DateTime.Now;
+
+                await _unitOfWork.Bookings.UpdateBookingAsync(booking);
+                await _unitOfWork.CompleteAsync();
+
+                return Ok(new { message = "Booking cancelled successfully" });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error cancelling booking {BookingId}", id);
+                return StatusCode(500, "An error occurred while cancelling the booking");
+            }
+        }
+
+
+
+        //[HttpPost("mentee/{menteeId}/bookings")]
+        ////[ProducesResponseType(typeof(BookingDto), StatusCodes.Status201Created)]
+        ////[ProducesResponseType(StatusCodes.Status400BadRequest)]
+        ////[ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        ////[ProducesResponseType(StatusCodes.Status404NotFound)]
+        //public async Task<IActionResult> CreateBooking(
+        //    int menteeId,
+        //    [FromQuery] int mentorId,
+        //    [FromBody] CreateBookingDTO bookingDto)
+        //{
+        //    try
+        //    {
+        //        // Verify the authenticated user matches the menteeId
+        //        var currentUserId = GetCurrentUserId();
+        //        if (currentUserId != menteeId)
+        //        {
+        //            return Unauthorized("You can only create bookings for yourself");
+        //        }
+
+        //        // Verify mentor exists
+        //        var mentor = await _unitOfWork.Mentors.GetMentorByIdAsync(mentorId);
+        //        if (mentor == null)
+        //        {
+        //            return NotFound("Mentor not found");
+        //        }
+
+        //        // Map and validate booking
+        //        var booking = _mapper.Map<Booking>(bookingDto);
+        //        booking.MenteeId = menteeId;
+        //        booking.MentorId = mentorId;
+        //        booking.CreatedAt = DateTime.Now;
+        //        booking.Status = "Scheduled"; // Default status
+
+        //        // Validate booking time
+        //        if (booking.StartDateTime < DateTime.Now.AddMinutes(30))
+        //        {
+        //            return BadRequest("Booking must be scheduled at least 30 minutes in advance");
+        //        }
+
+        //        var createdBooking = await _unitOfWork.Bookings.CreateBookingAsync(booking);
+        //        await _unitOfWork.CompleteAsync();
+
+        //        var result = _mapper.Map<BookingDto>(createdBooking);
+
+        //        return CreatedAtAction(
+        //            nameof(GetBookingDetails),
+        //            new { id = createdBooking.BookingId },
+        //            result);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error creating booking for mentee {MenteeId} with mentor {MentorId}",
+        //            menteeId, mentorId);
+        //        return StatusCode(500, "An error occurred while creating the booking");
+        //    }
+        //}
+
+
+        //  [HttpPost("mentee/{menteeId}/bookings")]
+        //  [ProducesResponseType(typeof(BookingDto), StatusCodes.Status201Created)]
+        //  [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        //  [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        //  [ProducesResponseType(StatusCodes.Status404NotFound)]
+        //  public async Task<ActionResult<BookingDto>> CreateBooking(
+        //int menteeId,
+        //[FromBody] CreateBookingDTO createBookingDto)
+        //  {
+        //      try
+        //      {
+        //          // 1. Authorization Check
+        //          var currentUserId = GetCurrentUserId();
+        //          if (currentUserId != menteeId)
+        //          {
+        //              return Unauthorized("You can only create bookings for yourself");
+        //          }
+
+        //          // 2. Validate Input
+        //          if (!ModelState.IsValid)
+        //          {
+        //              return BadRequest(ModelState);
+        //          }
+
+        //          // 3. Verify Mentor Exists
+        //          var mentor = await _unitOfWork.Mentors.GetMentorByIdAsync(createBookingDto.MentorId);
+        //          if (mentor == null)
+        //          {
+        //              return NotFound($"Mentor with ID {createBookingDto.MentorId} not found");
+        //          }
+
+        //          // 4. Validate Booking Times
+        //          if (createBookingDto.StartDateTime >= createBookingDto.EndDateTime)
+        //          {
+        //              return BadRequest("End time must be after start time");
+        //          }
+
+        //          if (createBookingDto.StartDateTime < DateTime.UtcNow.AddMinutes(30))
+        //          {
+        //              return BadRequest("Bookings must be made at least 30 minutes in advance");
+        //          }
+
+        //          // 5. Check Slot Availability
+        //          var isSlotAvailable = await _unitOfWork.Bookings.IsSlotAvailableAsync(
+        //              createBookingDto.MentorId,
+        //              createBookingDto.StartDateTime,
+        //              createBookingDto.EndDateTime);
+
+        //          if (!isSlotAvailable)
+        //          {
+        //              return BadRequest("The selected time slot is already booked");
+        //          }
+
+        //          // 6. Create Booking
+        //          var booking = _mapper.Map<Booking>(createBookingDto);
+        //          booking.MenteeId = menteeId; // From route parameter
+        //          booking.CreatedAt = DateTime.UtcNow;
+        //          booking.Status = "Scheduled";
+
+        //          var createdBooking = await _unitOfWork.Bookings.CreateBookingAsync(booking);
+        //          await _unitOfWork.CompleteAsync();
+
+        //          // 7. Return Response
+        //          return CreatedAtAction(
+        //              nameof(GetBookingDetails),
+        //              new { id = createdBooking.BookingId },
+        //              _mapper.Map<BookingDto>(createdBooking));
+        //      }
+        //      catch (Exception ex)
+        //      {
+        //          _logger.LogError(ex, "Error creating booking for mentee {MenteeId}", menteeId);
+        //          return StatusCode(500, "An error occurred while creating the booking");
+        //      }
+        //  }
+
+
+        [HttpPost("mentee/{menteeId}")]
+        [ProducesResponseType(typeof(BookingDto), 201)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(401)]
+        [ProducesResponseType(404)]
+        [ProducesResponseType(409)]
+        public async Task<IActionResult> CreateBooking(
+           int menteeId,
+           [FromBody] CreateBookingDTO bookingDto)
+        {
+            try
+            {
+                // Authorization
+                var currentUserId = GetCurrentUserId();
+                if (currentUserId != menteeId)
+                    return Unauthorized("You can only create bookings for yourself");
+
+                // Validation
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
+                if (bookingDto.StartDateTime >= bookingDto.EndDateTime)
+                    return BadRequest("End time must be after start time");
+
+                
+
+                // Availability check
+                var isAvailable = await _unitOfWork.Mentors.IsTimeSlotAvailableAsync(
+                    bookingDto.MentorId,
+                    bookingDto.StartDateTime,
+                    bookingDto.EndDateTime);
+
+                if (!isAvailable)
+                {
+                    var alternatives = await _unitOfWork.Mentors.GetMentorAvailabilityAsync(
+                        bookingDto.MentorId, 3);
+                    return Conflict(new
+                    {
+                        Message = "Time slot not available",
+                        Alternatives = alternatives
+                    });
+                }
+
+                // Create booking
+                var booking = new Booking
+                {
+                    MenteeId = menteeId,
+                    MentorId = bookingDto.MentorId,
+                    StartDateTime = bookingDto.StartDateTime,
+                    EndDateTime = bookingDto.EndDateTime,
+                    Status = "Scheduled",
+                    CreatedAt = DateTime.UtcNow
+                };
 
                 var createdBooking = await _unitOfWork.Bookings.CreateBookingAsync(booking);
-
-                return CreatedAtAction(nameof(GetBookingDetails),
+                return CreatedAtAction(
+                    nameof(GetBookingDetails),
                     new { id = createdBooking.BookingId },
                     _mapper.Map<BookingDto>(createdBooking));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating booking");
-                return StatusCode(500, "An error occurred while creating the booking");
+                return StatusCode(500, "Error creating booking");
             }
         }
-
+    
         // GET: api/bookings/{id}
         [HttpGet("{id}")]
         public async Task<ActionResult<BookingDetailsDTO>> GetBookingDetails(int id)
@@ -267,3 +529,4 @@ namespace Rafeeq.Controllers
         }
     }
 }
+

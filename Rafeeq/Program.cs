@@ -89,26 +89,72 @@ builder.Services.AddAuthentication(options =>
     {
         OnMessageReceived = context =>
         {
-            var accessToken = context.Request.Query["access_token"];
             var path = context.HttpContext.Request.Path;
 
+            // ? FIXED: Skip authentication for static files
+            if (path.StartsWithSegments("/uploads"))
+            {
+                // Mark this request to skip authentication
+                context.HttpContext.Items["SkipJwtAuth"] = true;
+                return Task.CompletedTask;
+            }
+
+            var accessToken = context.Request.Query["access_token"];
             if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
             {
                 context.Token = accessToken;
-                // Fixed: Don't use Substring on StringValues
                 logger.LogInformation($"Token extracted for SignalR connection");
             }
 
             return Task.CompletedTask;
         },
 
-        // Add logging for authentication failures
+        OnTokenValidated = context =>
+        {
+            // Skip token validation for uploads
+            if (context.HttpContext.Items.ContainsKey("SkipJwtAuth"))
+            {
+                context.Success();
+            }
+            return Task.CompletedTask;
+        },
+
         OnAuthenticationFailed = context =>
         {
+            var path = context.Request.Path;
+
+            // ? FIXED: Don't fail authentication for static files
+            if (path.StartsWithSegments("/uploads"))
+            {
+                context.NoResult();
+                return Task.CompletedTask;
+            }
+
             logger.LogError($"Authentication failed: {context.Exception.Message}");
+            return Task.CompletedTask;
+        },
+
+        OnChallenge = context =>
+        {
+            var path = context.Request.Path;
+
+            // ? FIXED: Don't challenge for static files
+            if (path.StartsWithSegments("/uploads"))
+            {
+                context.HandleResponse();
+                return Task.CompletedTask;
+            }
+
             return Task.CompletedTask;
         }
     };
+})
+.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["GoogleAuthSettings:ClientId"];
+    options.ClientSecret = builder.Configuration["GoogleAuthSettings:ClientSecret"];
+    options.CallbackPath = "/signin-google";
+
 });
 
 // Configure Authorization
@@ -171,17 +217,47 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-// Configure middleware - ORDER MATTERS FOR SIGNALR!
+// ? CRITICAL: Add middleware to bypass authentication for uploads
+app.Use(async (context, next) =>
+{
+    // If this is an uploads request, bypass authentication completely
+    if (context.Request.Path.StartsWithSegments("/uploads"))
+    {
+        await next();
+        return;
+    }
+
+    // For all other requests, proceed normally
+    await next();
+});
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwaggerDocumentation();
     logger.LogInformation("Running in Development environment");
 }
 
-// CORS must be before routing for SignalR to work properly
+// ? STEP 1: Static files MUST come FIRST (before authentication)
+app.UseStaticFiles(); // Default static files (wwwroot)
+
+// ? STEP 2: Serve uploads directory WITHOUT authentication
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
+        Path.Combine(builder.Environment.WebRootPath, "uploads")), 
+    RequestPath = "/uploads"
+});
+
+
+
+
+logger.LogInformation("Static files configured for uploads directory");
+
+// ? STEP 3: CORS (before routing for SignalR)
 app.UseCors("AllowSpecificOrigin");
 logger.LogInformation("CORS middleware configured");
 
+// ? STEP 4: Other middleware
 app.UseHttpsRedirection();
 
 
@@ -192,10 +268,12 @@ app.UseStaticFiles(new StaticFileOptions
     RequestPath = "/Uploads" 
 });
 app.UseRouting();
+
+// ? STEP 5: Authentication/Authorization AFTER static files
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Configure endpoints last
+// ? STEP 6: Configure endpoints last
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();
