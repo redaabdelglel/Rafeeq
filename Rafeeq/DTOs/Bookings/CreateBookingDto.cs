@@ -12,6 +12,8 @@ namespace Rafeeq.DTOs.Bookings
         public DateTime StartDateTime { get; set; }
         [Required]
         public DateTime EndDateTime { get; set; }
+        public decimal TotalAmount { get; set; }
+
 
     }
 }
