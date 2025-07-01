@@ -1,3 +1,4 @@
+
 ﻿
 using SendGrid; 
 using SendGrid.Helpers.Mail; 
@@ -7,10 +8,12 @@ namespace Rafeeq.Services.Auth
     {
         private readonly IConfiguration _config;
 
+
         public EmailService(IConfiguration config)
         {
             _config = config;
         }
+
 
         public async Task SendEmailAsync(string toEmail, string subject, string message)
         {
@@ -36,6 +39,7 @@ namespace Rafeeq.Services.Auth
 
             var plainTextContent = string.Empty; 
             var htmlContent = message; 
+
 
             var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
 
@@ -78,6 +82,7 @@ namespace Rafeeq.Services.Auth
             await SendEmailAsync(toEmail, subject, message);
         }
 
+
         public async Task SendPaymentConfirmationEmailAsync(string toEmail, string userName, int bookingId, decimal amount, DateTime sessionDateTime, string userType)
         {
             var subject = "Rafeeq: Payment Confirmation";
@@ -92,6 +97,7 @@ namespace Rafeeq.Services.Auth
                     <p>Please log in to your dashboard to view more details.</p>
                     <p>Thank you for being part of Rafeeq!</p>
                     ";
+
             }
             else
             {
@@ -108,4 +114,5 @@ namespace Rafeeq.Services.Auth
         }
     }
 }
+
 

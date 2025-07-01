@@ -376,6 +376,8 @@ namespace Rafeeq.Controllers
                     MentorId = bookingDto.MentorId,
                     StartDateTime = bookingDto.StartDateTime,
                     EndDateTime = bookingDto.EndDateTime,
+                    SessionType = bookingDto.SessionType,
+                    TotalAmount = bookingDto.TotalAmount,
                     Status = "Scheduled",
                     CreatedAt = DateTime.UtcNow
                 };
