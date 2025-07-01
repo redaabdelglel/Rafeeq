@@ -17,16 +17,16 @@ namespace Rafeeq.Controllers.Admin
     {
         private readonly IContactService _contactService;
         private readonly ILogger<AdminContactController> _logger;
-        private readonly UnitOfWorkManager _unitOfWork; // Add this field
+        private readonly UnitOfWorkManager _unitOfWork; 
 
         public AdminContactController(
             IContactService contactService,
             ILogger<AdminContactController> logger,
-            UnitOfWorkManager unitOfWork) // Inject UnitOfWorkManager
+            UnitOfWorkManager unitOfWork) 
         {
             _contactService = contactService;
             _logger = logger;
-            _unitOfWork = unitOfWork; // Initialize field
+            _unitOfWork = unitOfWork; 
         }
 
         // GET: api/admin/contact
@@ -100,41 +100,7 @@ namespace Rafeeq.Controllers.Admin
             }
         }
 
-        // POST: api/admin/contact/{id}/respond
-       /* [HttpPost("{id}/respond")]
-        public async Task<IActionResult> RespondToMessage(int id, [FromBody] ContactResponseDto dto)
-        {
-            try
-            {
-                if (!ModelState.IsValid)
-                {
-                    return BadRequest(ModelState);
-                }
-
-                var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
-                if (userId == 0)
-                {
-                    return Unauthorized(new { success = false, message = "User not authenticated properly" });
-                }
-
-                var result = await _contactService.RespondToMessageAsync(id, dto.ResponseMessage, userId);
-
-                if (!result.Success)
-                {
-                    return BadRequest(new { success = false, message = result.Message });
-                }
-
-                return Ok(new { success = true, message = result.Message });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error responding to contact message {id}");
-                return StatusCode(500, new { success = false, message = "An error occurred while responding to the message", error = ex.Message });
-            }
-        }
-        */
        
-        
         // DELETE: api/admin/contact/{id}
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteMessage(int id)
@@ -156,6 +122,7 @@ namespace Rafeeq.Controllers.Admin
                 return StatusCode(500, new { success = false, message = "An error occurred while deleting the contact message", error = ex.Message });
             }
         }
+
 
         // Get : api/admin/contact/new-count  
 
