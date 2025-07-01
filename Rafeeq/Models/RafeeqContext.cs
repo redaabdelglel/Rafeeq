@@ -342,22 +342,20 @@ public partial class RafeeqContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
         });
 
-        // ✅ NEW: Configure MessageReaction entity with cascade delete
         modelBuilder.Entity<MessageReaction>(entity =>
         {
             entity.HasKey(e => e.ReactionId);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
 
-            // ✅ IMPORTANT: Configure cascade delete for reactions
             entity.HasOne(d => d.Message)
                 .WithMany(p => p.Reactions)
                 .HasForeignKey(d => d.MessageId)
-                .OnDelete(DeleteBehavior.Cascade); // This allows reactions to be deleted when message is deleted
+                .OnDelete(DeleteBehavior.Cascade); 
 
             entity.HasOne(d => d.User)
                 .WithMany()
                 .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.NoAction); // Don't delete users when reaction is deleted
+                .OnDelete(DeleteBehavior.NoAction); 
         });
 
 
