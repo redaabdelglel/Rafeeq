@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>cc8ef165-bbf9-40d1-a33e-48ca3f9359d9</UserSecretsId>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,7 +24,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
-    <PackageReference Include="SendGrid" Version="9.29.3" />
+    <PackageReference Include="SendGrid" Version="9.29.2" />
     <PackageReference Include="Stripe.net" Version="48.2.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="8.1.2" />
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.11.0" />
