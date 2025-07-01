@@ -46,6 +46,10 @@ namespace Rafeeq.UnitOfWork
         private ContactRepository _contactRepository;
         private ContactRepliesRepository    _contactRepliesRepository;
 
+        private ArticleRepository _articleRepository;
+        private FAQRepository _faqRepository;
+
+
 
         public UnitOfWorkManager(RafeeqContext context)
         {

@@ -361,34 +361,27 @@ namespace Rafeeq.Services.Auth
 
         public async Task<bool> VerifyEmailAsync(string token)
         {
-            Console.WriteLine($"[VerifyEmail] - Attempting to verify email with token: {token}");
 
             var userToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(token, "EmailVerification");
 
             if (userToken == null)
             {
-                Console.WriteLine($"[VerifyEmail] - Token '{token}' not found in database or not of type 'EmailVerification'.");
                 return false;
             }
 
-            // Using .GetValueOrDefault() for nullable bool
             if (userToken.IsUsed.GetValueOrDefault())
             {
-                Console.WriteLine($"[VerifyEmail] - Token '{token}' found but is already used.");
                 return false;
             }
 
             if (userToken.ExpiryDate < DateTime.UtcNow)
             {
-                Console.WriteLine($"[VerifyEmail] - Token '{token}' found but has expired. Expiry: {userToken.ExpiryDate}, Current UTC: {DateTime.UtcNow}");
                 return false;
             }
 
-            Console.WriteLine($"[VerifyEmail] - Token '{token}' is valid and active. Attempting to find user.");
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userToken.UserId.GetValueOrDefault());
             if (user == null)
             {
-                Console.WriteLine($"[VerifyEmail] - User not found for UserId: {userToken.UserId} associated with token '{token}'.");
                 return false;
             }
 
@@ -399,7 +392,6 @@ namespace Rafeeq.Services.Auth
             _unitOfWork.UserTokenRepository.Update(userToken);
 
             await _unitOfWork.SaveAsync();
-            Console.WriteLine($"[VerifyEmail] - Email for user '{user.Email}' (ID: {user.UserId}) successfully verified.");
             return true;
         }
 
