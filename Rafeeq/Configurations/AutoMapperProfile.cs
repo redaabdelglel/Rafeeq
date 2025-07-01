@@ -285,7 +285,7 @@ namespace Rafeeq.Configurations
 
 
 
-            // NEW: Article Mappings
+            //  Article Mappings
             CreateMap<Article, ArticleDto>()
             .ForMember(dest => dest.AuthorName,
                        opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Unknown Author"))
@@ -296,7 +296,7 @@ namespace Rafeeq.Configurations
                            opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Unknown Author"));
 
 
-            // NEW: FAQ Mappings
+            //  FAQ Mappings
             CreateMap<Rafeeq.Models.FAQ, Rafeeq.DTOs.FAQ.FaqDto>()
          .ForMember(dest => dest.ViewCount, opt => opt.MapFrom(src => src.ViewCount))
          .ForMember(dest => dest.SortOrder, opt => opt.MapFrom(src => src.SortOrder))

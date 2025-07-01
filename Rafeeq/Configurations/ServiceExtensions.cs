@@ -46,7 +46,7 @@ namespace Rafeeq.Configurations
 
           
 
-            // NEW: Articles and FAQ Services
+            // Articles and FAQ Services
             services.AddScoped<IArticleService, ArticleService>();
             services.AddScoped<IFAQService, FAQService>();
 
