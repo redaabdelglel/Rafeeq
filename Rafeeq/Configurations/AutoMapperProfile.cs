@@ -121,7 +121,10 @@ namespace Rafeeq.Configurations
             CreateMap<Booking, BookingDetailsDTO>()
                 .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName))
                 .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Mentee.FullName));
-
+            CreateMap<CreateBookingDTO, Booking>()
+    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Scheduled"))
+    .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+    .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => "Unpaid"));
             // Reviews mapping
             CreateMap<Review, ReviewDto>();
             CreateMap<ReviewDto, CreateReviewDto>();
