@@ -18,17 +18,8 @@ namespace Rafeeq.Controllers
     [AllowAnonymous]
     [ApiController]
    [Authorize(Roles = "Admin")]
-    public class AdminController : ControllerBase
+    public class AdminController(UnitOfWorkManager _unitOfWork, IMapper _map) : ControllerBase
     {
-        private UnitOfWorkManager _unitOfWork;
-        private IMapper _map;
-
-        public AdminController(UnitOfWorkManager _unitOfWork, IMapper _map)
-
-        {
-            this._unitOfWork = _unitOfWork;
-            this._map = _map;
-        }
 
         // get all users
         [HttpGet("users")]
