@@ -21,18 +21,7 @@ public partial class Payment
     [Column(TypeName = "datetime")]
     public DateTime? PaymentDate { get; set; }
 
-    // ✅ NEW FIELDS
-    public int MentorId { get; set; }
-    public int MenteeId { get; set; }
-
-    [StringLength(50)]
-    public string SessionType { get; set; }
-
-    [Column(TypeName = "datetime")]
-    public DateTime StartDateTime { get; set; }
-
-    [Column(TypeName = "datetime")]
-    public DateTime EndDateTime { get; set; }
+  
 
     [ForeignKey("BookingId")]
     [InverseProperty("Payments")]

@@ -173,14 +173,24 @@ namespace Rafeeq.Configurations
             // Notification mappings
             CreateMap<Notification, NotificationDto>();
 
-            // Payment mappings
+            // Payment mappings - Update the existing mapping
             CreateMap<Payment, PaymentDto>()
-                .ForMember(dest => dest.MentorName, opt => opt.Ignore())
-                .ForMember(dest => dest.MenteeName, opt => opt.Ignore())
-                .ForMember(dest => dest.SessionType, opt => opt.Ignore())
-                .ForMember(dest => dest.SessionDateTime, opt => opt.Ignore())
-                .ForMember(dest => dest.Commission, opt => opt.Ignore())
-                .ForMember(dest => dest.MentorAmount, opt => opt.Ignore());
+                .ForMember(dest => dest.PaymentId, opt => opt.MapFrom(src => src.PaymentId))
+                .ForMember(dest => dest.BookingId, opt => opt.MapFrom(src => src.BookingId ?? 0))
+                .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.AmountPaid ?? 0))
+                .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod))
+                .ForMember(dest => dest.TransactionId, opt => opt.MapFrom(src => src.TransactionId))
+                .ForMember(dest => dest.PaymentDate, opt => opt.MapFrom(src => src.PaymentDate ?? DateTime.MinValue))
+                // Map from related Booking entity
+                .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.Mentor.FullName : ""))
+                .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.Mentee.FullName : ""))
+                .ForMember(dest => dest.SessionType, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.SessionType : ""))
+                .ForMember(dest => dest.SessionDateTime, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.StartDateTime ?? DateTime.MinValue : DateTime.MinValue))
+                .ForMember(dest => dest.Commission, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.Commission ?? 0 : 0))
+                .ForMember(dest => dest.MentorAmount, opt => opt.MapFrom(src =>
+                    src.Booking != null ? (src.AmountPaid ?? 0) - (src.Booking.Commission ?? 0) : 0));
+
+
 
             //mentor skill mapping
             CreateMap<Skill, UserSkillDto>()
