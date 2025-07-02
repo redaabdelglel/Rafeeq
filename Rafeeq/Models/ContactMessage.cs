@@ -32,15 +32,9 @@ namespace Rafeeq.Models
 
         [Column(TypeName = "datetime")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-
-        [Column(TypeName = "datetime")]
-        public DateTime? ResponseDate { get; set; }
-
-        // Make ResponseMessage nullable
-        public string? ResponseMessage { get; set; }
-
         public int? RespondedBy { get; set; }
 
+        public bool IsFromAdmin {  get; set; }
         [ForeignKey("RespondedBy")]
         public virtual User? Responder { get; set; }
     }

@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Rafeeq.DTOs.Payments;
 using Rafeeq.Models;
 using Rafeeq.Repositories.Notifications;
@@ -285,7 +286,7 @@ namespace Rafeeq.Services.Payments
                 return (false, $"Failed to retrieve mentor earnings: {ex.Message}", null);
             }
         }
-
+  
         // Helper method to send payment notifications
         private async Task SendPaymentNotificationsAsync(Booking booking, Payment payment)
         {

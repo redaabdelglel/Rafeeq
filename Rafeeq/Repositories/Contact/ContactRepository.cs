@@ -74,24 +74,7 @@ namespace Rafeeq.Repositories.Contact
             await _context.SaveChangesAsync();
             return true;
         }
-
-        public async Task<bool> AddResponseAsync(int id, string responseMessage, int responderId)
-        {
-            var message = await _context.ContactMessages.FindAsync(id);
-            if (message == null || message.IsDeleted)
-            {
-                return false;
-            }
-
-            message.ResponseMessage = responseMessage;
-            message.RespondedBy = responderId;
-            message.ResponseDate = DateTime.UtcNow;
-            message.Status = "Responded";
-
-            _context.ContactMessages.Update(message);
-            await _context.SaveChangesAsync();
-            return true;
-        }
+       
 
         public async Task<bool> DeleteAsync(int id)
         {
@@ -114,6 +97,7 @@ namespace Rafeeq.Repositories.Contact
                 .OrderByDescending(m => m.CreatedAt)
                 .ToListAsync();
         }
+        /*
         public async Task<bool> TestDirectSqlQuery()
         {
             try
@@ -131,7 +115,23 @@ namespace Rafeeq.Repositories.Contact
                 Console.WriteLine($"Error in TestDirectSqlQuery: {ex.Message}");
                 return false;
             }
+        }*/
+
+        public async Task<int> CountNewMessagesAsync()
+        {
+            return await _context.ContactMessages.CountAsync(m => m.Status == "New" && !m.IsDeleted);
         }
+
+        public async Task<IEnumerable<ContactMessage>> GetConversationByEmailAsync(string email)
+        {
+            return await _context.ContactMessages
+                .Where(m => m.Email.ToLower() == email.ToLower() && !m.IsDeleted)
+                 .Include(m => m.Responder)
+                .OrderBy(m => m.CreatedAt)
+                .ToListAsync();
+        }
+
+
 
     }
 }
