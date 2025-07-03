@@ -38,6 +38,8 @@ namespace Rafeeq.UnitOfWork
         private MenteeBookingRepository _menteeBookingRepository;
         private MenteeCVRepository _menteeCVRepository;
         private IMenteeRepository _menteeRepository;
+        private MenteeReviewsRepository _menteeReviews;
+
 
         private CVCommentRepository _cvCommentRepository;
         private RoleRepository _roleRepository;
@@ -157,7 +159,17 @@ namespace Rafeeq.UnitOfWork
                 return _menteeCVRepository;
             }
         }
-
+        public MenteeReviewsRepository MenteeReviewsRepository
+        {
+            get
+            {
+                if (_menteeReviews == null)
+                {
+                    _menteeReviews = new MenteeReviewsRepository(context);
+                }
+                return _menteeReviews;
+            }
+        }
         public PaymentRepository PaymentRepository
         {
             get
