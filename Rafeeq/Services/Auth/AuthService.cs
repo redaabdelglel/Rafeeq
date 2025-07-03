@@ -362,19 +362,34 @@ namespace Rafeeq.Services.Auth
         public async Task<bool> VerifyEmailAsync(string token)
         {
             var userToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(token, "EmailVerification");
-            if (userToken == null || userToken.IsUsed.GetValueOrDefault() || userToken.ExpiryDate < DateTime.UtcNow)
+
+            if (userToken == null) 
             {
                 return false;
             }
+
+            if (userToken.IsUsed.GetValueOrDefault()) 
+            {
+                return false;
+            }
+
+            if (userToken.ExpiryDate < DateTime.UtcNow) 
+            {
+                return false;
+            }
+
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userToken.UserId.GetValueOrDefault());
-            if (user == null)
+            if (user == null) 
             {
                 return false;
             }
+
             user.IsEmailVerified = true;
             _unitOfWork.UserRepository.Update(user);
+
             userToken.IsUsed = true;
             _unitOfWork.UserTokenRepository.Update(userToken);
+
             await _unitOfWork.SaveAsync();
             return true;
         }

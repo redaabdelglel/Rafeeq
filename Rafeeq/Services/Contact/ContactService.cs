@@ -1,12 +1,15 @@
-﻿using AutoMapper;
+﻿// ContactService.cs - Updated Version
+// Cleaned and structured for better readability and maintainability
+
+using AutoMapper;
 using Microsoft.Extensions.Logging;
 using Rafeeq.DTOs.Contact;
 using Rafeeq.Models;
 using Rafeeq.UnitOfWork;
 using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Rafeeq.Services.Contact
 {
@@ -47,38 +50,18 @@ namespace Rafeeq.Services.Contact
             }
         }
 
-        
         public async Task<(bool Success, string Message, IEnumerable<ContactMessageListDto> Data)> GetAllMessagesAsync()
         {
             try
             {
-                _logger.LogInformation("Fetching all contact messages");
-
                 var messages = await _unitOfWork.ContactRepository.GetAllAsync();
-
-                // Log the number of messages retrieved
-                _logger.LogInformation($"Retrieved {messages?.Count() ?? 0} messages");
-
-                if (messages == null)
-                {
-                    return (false, "No messages found", Enumerable.Empty<ContactMessageListDto>());
-                }
-
-                try
-                {
-                    var messageDtos = _mapper.Map<IEnumerable<ContactMessageListDto>>(messages);
-                    return (true, "Messages retrieved successfully", messageDtos);
-                }
-                catch (Exception mapEx)
-                {
-                    _logger.LogError(mapEx, "Error mapping contact messages to DTOs");
-                    return (false, "Failed to process messages", Enumerable.Empty<ContactMessageListDto>());
-                }
+                var messageDtos = _mapper.Map<IEnumerable<ContactMessageListDto>>(messages);
+                return (true, "Messages retrieved successfully", messageDtos);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving contact messages");
-                return (false, $"Failed to retrieve messages: {ex.Message}", Enumerable.Empty<ContactMessageListDto>());
+                return (false, "Failed to retrieve messages", Enumerable.Empty<ContactMessageListDto>());
             }
         }
 
@@ -88,16 +71,14 @@ namespace Rafeeq.Services.Contact
             {
                 var message = await _unitOfWork.ContactRepository.GetByIdAsync(id);
                 if (message == null)
-                {
                     return (false, "Message not found", null);
-                }
 
                 var messageDto = _mapper.Map<ContactMessageDto>(message);
                 return (true, "Message retrieved successfully", messageDto);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error retrieving contact message {id}");
+                _logger.LogError(ex, "Error retrieving message by ID");
                 return (false, "Failed to retrieve message", null);
             }
         }
@@ -108,46 +89,15 @@ namespace Rafeeq.Services.Contact
             {
                 var validStatuses = new[] { "New", "Read", "Responded", "Archived" };
                 if (!validStatuses.Contains(status))
-                {
                     return (false, "Invalid status value");
-                }
 
-                var result = await _unitOfWork.ContactRepository.UpdateStatusAsync(id, status);
-                if (!result)
-                {
-                    return (false, "Message not found");
-                }
-
-                return (true, "Message status updated successfully");
+                var updated = await _unitOfWork.ContactRepository.UpdateStatusAsync(id, status);
+                return updated ? (true, "Status updated successfully") : (false, "Message not found");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error updating status for message {id}");
-                return (false, "Failed to update message status");
-            }
-        }
-
-        public async Task<(bool Success, string Message)> RespondToMessageAsync(int id, string response, int responderId)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(response))
-                {
-                    return (false, "Response message is required");
-                }
-
-                var result = await _unitOfWork.ContactRepository.AddResponseAsync(id, response, responderId);
-                if (!result)
-                {
-                    return (false, "Message not found");
-                }
-
-                return (true, "Response added successfully");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error responding to message {id}");
-                return (false, "Failed to add response");
+                _logger.LogError(ex, "Error updating message status");
+                return (false, "Failed to update status");
             }
         }
 
@@ -155,17 +105,12 @@ namespace Rafeeq.Services.Contact
         {
             try
             {
-                var result = await _unitOfWork.ContactRepository.DeleteAsync(id);
-                if (!result)
-                {
-                    return (false, "Message not found");
-                }
-
-                return (true, "Message deleted successfully");
+                var deleted = await _unitOfWork.ContactRepository.DeleteAsync(id);
+                return deleted ? (true, "Message deleted successfully") : (false, "Message not found");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error deleting message {id}");
+                _logger.LogError(ex, "Error deleting message");
                 return (false, "Failed to delete message");
             }
         }
@@ -175,13 +120,90 @@ namespace Rafeeq.Services.Contact
             try
             {
                 var messages = await _unitOfWork.ContactRepository.GetByEmailAsync(email);
-                var messageDtos = _mapper.Map<IEnumerable<ContactMessageDto>>(messages);
-                return (true, "Messages retrieved successfully", messageDtos);
+                var dtoList = _mapper.Map<IEnumerable<ContactMessageDto>>(messages);
+                return (true, "Messages retrieved", dtoList);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, $"Error retrieving contact messages for email {email}");
+                _logger.LogError(ex, "Error retrieving messages by email");
                 return (false, "Failed to retrieve messages", Enumerable.Empty<ContactMessageDto>());
+            }
+        }
+
+        public async Task<(bool success, string Message, int count)> GetMessagesCountAsync()
+        {
+            try
+            {
+                var messages = await _unitOfWork.ContactRepository.GetAllAsync();
+                var count = messages.Count(m => m.Status == "New");
+                return (true, "Count retrieved", count);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error counting new messages");
+                return (false, "Error retrieving message count", 0);
+            }
+        }
+
+        public async Task<(bool success, string Message, IEnumerable<ContactMessageDto> Data)> GetRespondedMessagesByEmailAsync(string email)
+        {
+            try
+            {
+                var messages = await _unitOfWork.ContactRepository.GetByEmailAsync(email);
+                var responded = messages.Where(m => m.Status == "Responded");
+                var dtoList = _mapper.Map<IEnumerable<ContactMessageDto>>(responded);
+                return (true, "Responded messages retrieved", dtoList);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving responded messages");
+                return (false, "Failed to retrieve messages", Enumerable.Empty<ContactMessageDto>());
+            }
+        }
+
+        public async Task<(bool Success, string Message)> AddReplyAsync(CreateReplyDto dto, int responderId)
+        {
+            try
+            {
+                var reply = new ContactReplies
+                {
+                    MessageId = dto.MessageId,
+                    ReplyText = dto.ReplyText,
+                    ResponderId = responderId,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _unitOfWork.ContactRepliesRepository.AddReplyAsync(reply);
+                return (true, "Reply added successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error adding reply");
+                return (false, "Failed to add reply");
+            }
+        }
+
+        public async Task<(bool Success, string Message, ContactConversationDto Data)> GetFullConversationAsync(string email)
+        {
+            try
+            {
+                var messages = await _unitOfWork.ContactRepository.GetConversationByEmailAsync(email);
+                var replies = await _unitOfWork.ContactRepliesRepository.GetRepliesByEmailAsync(email);
+
+                var messageDtos = _mapper.Map<List<ContactMessageDto>>(messages);
+                var replyDtos = _mapper.Map<List<ContactReplyDto>>(replies);
+
+                return (true, "Conversation fetched successfully", new ContactConversationDto
+                {
+                    Email = email,
+                    Messages = messageDtos,
+                    Replies = replyDtos
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching full conversation");
+                return (false, "Failed to retrieve full conversation", null);
             }
         }
     }

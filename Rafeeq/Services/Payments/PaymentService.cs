@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Rafeeq.DTOs.Payments;
 using Rafeeq.Models;
 using Rafeeq.Repositories.Notifications;
@@ -95,11 +96,20 @@ namespace Rafeeq.Services.Payments
         {
             try
             {
-                // Get booking
+                // Get booking with related entities using BookingRepository
                 var booking = await _unitOfWork.BookingRepository.GetByIdAsync(dto.BookingId);
                 if (booking == null)
                 {
                     return (false, "Booking not found", null);
+                }
+
+                // Load the related entities if they're not already loaded
+                if (booking.Mentor == null || booking.Mentee == null)
+                {
+                    booking = await _unitOfWork.context.Bookings
+                        .Include(b => b.Mentor)
+                        .Include(b => b.Mentee)
+                        .FirstOrDefaultAsync(b => b.BookingId == dto.BookingId);
                 }
 
                 // Verify the user is the mentee for this booking
@@ -122,7 +132,7 @@ namespace Rafeeq.Services.Payments
                     return (false, "Payment verification failed", null);
                 }
 
-                // Create payment record
+                // Create payment record (only with existing columns)
                 var payment = new Payment
                 {
                     BookingId = dto.BookingId,
@@ -145,22 +155,17 @@ namespace Rafeeq.Services.Payments
                     booking.GoogleMeetLink = $"https://meet.google.com/rafeeq-{Guid.NewGuid().ToString().Substring(0, 8)}";
                 }
 
-                _unitOfWork.BookingRepository.Update(booking);
-                await _unitOfWork.SaveAsync();
+                // Update booking using repository
+                await _unitOfWork.MenteeBookingRepository.UpdateBookingAsync(booking);
 
                 // Send notifications and emails
-                await SendPaymentNotificationsAsync(booking, payment);
+                await SendPaymentNotificationsAsync(booking, savedPayment);
 
-                // Map to DTO
-                var paymentDto = _mapper.Map<PaymentDto>(savedPayment);
+                // Get the payment with booking data using repository method
+                var paymentWithBooking = await _unitOfWork.PaymentRepository.GetByIdAsync(savedPayment.PaymentId);
 
-                // Add extra data
-                paymentDto.MentorName = booking.Mentor?.FullName;
-                paymentDto.MenteeName = booking.Mentee?.FullName;
-                paymentDto.SessionType = booking.SessionType;
-                paymentDto.SessionDateTime = booking.StartDateTime ?? DateTime.UtcNow;
-                paymentDto.Commission = booking.Commission ?? 0;
-                paymentDto.MentorAmount = payment.AmountPaid.Value - (booking.Commission ?? 0);
+                // Map to DTO using AutoMapper
+                var paymentDto = _mapper.Map<PaymentDto>(paymentWithBooking);
 
                 return (true, "Payment confirmed successfully", paymentDto);
             }
@@ -169,6 +174,8 @@ namespace Rafeeq.Services.Payments
                 return (false, $"Failed to confirm payment: {ex.Message}", null);
             }
         }
+
+
 
         // Get payment history for current user
         public async Task<(bool Success, string Message, IEnumerable<PaymentDto> Data)> GetPaymentHistoryAsync(int userId)
@@ -344,5 +351,6 @@ namespace Rafeeq.Services.Payments
                 // Log but continue - don't fail the payment process if notifications fail
             }
         }
+
     }
 }

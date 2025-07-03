@@ -121,7 +121,10 @@ namespace Rafeeq.Configurations
             CreateMap<Booking, BookingDetailsDTO>()
                 .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Mentor.FullName))
                 .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Mentee.FullName));
-
+            CreateMap<CreateBookingDTO, Booking>()
+    .ForMember(dest => dest.Status, opt => opt.MapFrom(src => "Scheduled"))
+    .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => DateTime.UtcNow))
+    .ForMember(dest => dest.PaymentStatus, opt => opt.MapFrom(src => "Unpaid"));
             // Reviews mapping
             CreateMap<Review, ReviewDto>();
             CreateMap<ReviewDto, CreateReviewDto>();
@@ -170,14 +173,24 @@ namespace Rafeeq.Configurations
             // Notification mappings
             CreateMap<Notification, NotificationDto>();
 
-            // Payment mappings
+            // Payment mappings - Update the existing mapping
             CreateMap<Payment, PaymentDto>()
-                .ForMember(dest => dest.MentorName, opt => opt.Ignore())
-                .ForMember(dest => dest.MenteeName, opt => opt.Ignore())
-                .ForMember(dest => dest.SessionType, opt => opt.Ignore())
-                .ForMember(dest => dest.SessionDateTime, opt => opt.Ignore())
-                .ForMember(dest => dest.Commission, opt => opt.Ignore())
-                .ForMember(dest => dest.MentorAmount, opt => opt.Ignore());
+                .ForMember(dest => dest.PaymentId, opt => opt.MapFrom(src => src.PaymentId))
+                .ForMember(dest => dest.BookingId, opt => opt.MapFrom(src => src.BookingId ?? 0))
+                .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.AmountPaid ?? 0))
+                .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod))
+                .ForMember(dest => dest.TransactionId, opt => opt.MapFrom(src => src.TransactionId))
+                .ForMember(dest => dest.PaymentDate, opt => opt.MapFrom(src => src.PaymentDate ?? DateTime.MinValue))
+                // Map from related Booking entity
+                .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.Mentor.FullName : ""))
+                .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.Mentee.FullName : ""))
+                .ForMember(dest => dest.SessionType, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.SessionType : ""))
+                .ForMember(dest => dest.SessionDateTime, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.StartDateTime ?? DateTime.MinValue : DateTime.MinValue))
+                .ForMember(dest => dest.Commission, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.Commission ?? 0 : 0))
+                .ForMember(dest => dest.MentorAmount, opt => opt.MapFrom(src =>
+                    src.Booking != null ? (src.AmountPaid ?? 0) - (src.Booking.Commission ?? 0) : 0));
+
+
 
             //mentor skill mapping
             CreateMap<Skill, UserSkillDto>()
@@ -253,9 +266,10 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
                 .ForMember(dest => dest.Subject, opt => opt.MapFrom(src => src.Subject))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
-                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt));
+                .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+                .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.Message));
 
-            CreateMap<ContactMessage, ContactMessageDto>()
+                 CreateMap<ContactMessage, ContactMessageDto>()
                 .ForMember(dest => dest.MessageId, opt => opt.MapFrom(src => src.MessageId))
                 .ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.Name))
                 .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
@@ -263,9 +277,17 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.Message, opt => opt.MapFrom(src => src.Message))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
                 .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
-                .ForMember(dest => dest.ResponseDate, opt => opt.MapFrom(src => src.ResponseDate))
-                .ForMember(dest => dest.ResponseMessage, opt => opt.MapFrom(src => src.ResponseMessage))
+                
                 .ForMember(dest => dest.ResponderName, opt => opt.MapFrom(src => src.Responder != null ? src.Responder.FullName : null));
+            
+            
+            //contact replay
+        CreateMap<ContactReplies, ContactReplyDto>()
+       .ForMember(dest => dest.ReplyId, opt => opt.MapFrom(src => src.ReplyId))
+       .ForMember(dest => dest.ReplyText, opt => opt.MapFrom(src => src.ReplyText))
+       .ForMember(dest => dest.CreatedAt, opt => opt.MapFrom(src => src.CreatedAt))
+       .ForMember(dest => dest.ResponderName, opt => opt.MapFrom(src =>
+           src.Responder != null ? src.Responder.FullName :"Admin"));
 
 
 
@@ -275,7 +297,7 @@ namespace Rafeeq.Configurations
 
 
 
-            // NEW: Article Mappings
+            //  Article Mappings
             CreateMap<Article, ArticleDto>()
             .ForMember(dest => dest.AuthorName,
                        opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Unknown Author"))
@@ -286,7 +308,7 @@ namespace Rafeeq.Configurations
                            opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Unknown Author"));
 
 
-            // NEW: FAQ Mappings
+            //  FAQ Mappings
             CreateMap<Rafeeq.Models.FAQ, Rafeeq.DTOs.FAQ.FaqDto>()
          .ForMember(dest => dest.ViewCount, opt => opt.MapFrom(src => src.ViewCount))
          .ForMember(dest => dest.SortOrder, opt => opt.MapFrom(src => src.SortOrder))
@@ -326,6 +348,8 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName));
 
 
+            //review mapping mentor and mentee
+            CreateMap<Review, ReviewDateDto>().ReverseMap();
         }
     
     }

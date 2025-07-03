@@ -9,5 +9,7 @@ namespace Rafeeq.DTOs.Payments
 
         [Required]
         public int BookingId { get; set; }
+
+     
     }
 }
