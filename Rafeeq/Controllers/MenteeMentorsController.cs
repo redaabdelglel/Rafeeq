@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Rafeeq.DTOs.Availability;
+using Rafeeq.Repositories.Users;
 
 namespace Rafeeq.Controllers
 {
@@ -178,5 +179,73 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, "Error retrieving availability");
             }
         }
+        [HttpGet("mentors/{mentorId}/available-days")]
+        public async Task<IActionResult> GetAvailableDays(
+    int mentorId,
+    [FromQuery] DateTime? startDate = null,
+    [FromQuery] DateTime? endDate = null)
+        {
+            startDate ??= DateTime.UtcNow;
+            endDate ??= DateTime.UtcNow.AddDays(14);
+
+            var availableSlots = await _unitOfWork.Mentors.GetTrueAvailableSlotsAsync(mentorId, startDate.Value, endDate.Value);
+
+            return Ok(availableSlots);
+        }
+
+        [HttpGet("mentors/{mentorId}/available-times")]
+        public async Task<IActionResult> GetAvailableTimes(
+            int mentorId,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            startDate ??= DateTime.UtcNow;
+            endDate ??= DateTime.UtcNow.AddDays(14);
+
+            var timeSlots = await _unitOfWork.Mentors.GetAvailableTimeSlotsAsync(mentorId, startDate.Value, endDate.Value);
+
+            return Ok(timeSlots);
+        }
+        [HttpGet("mentors/{mentorId}/true-available-slots")]
+        public async Task<IActionResult> GetTrueAvailableSlots(
+    int mentorId,
+    [FromQuery] DateTime? startDate = null,
+    [FromQuery] DateTime? endDate = null,
+    [FromQuery] int durationMinutes = 60) // Default 1 hour sessions
+        {
+            try
+            {
+                var now = DateTime.UtcNow;
+                startDate ??= now;
+                endDate ??= now.AddDays(14);
+
+                var slots = await _unitOfWork.Mentors.GetTrueAvailableSlotsAsync(
+                    mentorId,
+                    startDate.Value,
+                    endDate.Value);
+
+                // Filter slots that can accommodate the requested duration
+                var availableSlots = slots
+                    .Where(s => (s.EndTime - s.StartTime).TotalMinutes >= durationMinutes)
+                    .ToList();
+
+                if (!availableSlots.Any())
+                    return NotFound("No available slots found for the selected criteria");
+
+                return Ok(availableSlots);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting true available slots");
+                return StatusCode(500, "Error retrieving available slots");
+            }
+        }
+        [HttpGet("mentors/{mentorId}/free-slots")]
+        public async Task<IActionResult> GetFreeTimeSlots(int mentorId)
+        {
+            var freeSlots = await _unitOfWork.Mentors.GetOnlyFreeTimeSlots(mentorId);
+            return freeSlots.Any() ? Ok(freeSlots) : NotFound("No free slots available");
+        }
     }
+
 }

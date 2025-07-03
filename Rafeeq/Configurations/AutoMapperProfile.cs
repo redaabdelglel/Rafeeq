@@ -256,6 +256,8 @@ namespace Rafeeq.Configurations
                     opt => opt.MapFrom(src => src.Mentor.ProfilePicture))
                 .ForMember(dest => dest.MentorBio,
                     opt => opt.MapFrom(src => src.Mentor.Bio));
+            CreateMap<UpdateBookingStatusDto, Booking>()
+                  .ForMember(dest => dest.GoogleMeetLink, opt => opt.MapFrom(src => src.GoogleMeetLink));
 
             // Contact mappings
             CreateMap<ContactMessage, ContactMessageListDto>()
@@ -319,7 +321,10 @@ namespace Rafeeq.Configurations
 
 
 
-
+            // Mentee Reviews
+            CreateMap<Review, ReviewDateDto>();
+            CreateMap<CreateReviewDto, Review>();
+            CreateMap<UpdateReviewDto, Review>();
 
 
 

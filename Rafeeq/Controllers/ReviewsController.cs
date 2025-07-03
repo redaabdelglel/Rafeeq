@@ -59,7 +59,11 @@ namespace Rafeeq.Controllers
             if (reviewDto == null || reviewDto.BookingId <= 0)
                 return BadRequest("Invalid review data or booking ID.");
 
-            var booking = await _unitOfWork.BookingRepository.GetByIdAsync(reviewDto.BookingId);
+            var booking = await _unitOfWork.BookingRepository.GetByIdAsync(reviewDto.BookingId ?? 0); 
+            if (booking == null)
+            {
+                return NotFound("Booking not found");
+            }
 
             // Booking must exist
             if (booking == null)
@@ -78,12 +82,16 @@ namespace Rafeeq.Controllers
                 return BadRequest("Reviewed user must be the mentor of the session.");
 
             // Prevent duplicate review for same booking
-            var existingReview = await _unitOfWork.ReviewRepository
-                .GetByBookingIdAsync(reviewDto.BookingId);
+            if (reviewDto.BookingId.HasValue)
+            {
+                var existingReview = await _unitOfWork.ReviewRepository
+                    .GetByBookingIdAsync(reviewDto.BookingId.Value); // .Value extracts the int from int?
 
-            if (existingReview != null)
-                return BadRequest("Review for this booking already exists.");
-
+                if (existingReview != null)
+                {
+                    return BadRequest("You've already reviewed this booking");
+                }
+            }
             var review = new Review
             {
                 ReviewerId = reviewDto.ReviewerId,
