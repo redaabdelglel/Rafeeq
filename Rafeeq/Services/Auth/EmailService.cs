@@ -2,9 +2,6 @@
 
 
 
-//"ApiKey": "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"
-
-
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using Microsoft.Extensions.Logging;
@@ -103,20 +100,20 @@ namespace Rafeeq.Services.Auth
                             <h1 style='color: #27ae60; margin: 0;'>Rafeeq</h1>
                             <p style='color: #666; margin: 5px 0 0 0;'>Professional Mentorship Platform</p>
                         </div>
-                        
+
                         <div style='text-align: center;'>
                             <h2 style='color: #2c3e50; margin-bottom: 20px;'>Verify Your Email Address</h2>
                             <p style='color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 30px;'>
                                 Welcome to Rafeeq! Click the button below to verify your email and start your mentorship journey.
                             </p>
-                            
+
                             <a href='{verificationLink}' 
                                style='display: inline-block; background-color: #27ae60; color: white; padding: 15px 30px; 
                                       text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;
                                       margin-bottom: 20px;'>
                                 ✅ Verify Email Address
                             </a>
-                            
+
                             <p style='color: #777; font-size: 14px; margin-top: 30px;'>
                                 Or copy and paste this link in your browser:
                             </p>
@@ -125,7 +122,7 @@ namespace Rafeeq.Services.Auth
                                 {verificationLink}
                             </p>
                         </div>
-                        
+
                         <div style='margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;'>
                             <p style='color: #999; font-size: 12px; margin: 0;'>
                                 This link expires in 24 hours. If you didn't create this account, please ignore this email.
@@ -331,3 +328,4 @@ namespace Rafeeq.Services.Auth
 //        }
 //    }
 //}
+
