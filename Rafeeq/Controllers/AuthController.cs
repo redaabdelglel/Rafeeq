@@ -12,11 +12,14 @@ namespace Rafeeq.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IEmailService _emailService;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IEmailService emailService) // Inject IEmailService
         {
             _authService = authService;
+            _emailService = emailService; // Initialize the field
         }
+
 
         [HttpPost("Register")]
         [AllowAnonymous]
@@ -127,17 +130,44 @@ namespace Rafeeq.Controllers
             return Ok("Email verified successfully! You can now log in.");
         }
 
+        //[HttpPost("ResendVerificationEmail")]
+        //[AllowAnonymous]
+        //public async Task<IActionResult> ResendVerification([FromBody] string email)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
+        //    await _authService.ResendVerificationEmailAsync(email);
+        //    return Ok("Go to your account, a new verification link has been sent."); 
+        //}
+
+
+
         [HttpPost("ResendVerificationEmail")]
         [AllowAnonymous]
-        public async Task<IActionResult> ResendVerification([FromBody] string email)
+        public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto dto)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-            await _authService.ResendVerificationEmailAsync(email);
-            return Ok("Go to your account, a new verification link has been sent."); 
+
+            try
+            {
+                await _authService.ResendVerificationEmailAsync(dto.Email);
+                return Ok(new { Message = "Verification email sent successfully. Please check your inbox." });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+            catch (Exception)
+            {
+                return StatusCode(500, new { Message = "Failed to send verification email. Please try again later." });
+            }
         }
+
         // commit Auth15
         [HttpPost("logout")]
         [AllowAnonymous]
@@ -158,5 +188,38 @@ namespace Rafeeq.Controllers
 
             return Ok(new { Message = "Logged out successfully." });
         }
+
+
+
+        [HttpPost("test-email")]
+        [AllowAnonymous]
+        public async Task<IActionResult> TestEmail([FromBody] string email)
+        {
+            try
+            {
+                await _emailService.SendEmailAsync(email, "Test Email", "<h1>Test successful!</h1>");
+                return Ok(new { Message = "Test email sent successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+
+        [HttpPost("test-verification")]
+        [AllowAnonymous]
+        public async Task<IActionResult> TestVerification([FromBody] string email)
+        {
+            try
+            {
+                await _emailService.SendVerificationEmailAsync(email, "test-token-123");
+                return Ok(new { Message = "Test verification email sent!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { Message = ex.Message });
+            }
+        }
+
     }
 }
