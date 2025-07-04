@@ -1,4 +1,3 @@
-
 ﻿
 using SendGrid; 
 using SendGrid.Helpers.Mail;
@@ -30,9 +29,9 @@ namespace Rafeeq.Services.Auth
 
             var to = new EmailAddress(toEmail);
 
-            
+
             var plainTextContent = string.Empty;
-            var htmlContent = message; 
+            var htmlContent = message;
 
 
             var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextContent, htmlContent);
@@ -95,7 +94,7 @@ namespace Rafeeq.Services.Auth
                     ";
 
             }
-            else 
+            else
             {
                 message = $@"
                     <h2>Payment Confirmation</h2>
@@ -113,3 +112,4 @@ namespace Rafeeq.Services.Auth
 }
 
 
+//"ApiKey": "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"

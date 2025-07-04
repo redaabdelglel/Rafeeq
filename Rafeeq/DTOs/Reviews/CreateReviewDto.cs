@@ -6,7 +6,7 @@
 
         public int? ReviewedUserId { get; set; }
 
-        public int BookingId { get; set; }
+        public int? BookingId { get; set; }
 
         public int? Rating { get; set; }
 
