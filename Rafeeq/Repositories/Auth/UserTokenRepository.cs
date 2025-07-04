@@ -21,6 +21,15 @@ namespace Rafeeq.Repositories.Auth
                 .Where(t => t.TokenValue == tokenValue.Trim() && t.TokenType == tokenType && t.IsUsed == false && t.ExpiryDate > DateTime.UtcNow)
                 .FirstOrDefaultAsync();
         }
-    
+
+        public async Task<List<UserToken>> GetTokensForUserInTimeRange(int userId, string tokenType, DateTime sinceDateTime)
+        {
+            return await Context.UserTokens
+                .Where(t => t.UserId == userId &&
+                           t.TokenType == tokenType &&
+                           t.CreatedAt >= sinceDateTime)
+                .ToListAsync();
+        }
+
     }
 }

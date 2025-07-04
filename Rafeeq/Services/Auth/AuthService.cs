@@ -394,14 +394,62 @@ namespace Rafeeq.Services.Auth
             return true;
         }
 
+        //public async Task ResendVerificationEmailAsync(string email)
+        //{
+        //    var user = await _unitOfWork.UserRepository.GetUserByEmailAsync(email);
+        //    if (user == null || user.IsEmailVerified.GetValueOrDefault())
+        //    {
+        //        return;
+        //    }
+
+        //    var existingTokens = await _unitOfWork.UserTokenRepository.GetActiveTokensForUserAsync(user.UserId, "EmailVerification");
+        //    foreach (var token in existingTokens)
+        //    {
+        //        token.IsUsed = true;
+        //        _unitOfWork.UserTokenRepository.Update(token);
+        //    }
+        //    await _unitOfWork.SaveAsync();
+
+        //    var newToken = Guid.NewGuid().ToString();
+        //    var userToken = new UserToken
+        //    {
+        //        UserId = user.UserId,
+        //        TokenType = "EmailVerification",
+        //        TokenValue = newToken,
+        //        ExpiryDate = DateTime.UtcNow.AddHours(24),
+        //        IsUsed = false,
+        //        CreatedAt = DateTime.UtcNow
+        //    };
+        //    _unitOfWork.UserTokenRepository.Add(userToken);
+        //    await _unitOfWork.SaveAsync();
+
+        //    var frontendUrl = _config.GetSection("FrontendUrl").Value;
+        //    if (string.IsNullOrEmpty(frontendUrl))
+        //    {
+        //        return;
+        //    }
+        //    //var verificationLink = $"{frontendUrl}/verify-email/{newToken}";
+
+        //    await _emailService.SendVerificationEmailAsync(user.Email, newToken);
+        //}
         public async Task ResendVerificationEmailAsync(string email)
         {
             var user = await _unitOfWork.UserRepository.GetUserByEmailAsync(email);
             if (user == null || user.IsEmailVerified.GetValueOrDefault())
             {
-                return;
+                return; // Don't reveal if email exists
             }
 
+            // Check for recent tokens (last 2 minutes)
+            var recentTokens = await _unitOfWork.UserTokenRepository.GetTokensForUserInTimeRange(
+                user.UserId, "EmailVerification", DateTime.UtcNow.AddMinutes(-2));
+
+            if (recentTokens.Any())
+            {
+                throw new InvalidOperationException("Please wait 2 minutes before requesting another verification email.");
+            }
+
+            // Invalidate existing tokens
             var existingTokens = await _unitOfWork.UserTokenRepository.GetActiveTokensForUserAsync(user.UserId, "EmailVerification");
             foreach (var token in existingTokens)
             {
@@ -410,6 +458,7 @@ namespace Rafeeq.Services.Auth
             }
             await _unitOfWork.SaveAsync();
 
+            // Create new token
             var newToken = Guid.NewGuid().ToString();
             var userToken = new UserToken
             {
@@ -423,15 +472,9 @@ namespace Rafeeq.Services.Auth
             _unitOfWork.UserTokenRepository.Add(userToken);
             await _unitOfWork.SaveAsync();
 
-            var frontendUrl = _config.GetSection("FrontendUrl").Value;
-            if (string.IsNullOrEmpty(frontendUrl))
-            {
-                return;
-            }
-            //var verificationLink = $"{frontendUrl}/verify-email/{newToken}";
-
             await _emailService.SendVerificationEmailAsync(user.Email, newToken);
         }
+
 
         public async Task<bool> InvalidateRefreshTokenAsync(int userId)
         {
