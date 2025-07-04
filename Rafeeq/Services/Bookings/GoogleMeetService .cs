@@ -7,12 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using System.Text;
 
 namespace Rafeeq.Services.Bookings
 {
     public class GoogleMeetSettings
     {
-        public string CredentialsFilePath { get; set; }
+        public string CredentialsFilePath { get; set; } = "Secrets/rafeeq-463218-6e030456744f.json";
         public string CalendarId { get; set; } = "primary";
         public string[] Scopes { get; set; } = { CalendarService.Scope.Calendar };
         public string TimeZone { get; set; } = "UTC";
@@ -33,11 +34,8 @@ namespace Rafeeq.Services.Bookings
             _logger = logger;
             _environment = environment;
 
-            // Log configuration on initialization
-            _logger.LogInformation("GoogleMeetService initialized with settings: CredentialsFilePath={Path}, CalendarId={CalendarId}, TimeZone={TimeZone}",
-                _settings.CredentialsFilePath,
-                _settings.CalendarId,
-                _settings.TimeZone);
+            _logger.LogInformation("GoogleMeetService initialized with CalendarId={CalendarId}, TimeZone={TimeZone}",
+                _settings.CalendarId, _settings.TimeZone);
         }
 
         public async Task<string> CreateMeetingAsync(string meetingName, DateTime startTime, DateTime endTime, string description = null)
@@ -47,71 +45,72 @@ namespace Rafeeq.Services.Bookings
 
             try
             {
-                // Log environment variables
-                _logger.LogInformation("Current environment: {Environment}",
-                    Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Not set");
-
-                // Log root path
-                _logger.LogInformation("Content root path: {RootPath}", _environment.ContentRootPath);
-
-                // Resolve the path relative to content root
-                string credentialsPath = Path.Combine(_environment.ContentRootPath, _settings.CredentialsFilePath);
-                _logger.LogInformation("Looking for credentials at: {Path}", credentialsPath);
-
-                // Check if file exists and log detailed information
-                bool fileExists = File.Exists(credentialsPath);
-                _logger.LogInformation("Credentials file exists: {Exists}", fileExists);
-
-                if (!fileExists)
-                {
-                    // Check directory exists
-                    string directory = Path.GetDirectoryName(credentialsPath);
-                    bool directoryExists = Directory.Exists(directory);
-                    _logger.LogInformation("Parent directory exists: {Exists} - {Directory}", directoryExists, directory);
-
-                    if (directoryExists)
-                    {
-                        // List all files in the directory to help debug
-                        var files = Directory.GetFiles(directory);
-                        _logger.LogInformation("Files in directory: {Files}", string.Join(", ", files));
-                    }
-
-                    _logger.LogError("Credentials file not found at: {Path}", credentialsPath);
-                    return $"https://meet.google.com/error-file-{Guid.NewGuid().ToString().Substring(0, 8)}";
-                }
-
-                // Try to read the file to make sure it's accessible
-                try
-                {
-                    string fileContent = File.ReadAllText(credentialsPath);
-                    _logger.LogInformation("Successfully read credentials file. Length: {Length} characters", fileContent.Length);
-
-                    // Check if it's valid JSON by logging the first and last few characters
-                    _logger.LogInformation("Credentials file starts with: {Start}...",
-                        fileContent.Length > 20 ? fileContent.Substring(0, 20) : fileContent);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error reading credentials file at {Path}", credentialsPath);
-                    return $"https://meet.google.com/error-read-{Guid.NewGuid().ToString().Substring(0, 8)}";
-                }
-
-                // Create credential
-                _logger.LogInformation("Creating credential from file...");
                 GoogleCredential credential;
-                try
+
+                // Try environment variable first (for production)
+                var credentialsJson = Environment.GetEnvironmentVariable("GOOGLE_CREDENTIALS_JSON");
+                if (!string.IsNullOrEmpty(credentialsJson))
                 {
-                    using (var stream = new FileStream(credentialsPath, FileMode.Open, FileAccess.Read))
+                    _logger.LogInformation("Loading credentials from environment variable");
+                    using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(credentialsJson)))
                     {
                         credential = GoogleCredential.FromStream(stream)
                             .CreateScoped(_settings.Scopes);
                     }
-                    _logger.LogInformation("Successfully created Google credential");
+                    _logger.LogInformation("Successfully created Google credential from environment variable");
                 }
-                catch (Exception ex)
+                else
                 {
-                    _logger.LogError(ex, "Error creating Google credential from file");
-                    return $"https://meet.google.com/error-cred-{Guid.NewGuid().ToString().Substring(0, 8)}";
+                    // Fallback: Try local file (for development)
+                    _logger.LogInformation("Environment variable not found, trying local file");
+
+                    string credentialsPath = Path.Combine(_environment.ContentRootPath, _settings.CredentialsFilePath);
+                    _logger.LogInformation("Looking for credentials at: {Path}", credentialsPath);
+
+                    bool fileExists = File.Exists(credentialsPath);
+                    _logger.LogInformation("Credentials file exists: {Exists}", fileExists);
+
+                    if (!fileExists)
+                    {
+                        string directory = Path.GetDirectoryName(credentialsPath);
+                        bool directoryExists = Directory.Exists(directory);
+                        _logger.LogInformation("Parent directory exists: {Exists} - {Directory}", directoryExists, directory);
+
+                        if (directoryExists)
+                        {
+                            var files = Directory.GetFiles(directory);
+                            _logger.LogInformation("Files in directory: {Files}", string.Join(", ", files));
+                        }
+
+                        _logger.LogError("No Google credentials found. Set GOOGLE_CREDENTIALS_JSON environment variable or add credentials file at: {Path}", credentialsPath);
+                        return $"https://meet.google.com/error-no-credentials-{Guid.NewGuid().ToString().Substring(0, 8)}";
+                    }
+
+                    try
+                    {
+                        string fileContent = File.ReadAllText(credentialsPath);
+                        _logger.LogInformation("Successfully read credentials file. Length: {Length} characters", fileContent.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error reading credentials file at {Path}", credentialsPath);
+                        return $"https://meet.google.com/error-read-{Guid.NewGuid().ToString().Substring(0, 8)}";
+                    }
+
+                    try
+                    {
+                        using (var stream = new FileStream(credentialsPath, FileMode.Open, FileAccess.Read))
+                        {
+                            credential = GoogleCredential.FromStream(stream)
+                                .CreateScoped(_settings.Scopes);
+                        }
+                        _logger.LogInformation("Successfully created Google credential from local file");
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error creating Google credential from file");
+                        return $"https://meet.google.com/error-cred-{Guid.NewGuid().ToString().Substring(0, 8)}";
+                    }
                 }
 
                 // Create service
@@ -123,7 +122,7 @@ namespace Rafeeq.Services.Bookings
                 });
                 _logger.LogInformation("Successfully created Calendar service");
 
-                // Create event
+                // Create event with proper conference data - FIXED VERSION
                 _logger.LogInformation("Creating event with conference data...");
                 var @event = new Event
                 {
@@ -143,36 +142,34 @@ namespace Rafeeq.Services.Bookings
                     {
                         CreateRequest = new CreateConferenceRequest
                         {
-                            RequestId = Guid.NewGuid().ToString(),
+                            RequestId = Guid.NewGuid().ToString("N"), // Use "N" format for clean GUID
                             ConferenceSolutionKey = new ConferenceSolutionKey
                             {
-                                // Try this specific type
-                                Type = "addOn"
-                            }
-                        },
-                        EntryPoints = new List<EntryPoint>
-                        {
-                            new EntryPoint
+                                Type = "hangoutsMeet"
+                            },
+                            Status = new ConferenceRequestStatus
                             {
-                                EntryPointType = "video",
-                                Uri = "https://meet.google.com/placeholder",
-                                Label = "meet.google.com/placeholder"
+                                StatusCode = "pending"
                             }
                         }
                     }
                 };
-                _logger.LogInformation("Event object created");
 
-                // Insert the event
                 _logger.LogInformation("Inserting event into calendar {CalendarId}", _settings.CalendarId);
                 var request = service.Events.Insert(@event, _settings.CalendarId);
                 request.ConferenceDataVersion = 1;  // Important for Meet link generation
+                request.SendUpdates = EventsResource.InsertRequest.SendUpdatesEnum.All;
 
                 _logger.LogInformation("Executing event insert request...");
                 var createdEvent = await request.ExecuteAsync();
                 _logger.LogInformation("Event created successfully with ID: {EventId}", createdEvent.Id);
 
-                // Check where the meet link might be
+                // Log the full response to debug
+                _logger.LogInformation("Event response - HangoutLink: {HangoutLink}", createdEvent.HangoutLink ?? "null");
+                _logger.LogInformation("Event response - ConferenceData: {ConferenceData}",
+                    createdEvent.ConferenceData?.EntryPoints?.Count.ToString() ?? "null");
+
+                // Check for Meet link in various places
                 if (!string.IsNullOrEmpty(createdEvent.HangoutLink))
                 {
                     _logger.LogInformation("Meet link found in HangoutLink: {Link}", createdEvent.HangoutLink);
@@ -180,7 +177,8 @@ namespace Rafeeq.Services.Bookings
                 }
                 else if (createdEvent.ConferenceData?.EntryPoints != null && createdEvent.ConferenceData.EntryPoints.Count > 0)
                 {
-                    var meetLink = createdEvent.ConferenceData.EntryPoints[0].Uri;
+                    var meetLink = createdEvent.ConferenceData.EntryPoints.FirstOrDefault(ep => ep.EntryPointType == "video")?.Uri
+                                   ?? createdEvent.ConferenceData.EntryPoints[0].Uri;
                     _logger.LogInformation("Meet link found in ConferenceData.EntryPoints: {Link}", meetLink);
                     return meetLink;
                 }
@@ -197,14 +195,12 @@ namespace Rafeeq.Services.Bookings
             {
                 _logger.LogError(ex, "Error in CreateMeetingAsync: {Message}", ex.Message);
 
-                // Detailed logging for Google API exceptions
                 if (ex is Google.GoogleApiException googleEx)
                 {
                     _logger.LogError("Google API Error: Status={Status}, Reason={Reason}",
                         googleEx.HttpStatusCode,
                         googleEx.Error?.Message ?? "Unknown");
 
-                    // Log all error details
                     if (googleEx.Error?.Errors != null)
                     {
                         foreach (var error in googleEx.Error.Errors)
@@ -215,9 +211,7 @@ namespace Rafeeq.Services.Bookings
                     }
                 }
 
-                // For all types of exceptions, dump the full exception details to help diagnose
-                _logger.LogError("Full exception details: {ExDetails}", ex.ToString());
-
+                // Return a more specific error message
                 return $"https://meet.google.com/error-exception-{Guid.NewGuid().ToString().Substring(0, 8)}";
             }
         }
@@ -228,20 +222,34 @@ namespace Rafeeq.Services.Bookings
             {
                 _logger.LogInformation("Creating simple event without conferencing data");
 
-                // Resolve the path relative to content root
-                string credentialsPath = Path.Combine(_environment.ContentRootPath, _settings.CredentialsFilePath);
-
-                if (!File.Exists(credentialsPath))
-                {
-                    _logger.LogError("Credentials file not found at: {Path}", credentialsPath);
-                    return "ERROR: Credentials file not found";
-                }
-
                 GoogleCredential credential;
-                using (var stream = new FileStream(credentialsPath, FileMode.Open, FileAccess.Read))
+
+                // Try environment variable first
+                var credentialsJson = Environment.GetEnvironmentVariable("GOOGLE_CREDENTIALS_JSON");
+                if (!string.IsNullOrEmpty(credentialsJson))
                 {
-                    credential = GoogleCredential.FromStream(stream)
-                        .CreateScoped(_settings.Scopes);
+                    using (var stream = new MemoryStream(Encoding.UTF8.GetBytes(credentialsJson)))
+                    {
+                        credential = GoogleCredential.FromStream(stream)
+                            .CreateScoped(_settings.Scopes);
+                    }
+                }
+                else
+                {
+                    // Fallback: Try local file
+                    string credentialsPath = Path.Combine(_environment.ContentRootPath, _settings.CredentialsFilePath);
+
+                    if (!File.Exists(credentialsPath))
+                    {
+                        _logger.LogError("Credentials file not found at: {Path}", credentialsPath);
+                        return "ERROR: Credentials file not found";
+                    }
+
+                    using (var stream = new FileStream(credentialsPath, FileMode.Open, FileAccess.Read))
+                    {
+                        credential = GoogleCredential.FromStream(stream)
+                            .CreateScoped(_settings.Scopes);
+                    }
                 }
 
                 var service = new CalendarService(new BaseClientService.Initializer()
@@ -250,7 +258,6 @@ namespace Rafeeq.Services.Bookings
                     ApplicationName = "Rafeeq Booking System"
                 });
 
-                // Create a simple event without conference data
                 var @event = new Event
                 {
                     Summary = meetingName,
@@ -266,8 +273,6 @@ namespace Rafeeq.Services.Bookings
                         TimeZone = _settings.TimeZone
                     }
                 };
-
-                _logger.LogInformation("Inserting simple event into calendar {CalendarId}", _settings.CalendarId);
 
                 var request = service.Events.Insert(@event, _settings.CalendarId);
                 var createdEvent = await request.ExecuteAsync();
