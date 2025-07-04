@@ -18,6 +18,9 @@ using Microsoft.Extensions.FileProviders;
 var builder = WebApplication.CreateBuilder(args);
 var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<Program>();
 
+builder.Configuration.AddUserSecrets<Program>();
+
+
 // Add services to the container
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();  // For Swagger
