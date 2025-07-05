@@ -14,6 +14,9 @@ using Rafeeq.Repositories.Mentee;
 using Microsoft.AspNetCore.Authorization;
 using Rafeeq.Helpers;
 using Microsoft.Extensions.FileProviders;
+using Rafeeq.Repositories.Auth;
+using Rafeeq.Services.Auth;
+using SendGrid.Helpers.Mail;
 
 var builder = WebApplication.CreateBuilder(args);
 var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<Program>();
@@ -190,6 +193,22 @@ builder.Services.AddScoped<IMenteeBookingRepository, MenteeBookingRepository>();
 builder.Services.AddScoped<ICVRepository, MenteeCVRepository>();
 builder.Services.AddScoped<IMentorRepository, MenteeMentorRepository>();
 builder.Services.AddScoped<IMenteeRepository, MenteeRepository>();
+
+
+
+// Email Services
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Auth Services  
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+
+// Repository Services
+builder.Services.AddScoped<IUserTokenRepository, UserTokenRepository>();
+
+builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
+
+
 
 // Register Unit of Work
 builder.Services.AddScoped<IUnitOfWork, CVBookingUnitOfWork>();

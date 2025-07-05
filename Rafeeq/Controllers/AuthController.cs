@@ -12,12 +12,16 @@ namespace Rafeeq.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
+        private readonly IEmailService _emailService; // Add this
+        private readonly IConfiguration _config;
 
-        public AuthController(IAuthService authService)
+        public AuthController(IAuthService authService, IEmailService emailService, IConfiguration config)
         {
             _authService = authService;
+            _emailService = emailService;
+            _config = config; // Initialize the missing field
         }
-
+    
         [HttpPost("Register")]
         [AllowAnonymous]
         public async Task<IActionResult> Register([FromBody] RegisterDto dto)
@@ -138,6 +142,31 @@ namespace Rafeeq.Controllers
             await _authService.ResendVerificationEmailAsync(email);
             return Ok("Go to your account, a new verification link has been sent.");
         }
+
+        //[HttpPost("ResendVerificationEmail")]
+        //[AllowAnonymous]
+        //public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto dto) // ✅ Use DTO
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
+
+        //    try
+        //    {
+        //        await _authService.ResendVerificationEmailAsync(dto.Email); // ✅ Use dto.Email
+        //        return Ok(new { Message = "⚡ Verification email sent instantly! Check your inbox." });
+        //    }
+        //    catch (InvalidOperationException ex)
+        //    {
+        //        return BadRequest(new { Message = ex.Message });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new { Message = "Failed to send verification email.", Error = ex.Message });
+        //    }
+        //}
+
         // commit Auth15
         [HttpPost("logout")]
         [AllowAnonymous]
@@ -158,5 +187,37 @@ namespace Rafeeq.Controllers
 
             return Ok(new { Message = "Logged out successfully." });
         }
+        [HttpPost("test-email-config")]
+        [AllowAnonymous]
+        public async Task<IActionResult> TestEmailConfig([FromBody] string email)
+        {
+            try
+            {
+                await _emailService.SendEmailAsync(email, "Test Email", "<h1>Test successful!</h1>");
+                return Ok(new { success = true, message = "Test email sent successfully!" });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { success = false, message = ex.Message, details = ex.InnerException?.Message });
+            }
+        }
+
+        [HttpGet("email-config-check")]
+        [AllowAnonymous]
+        public IActionResult CheckEmailConfig()
+        {
+            var config = new
+            {
+                SendGridConfigured = !string.IsNullOrEmpty(_config["SendGrid:ApiKey"]),
+                SendGridKeyLength = _config["SendGrid:ApiKey"]?.Length ?? 0,
+                FromEmailConfigured = !string.IsNullOrEmpty(_config["EmailSettings:FromEmailAddress"]),
+                FromEmail = _config["EmailSettings:FromEmailAddress"],
+                FromName = _config["EmailSettings:FromName"],
+                FrontendUrl = _config["FrontendUrl"]
+            };
+
+            return Ok(config);
+        }
+
     }
 }
