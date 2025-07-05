@@ -195,17 +195,6 @@ builder.Services.AddScoped<IMentorRepository, MenteeMentorRepository>();
 builder.Services.AddScoped<IMenteeRepository, MenteeRepository>();
 
 
-
-// Email Services
-builder.Services.AddScoped<IEmailService, EmailService>();
-
-// Auth Services  
-builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddScoped<IJwtService, JwtService>();
-
-// Repository Services
-builder.Services.AddScoped<IUserTokenRepository, UserTokenRepository>();
-
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 

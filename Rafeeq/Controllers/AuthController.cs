@@ -143,30 +143,7 @@ namespace Rafeeq.Controllers
             return Ok("Go to your account, a new verification link has been sent.");
         }
 
-        //[HttpPost("ResendVerificationEmail")]
-        //[AllowAnonymous]
-        //public async Task<IActionResult> ResendVerification([FromBody] ResendVerificationDto dto) // ✅ Use DTO
-        //{
-        //    if (!ModelState.IsValid)
-        //    {
-        //        return BadRequest(ModelState);
-        //    }
-
-        //    try
-        //    {
-        //        await _authService.ResendVerificationEmailAsync(dto.Email); // ✅ Use dto.Email
-        //        return Ok(new { Message = "⚡ Verification email sent instantly! Check your inbox." });
-        //    }
-        //    catch (InvalidOperationException ex)
-        //    {
-        //        return BadRequest(new { Message = ex.Message });
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        return StatusCode(500, new { Message = "Failed to send verification email.", Error = ex.Message });
-        //    }
-        //}
-
+     
         // commit Auth15
         [HttpPost("logout")]
         [AllowAnonymous]
