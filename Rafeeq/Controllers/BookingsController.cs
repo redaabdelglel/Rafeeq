@@ -37,37 +37,9 @@ namespace Rafeeq.Controllers
             {
                 _logger.LogInformation("JoinBooking endpoint called for booking ID: {BookingId}", id);
 
-                // Get current user ID from claims
                 var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
-                _logger.LogInformation("User {UserId} with role {Role} is attempting to join booking {BookingId}",
-                    currentUserId, userRole, id);
-
-                // Direct test of GoogleMeetService to isolate issues
-                try
-                {
-                    _logger.LogInformation("Testing GoogleMeetService directly...");
-                    var testMeetLink = await _googleMeetService.CreateMeetingAsync(
-                        $"Test Meeting for Booking {id}",
-                        DateTime.UtcNow.AddMinutes(10),
-                        DateTime.UtcNow.AddMinutes(40),
-                        $"Test description for booking {id}");
-
-                    _logger.LogInformation("Direct test of GoogleMeetService returned: {MeetLink}", testMeetLink);
-
-                    // Check if it's an error link
-                    if (testMeetLink.Contains("/error-"))
-                    {
-                        _logger.LogWarning("Direct test resulted in an error link: {MeetLink}", testMeetLink);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Direct test of GoogleMeetService failed");
-                }
-
-                // Now proceed with the regular flow
                 var result = await _bookingService.GetBookingMeetLinkAsync(id, currentUserId, userRole);
 
                 if (!result.Success)
@@ -76,20 +48,21 @@ namespace Rafeeq.Controllers
                     return BadRequest(new { success = false, message = result.Message });
                 }
 
-                _logger.LogInformation("Successfully retrieved meet link for booking {BookingId}: {Link}",
-                    id, result.Data);
+                _logger.LogInformation("Successfully retrieved meet link for booking {BookingId}: {Link}", id, result.Data);
 
-                // Check if it's a real link or fallback
-                bool isRealLink = !result.Data.Contains("/error-") &&
-                                  !result.Data.Contains("/fallback-") &&
-                                  !result.Data.Contains("/mock-");
+                // Check if it's a real meeting link
+                bool isRealLink = !string.IsNullOrEmpty(result.Data) &&
+                                  (result.Data.Contains("meet.google.com") ||
+                                   result.Data.Contains("zoom.us") ||
+                                   result.Data.Contains("teams.microsoft.com") ||
+                                   result.Data.Contains("google.com/calendar"));
 
                 return Ok(new
                 {
                     success = true,
                     meetLink = result.Data,
                     isRealLink = isRealLink,
-                    linkType = isRealLink ? "real" : "fallback"
+                    linkType = isRealLink ? "meeting_link" : "other"
                 });
             }
             catch (Exception ex)
@@ -98,6 +71,9 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, new { success = false, message = "Error getting meeting link", error = ex.Message });
             }
         }
+
+
+
 
         // GET: api/bookings/upcoming
         [HttpGet("upcoming")]
@@ -328,6 +304,32 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, new { success = false, message = "Error retrieving booking details", error = ex.Message });
             }
         }
+
+       
+        [HttpPut("{id}/meeting-link")]
+        public async Task<IActionResult> UpdateMeetingLink(int id, [FromBody] UpdateMeetingLinkDto linkDto)
+        {
+            try
+            {
+                var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+
+                var result = await _bookingService.UpdateMeetingLinkAsync(id, linkDto.MeetingLink, currentUserId, userRole);
+
+                if (!result.Success)
+                {
+                    return BadRequest(new { success = false, message = result.Message });
+                }
+
+                return Ok(new { success = true, message = "Meeting link updated successfully", data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error updating meeting link for booking {id}");
+                return StatusCode(500, new { success = false, message = "Error updating meeting link" });
+            }
+        }
+
 
 
     }
