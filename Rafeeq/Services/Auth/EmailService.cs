@@ -1,4 +1,5 @@
 ﻿
+
 using SendGrid;
 using SendGrid.Helpers.Mail;
 using Microsoft.Extensions.Logging;
@@ -9,14 +10,13 @@ namespace Rafeeq.Services.Auth
     {
         private readonly IConfiguration _config;
         private readonly ILogger<EmailService> _logger;
-        private readonly SendGridClient _sendGridClient; // Reuse client instance
+        private readonly SendGridClient _sendGridClient;
 
         public EmailService(IConfiguration config, ILogger<EmailService> logger)
         {
             this._config = config;
             this._logger = logger;
 
-            // Initialize SendGrid client once
             var sendGridApiKey = _config["SendGrid:ApiKey"];
             if (!string.IsNullOrEmpty(sendGridApiKey))
             {
@@ -39,40 +39,51 @@ namespace Rafeeq.Services.Auth
 
             var msg = MailHelper.CreateSingleEmail(from, to, subject, string.Empty, message);
 
-            // Optimize for faster delivery
+            // 🚀 SPEED OPTIMIZATIONS - Headers for INSTANT delivery
             msg.AddHeader("X-Priority", "1");
             msg.AddHeader("Importance", "high");
             msg.AddHeader("X-MSMail-Priority", "High");
+            msg.AddHeader("Precedence", "urgent");
+            msg.AddHeader("Priority", "urgent");
+            msg.AddHeader("X-Mailer", "Rafeeq-FastMail");
 
-            // Add categories for better tracking and reputation
-            msg.AddCategory("verification");
+            // ⚡ Disable tracking for maximum speed
+            msg.SetClickTracking(false, false);
+            msg.SetOpenTracking(false);
+            msg.SetSubscriptionTracking(false);
+            msg.SetGoogleAnalytics(false);
+
+            msg.SetBypassListManagement(false);
+
+            // 📊 Categories for speed and tracking
+            msg.AddCategory("instant");
             msg.AddCategory("auth");
-            msg.AddCategory("rafeeq");
+            msg.AddCategory("verified-sender");
 
-            // Add custom args for tracking
-            msg.AddCustomArg("email_type", "verification");
-            msg.AddCustomArg("timestamp", DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+            // 🏷️ Minimal custom args
+            msg.AddCustomArg("speed", "max");
+            msg.AddCustomArg("type", "auth");
 
             try
             {
-                _logger.LogInformation("Sending verification email to {Email}", toEmail);
+                _logger.LogInformation("⚡ FAST: Sending instant email to {Email}", toEmail);
 
                 var response = await _sendGridClient.SendEmailAsync(msg);
 
                 if (!response.IsSuccessStatusCode)
                 {
                     var errorBody = await response.Body.ReadAsStringAsync();
-                    _logger.LogError("SendGrid email failed for {Email}. Status: {StatusCode}. Body: {Body}",
+                    _logger.LogError("❌ FAST EMAIL FAILED for {Email}. Status: {StatusCode}. Error: {Error}",
                         toEmail, response.StatusCode, errorBody);
-                    throw new Exception($"SendGrid failed to send email. Status: {response.StatusCode}");
+                    throw new Exception($"Fast email delivery failed: {response.StatusCode} - {errorBody}");
                 }
 
-                _logger.LogInformation("Email sent successfully to {Email}. Status: {StatusCode}",
+                _logger.LogInformation("✅ FAST EMAIL SUCCESS to {Email}. Status: {StatusCode}",
                     toEmail, response.StatusCode);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to send email to {Email}", toEmail);
+                _logger.LogError(ex, "💥 Fast email failed to {Email}", toEmail);
                 throw;
             }
         }
@@ -82,134 +93,151 @@ namespace Rafeeq.Services.Auth
             var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:4200";
             var verificationLink = $"{frontendUrl}/verify-email/{token}";
 
-            var subject = "🚀 Verify Your Rafeeq Account - Quick Action Required";
-            var message = $@"
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset='utf-8'>
-                    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-                    <title>Verify Your Email</title>
-                </head>
-                <body style='margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;'>
-                    <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>
-                        <div style='text-align: center; margin-bottom: 30px;'>
-                            <h1 style='color: #27ae60; margin: 0;'>Rafeeq</h1>
-                            <p style='color: #666; margin: 5px 0 0 0;'>Professional Mentorship Platform</p>
-                        </div>
+            // Log the link for debugging
+            _logger.LogInformation("Generated verification link: {Link} for email: {Email}", verificationLink, toEmail);
 
-                        <div style='text-align: center;'>
-                            <h2 style='color: #2c3e50; margin-bottom: 20px;'>Verify Your Email Address</h2>
-                            <p style='color: #555; font-size: 16px; line-height: 1.6; margin-bottom: 30px;'>
-                                Welcome to Rafeeq! Click the button below to verify your email and start your mentorship journey.
-                            </p>
-
-                            <a href='{verificationLink}' 
-                               style='display: inline-block; background-color: #27ae60; color: white; padding: 15px 30px; 
-                                      text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 16px;
-                                      margin-bottom: 20px;'>
-                                ✅ Verify Email Address
-                            </a>
-
-                            <p style='color: #777; font-size: 14px; margin-top: 30px;'>
-                                Or copy and paste this link in your browser:
-                            </p>
-                            <p style='word-break: break-all; color: #27ae60; font-size: 12px; 
-                                      background-color: #f8f9fa; padding: 10px; border-radius: 4px;'>
-                                {verificationLink}
-                            </p>
-                        </div>
-
-                        <div style='margin-top: 40px; padding-top: 20px; border-top: 1px solid #eee; text-align: center;'>
-                            <p style='color: #999; font-size: 12px; margin: 0;'>
-                                This link expires in 24 hours. If you didn't create this account, please ignore this email.
-                            </p>
-                            <p style='color: #999; font-size: 12px; margin: 10px 0 0 0;'>
-                                © 2024 Rafeeq Platform. All rights reserved.
-                            </p>
-                        </div>
-                    </div>
-                </body>
-                </html>";
+            var subject = "✅ Verify Your Rafeeq Account";
+            var message = CreateFastVerificationTemplate(verificationLink);
 
             await SendEmailAsync(toEmail, subject, message);
         }
 
-        // Update other email methods similarly...
         public async Task SendPasswordResetEmailAsync(string toEmail, string token)
         {
             var frontendUrl = _config["FrontendUrl"] ?? "http://localhost:4200";
             var resetLink = $"{frontendUrl}/reset-password?token={token}";
 
-            var subject = "🔒 Rafeeq Password Reset Request";
-            var message = $@"
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <meta charset='utf-8'>
-                    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-                </head>
-                <body style='margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;'>
-                    <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px;'>
-                        <div style='text-align: center;'>
-                            <h2 style='color: #3498db;'>Password Reset Request</h2>
-                            <p>Click the button below to reset your password:</p>
-                            <a href='{resetLink}' 
-                               style='display: inline-block; background-color: #3498db; color: white; padding: 15px 30px; 
-                                      text-decoration: none; border-radius: 5px; font-weight: bold;'>
-                                Reset Password
-                            </a>
-                            <p style='margin-top: 30px; color: #777; font-size: 12px;'>
-                                This link expires in 1 hour.
-                            </p>
-                        </div>
-                    </div>
-                </body>
-                </html>";
+            // Log the link for debugging
+            _logger.LogInformation("Generated reset link: {Link} for email: {Email}", resetLink, toEmail);
+
+            var subject = "🔐 Reset Your Rafeeq Password";
+            var message = CreateFastPasswordResetTemplate(resetLink);
 
             await SendEmailAsync(toEmail, subject, message);
         }
 
+        // ✅ MISSING METHOD IMPLEMENTATION - Add this method
         public async Task SendPaymentConfirmationEmailAsync(string toEmail, string userName, int bookingId, decimal amount, DateTime sessionDateTime, string userType)
         {
             var subject = "💰 Rafeeq Payment Confirmation";
+            var message = CreateFastPaymentTemplate(userName, bookingId, amount, sessionDateTime, userType);
 
-            string message;
-            if (userType.ToLower() == "mentor")
-            {
-                message = $@"
-                    <!DOCTYPE html>
-                    <html>
-                    <body style='font-family: Arial, sans-serif; background-color: #f4f4f4;'>
-                        <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px;'>
-                            <h2 style='color: #27ae60;'>💰 Payment Received</h2>
-                            <p>Dear {userName},</p>
-                            <p>Good news! You've received a payment of <strong>${amount:F2}</strong> for booking #{bookingId}.</p>
-                            <p>Session: <strong>{sessionDateTime:f}</strong></p>
-                        </div>
-                    </body>
-                    </html>";
-            }
-            else
-            {
-                message = $@"
-                    <!DOCTYPE html>
-                    <html>
-                    <body style='font-family: Arial, sans-serif; background-color: #f4f4f4;'>
-                        <div style='max-width: 600px; margin: 0 auto; background-color: #ffffff; padding: 20px; border-radius: 8px;'>
-                            <h2 style='color: #3498db;'>✅ Payment Confirmed</h2>
-                            <p>Dear {userName},</p>
-                            <p>Your payment of <strong>${amount:F2}</strong> for booking #{bookingId} was successful.</p>
-                            <p>Session: <strong>{sessionDateTime:f}</strong></p>
-                        </div>
-                    </body>
-                    </html>";
-            }
+            // Log payment email for debugging
+            _logger.LogInformation("Sending payment confirmation email to {Email} for booking #{BookingId} - Amount: ${Amount}",
+                toEmail, bookingId, amount);
 
             await SendEmailAsync(toEmail, subject, message);
         }
+
+        // 🚀 Enhanced Email Templates with Better Link Visibility
+        private string CreateFastVerificationTemplate(string verificationLink)
+        {
+            return $@"<!DOCTYPE html>
+<html><head><meta charset='UTF-8'><title>Verify Email</title></head>
+<body style='font-family:Arial;margin:0;padding:20px;background:#f5f5f5'>
+<div style='max-width:600px;margin:0 auto;background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1)'>
+<h1 style='color:#27ae60;text-align:center;margin:0 0 20px;font-size:28px'>Rafeeq</h1>
+<h2 style='text-align:center;margin:0 0 20px;color:#333'>✅ Verify Your Email</h2>
+<p style='text-align:center;margin:0 0 30px;color:#666;line-height:1.6'>Welcome to Rafeeq! Click the button below to verify your email and complete your registration:</p>
+
+<!-- Main Verification Button -->
+<div style='text-align:center;margin:30px 0'>
+<a href='{verificationLink}' style='background:#27ae60;color:#fff;padding:16px 32px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;font-size:16px;border:2px solid #27ae60'>VERIFY NOW</a>
+</div>
+
+<!-- Alternative Text Link -->
+<div style='text-align:center;margin:20px 0'>
+<p style='color:#666;margin:0 0 10px;font-size:14px'>Or click this link:</p>
+<a href='{verificationLink}' style='color:#27ae60;font-weight:bold;text-decoration:underline'>{verificationLink}</a>
+</div>
+
+<!-- Copy Link Section -->
+<div style='background:#f8f9fa;padding:15px;border-radius:5px;margin:20px 0'>
+<p style='color:#666;margin:0 0 10px;font-size:13px;font-weight:bold'>Can't click? Copy and paste this link:</p>
+<p style='background:#fff;padding:10px;border:1px solid #ddd;border-radius:4px;margin:0;word-break:break-all;font-size:12px;color:#27ae60'>{verificationLink}</p>
+</div>
+
+<p style='text-align:center;color:#999;font-size:12px;margin:30px 0 0'>This link expires in 24 hours. If you didn't create this account, please ignore this email.</p>
+</div></body></html>";
+        }
+
+        private string CreateFastPasswordResetTemplate(string resetLink)
+        {
+            return $@"<!DOCTYPE html>
+<html><head><meta charset='UTF-8'><title>Reset Password</title></head>
+<body style='font-family:Arial;margin:0;padding:20px;background:#f5f5f5'>
+<div style='max-width:600px;margin:0 auto;background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1)'>
+<h1 style='color:#3498db;text-align:center;margin:0 0 20px;font-size:28px'>🔐 Reset Password</h1>
+<p style='text-align:center;margin:0 0 30px;color:#666;line-height:1.6'>Click the button below to reset your password. This link expires in 1 hour:</p>
+
+<!-- Main Reset Button -->
+<div style='text-align:center;margin:30px 0'>
+<a href='{resetLink}' style='background:#3498db;color:#fff;padding:16px 32px;text-decoration:none;border-radius:8px;font-weight:bold;display:inline-block;font-size:16px;border:2px solid #3498db'>RESET NOW</a>
+</div>
+
+<!-- Alternative Text Link -->
+<div style='text-align:center;margin:20px 0'>
+<p style='color:#666;margin:0 0 10px;font-size:14px'>Or click this link:</p>
+<a href='{resetLink}' style='color:#3498db;font-weight:bold;text-decoration:underline'>{resetLink}</a>
+</div>
+
+<!-- Copy Link Section -->
+<div style='background:#f8f9fa;padding:15px;border-radius:5px;margin:20px 0'>
+<p style='color:#666;margin:0 0 10px;font-size:13px;font-weight:bold'>Can't click? Copy and paste this link:</p>
+<p style='background:#fff;padding:10px;border:1px solid #ddd;border-radius:4px;margin:0;word-break:break-all;font-size:12px;color:#3498db'>{resetLink}</p>
+</div>
+
+<p style='text-align:center;color:#999;font-size:12px;margin:30px 0 0'>If you didn't request this reset, please ignore this email.</p>
+</div></body></html>";
+        }
+
+        // ✅ ADD MISSING PAYMENT TEMPLATE METHOD
+        private string CreateFastPaymentTemplate(string userName, int bookingId, decimal amount, DateTime sessionDateTime, string userType)
+        {
+            var isForMentor = userType.ToLower() == "mentor";
+            var emoji = isForMentor ? "💰" : "✅";
+            var title = isForMentor ? "Payment Received" : "Payment Confirmed";
+            var color = isForMentor ? "#27ae60" : "#3498db";
+            var content = isForMentor
+                ? $"Great news! You've received a payment of <strong>${amount:F2}</strong> for booking #{bookingId}."
+                : $"Your payment of <strong>${amount:F2}</strong> for booking #{bookingId} has been processed successfully.";
+
+            return $@"<!DOCTYPE html>
+<html><head><meta charset='UTF-8'><title>Payment Confirmation</title></head>
+<body style='font-family:Arial;margin:0;padding:20px;background:#f5f5f5'>
+<div style='max-width:600px;margin:0 auto;background:#fff;padding:30px;border-radius:8px;box-shadow:0 2px 10px rgba(0,0,0,0.1)'>
+<h1 style='color:{color};text-align:center;margin:0 0 20px;font-size:28px'>{emoji} {title}</h1>
+
+<div style='text-align:center;margin:20px 0'>
+<h2 style='color:#333;margin:0 0 20px'>Dear {userName},</h2>
+<p style='margin:0 0 20px;color:#666;line-height:1.6'>{content}</p>
+</div>
+
+<!-- Payment Details Card -->
+<div style='background:#f8f9fa;padding:20px;border-radius:8px;margin:20px 0;border-left:4px solid {color}'>
+<h3 style='color:#333;margin:0 0 15px;font-size:18px'>Payment Details</h3>
+<p style='margin:0 0 10px;color:#666'><strong>Booking ID:</strong> #{bookingId}</p>
+<p style='margin:0 0 10px;color:#666'><strong>Amount:</strong> <span style='color:{color};font-weight:bold;font-size:18px'>${amount:F2}</span></p>
+<p style='margin:0 0 10px;color:#666'><strong>Session Date:</strong> {sessionDateTime:f}</p>
+<p style='margin:0;color:#666'><strong>Status:</strong> <span style='color:#27ae60;font-weight:bold'>Confirmed</span></p>
+</div>
+
+<!-- Action Section -->
+<div style='text-align:center;margin:30px 0'>
+<p style='margin:0 0 20px;color:#666'>Ready for your session? Log in to your dashboard for more details.</p>
+<a href='http://localhost:4200/dashboard' style='background:{color};color:#fff;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;display:inline-block'>Go to Dashboard</a>
+</div>
+
+<div style='text-align:center;margin:30px 0 0;padding-top:20px;border-top:1px solid #eee'>
+<p style='margin:0;color:{color};font-weight:bold;font-size:16px'>Thank you for using Rafeeq! 🚀</p>
+<p style='margin:5px 0 0;color:#999;font-size:12px'>Professional Mentorship Platform</p>
+</div>
+</div></body></html>";
+        }
     }
 }
+
+
 
 
 
@@ -324,4 +352,6 @@ namespace Rafeeq.Services.Auth
 //        }
 //    }
 //}
+
+
 
