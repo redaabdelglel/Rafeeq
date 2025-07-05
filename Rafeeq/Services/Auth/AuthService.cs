@@ -46,7 +46,7 @@ namespace Rafeeq.Services.Auth
                 role = await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Mentee");
                 if (role == null)
                 {
-                    return new RegisterResponseDto 
+                    return new RegisterResponseDto
                     {
                         IsSuccess = false,
                         Message = "Internal server error: Default user role not found.",
@@ -166,17 +166,17 @@ namespace Rafeeq.Services.Auth
                     }
                     break;
 
-                case "facebook": 
+                case "facebook":
                     verifiedEmail = dto.Email;
                     verifiedFullName = dto.FullName;
                     verifiedExternalId = dto.IdToken;
                     verifiedProfilePicture = dto.ProfilePicture;
                     break;
 
-                case "linkedin": 
+                case "linkedin":
                     verifiedEmail = dto.Email;
                     verifiedFullName = dto.FullName;
-                    verifiedExternalId = dto.IdToken; 
+                    verifiedExternalId = dto.IdToken;
                     verifiedProfilePicture = dto.ProfilePicture;
                     break;
 
@@ -330,7 +330,7 @@ namespace Rafeeq.Services.Auth
 
         public async Task<bool> ResetPasswordAsync(string token, string newPassword)
         {
-           
+
             var userToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(token.Trim(), "PasswordReset");
 
             if (userToken == null)
@@ -352,7 +352,7 @@ namespace Rafeeq.Services.Auth
             user.PasswordHash = PasswordHasher.HashPassword(newPassword);
             _unitOfWork.UserRepository.Update(user);
 
-            userToken.IsUsed = true; 
+            userToken.IsUsed = true;
             _unitOfWork.UserTokenRepository.Update(userToken);
 
             await _unitOfWork.SaveAsync();
@@ -363,23 +363,23 @@ namespace Rafeeq.Services.Auth
         {
             var userToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(token, "EmailVerification");
 
-            if (userToken == null) 
+            if (userToken == null)
             {
                 return false;
             }
 
-            if (userToken.IsUsed.GetValueOrDefault()) 
+            if (userToken.IsUsed.GetValueOrDefault())
             {
                 return false;
             }
 
-            if (userToken.ExpiryDate < DateTime.UtcNow) 
+            if (userToken.ExpiryDate < DateTime.UtcNow)
             {
                 return false;
             }
 
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userToken.UserId.GetValueOrDefault());
-            if (user == null) 
+            if (user == null)
             {
                 return false;
             }
@@ -394,62 +394,14 @@ namespace Rafeeq.Services.Auth
             return true;
         }
 
-        //public async Task ResendVerificationEmailAsync(string email)
-        //{
-        //    var user = await _unitOfWork.UserRepository.GetUserByEmailAsync(email);
-        //    if (user == null || user.IsEmailVerified.GetValueOrDefault())
-        //    {
-        //        return;
-        //    }
-
-        //    var existingTokens = await _unitOfWork.UserTokenRepository.GetActiveTokensForUserAsync(user.UserId, "EmailVerification");
-        //    foreach (var token in existingTokens)
-        //    {
-        //        token.IsUsed = true;
-        //        _unitOfWork.UserTokenRepository.Update(token);
-        //    }
-        //    await _unitOfWork.SaveAsync();
-
-        //    var newToken = Guid.NewGuid().ToString();
-        //    var userToken = new UserToken
-        //    {
-        //        UserId = user.UserId,
-        //        TokenType = "EmailVerification",
-        //        TokenValue = newToken,
-        //        ExpiryDate = DateTime.UtcNow.AddHours(24),
-        //        IsUsed = false,
-        //        CreatedAt = DateTime.UtcNow
-        //    };
-        //    _unitOfWork.UserTokenRepository.Add(userToken);
-        //    await _unitOfWork.SaveAsync();
-
-        //    var frontendUrl = _config.GetSection("FrontendUrl").Value;
-        //    if (string.IsNullOrEmpty(frontendUrl))
-        //    {
-        //        return;
-        //    }
-        //    //var verificationLink = $"{frontendUrl}/verify-email/{newToken}";
-
-        //    await _emailService.SendVerificationEmailAsync(user.Email, newToken);
-        //}
         public async Task ResendVerificationEmailAsync(string email)
         {
             var user = await _unitOfWork.UserRepository.GetUserByEmailAsync(email);
             if (user == null || user.IsEmailVerified.GetValueOrDefault())
             {
-                return; // Don't reveal if email exists
+                return;
             }
 
-            // Check for recent tokens (last 2 minutes)
-            var recentTokens = await _unitOfWork.UserTokenRepository.GetTokensForUserInTimeRange(
-                user.UserId, "EmailVerification", DateTime.UtcNow.AddMinutes(-2));
-
-            if (recentTokens.Any())
-            {
-                throw new InvalidOperationException("Please wait 2 minutes before requesting another verification email.");
-            }
-
-            // Invalidate existing tokens
             var existingTokens = await _unitOfWork.UserTokenRepository.GetActiveTokensForUserAsync(user.UserId, "EmailVerification");
             foreach (var token in existingTokens)
             {
@@ -458,7 +410,6 @@ namespace Rafeeq.Services.Auth
             }
             await _unitOfWork.SaveAsync();
 
-            // Create new token
             var newToken = Guid.NewGuid().ToString();
             var userToken = new UserToken
             {
@@ -472,9 +423,15 @@ namespace Rafeeq.Services.Auth
             _unitOfWork.UserTokenRepository.Add(userToken);
             await _unitOfWork.SaveAsync();
 
+            var frontendUrl = _config.GetSection("FrontendUrl").Value;
+            if (string.IsNullOrEmpty(frontendUrl))
+            {
+                return;
+            }
+            //var verificationLink = $"{frontendUrl}/verify-email/{newToken}";
+
             await _emailService.SendVerificationEmailAsync(user.Email, newToken);
         }
-
 
         public async Task<bool> InvalidateRefreshTokenAsync(int userId)
         {
