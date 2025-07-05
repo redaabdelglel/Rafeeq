@@ -67,5 +67,75 @@ namespace Rafeeq.Controllers
             await _faqService.IncrementFaqNotHelpfulCountAsync(id);
             return NoContent();
         }
+
+        // --- Admin CRUD Endpoints ---
+        [HttpGet("admin")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(PagedResult<FaqDto>), 200)]
+        public async Task<IActionResult> GetAllFaqsForAdmin(
+           [FromQuery] string? category = null,
+           [FromQuery] string? searchQuery = null,
+           [FromQuery] int pageNumber = 1,
+           [FromQuery] int pageSize = 10)
+        {
+            var pagedResult = await _faqService.GetAllFaqsForAdminAsync(category, searchQuery, pageNumber, pageSize);
+            return Ok(pagedResult);
+        }
+
+        [HttpGet("admin/{id}")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(FaqDto), 200)]
+        public async Task<IActionResult> GetFaqForAdmin(int id)
+        {
+            var faqDto = await _faqService.GetFaqByIdForAdminAsync(id);
+            if (faqDto == null)
+            {
+                return NotFound("FAQ not found.");
+            }
+            return Ok(faqDto);
+        }
+
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(FaqDto), 201)]
+        public async Task<IActionResult> CreateFaq([FromBody] FaqCreateDto faqDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var createdFaq = await _faqService.CreateFaqAsync(faqDto);
+            return CreatedAtAction(nameof(GetFaqForAdmin), new { id = createdFaq.FAQId }, createdFaq);
+        }
+
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(FaqDto), 200)]
+        public async Task<IActionResult> UpdateFaq(int id, [FromBody] FaqUpdateDto faqDto)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var updatedFaq = await _faqService.UpdateFaqAsync(id, faqDto);
+            if (updatedFaq == null)
+            {
+                return NotFound($"FAQ with ID {id} not found.");
+            }
+            return Ok(updatedFaq);
+        }
+
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(204)]
+        public async Task<IActionResult> DeleteFaq(int id)
+        {
+            var result = await _faqService.DeleteFaqAsync(id);
+            if (!result)
+            {
+                return NotFound($"FAQ with ID {id} not found.");
+            }
+            return NoContent();
+        }
     }
 }
