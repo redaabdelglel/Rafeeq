@@ -18,5 +18,19 @@ namespace Rafeeq.Services.FAQ
         Task IncrementFaqHelpfulCountAsync(int faqId);
 
         Task IncrementFaqNotHelpfulCountAsync(int faqId);
+
+
+
+
+        // Admin-specific CRUD methods
+        Task<PagedResult<FaqDto>> GetAllFaqsForAdminAsync( 
+            string? category = null,
+            string? searchQuery = null,
+            int pageNumber = 1,
+            int pageSize = 10);
+        Task<FaqDto?> GetFaqByIdForAdminAsync(int faqId); 
+        Task<FaqDto> CreateFaqAsync(FaqCreateDto faqDto);
+        Task<FaqDto?> UpdateFaqAsync(int id, FaqUpdateDto faqDto);
+        Task<bool> DeleteFaqAsync(int id);
     }
 }

@@ -21,6 +21,6 @@ namespace Rafeeq.Repositories.Auth
                 .Where(t => t.TokenValue == tokenValue.Trim() && t.TokenType == tokenType && t.IsUsed == false && t.ExpiryDate > DateTime.UtcNow)
                 .FirstOrDefaultAsync();
         }
-    
+
     }
 }

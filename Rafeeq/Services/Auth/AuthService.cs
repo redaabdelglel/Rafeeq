@@ -46,7 +46,7 @@ namespace Rafeeq.Services.Auth
                 role = await _unitOfWork.context.Roles.FirstOrDefaultAsync(r => r.RoleName == "Mentee");
                 if (role == null)
                 {
-                    return new RegisterResponseDto 
+                    return new RegisterResponseDto
                     {
                         IsSuccess = false,
                         Message = "Internal server error: Default user role not found.",
@@ -166,17 +166,17 @@ namespace Rafeeq.Services.Auth
                     }
                     break;
 
-                case "facebook": 
+                case "facebook":
                     verifiedEmail = dto.Email;
                     verifiedFullName = dto.FullName;
                     verifiedExternalId = dto.IdToken;
                     verifiedProfilePicture = dto.ProfilePicture;
                     break;
 
-                case "linkedin": 
+                case "linkedin":
                     verifiedEmail = dto.Email;
                     verifiedFullName = dto.FullName;
-                    verifiedExternalId = dto.IdToken; 
+                    verifiedExternalId = dto.IdToken;
                     verifiedProfilePicture = dto.ProfilePicture;
                     break;
 
@@ -330,7 +330,7 @@ namespace Rafeeq.Services.Auth
 
         public async Task<bool> ResetPasswordAsync(string token, string newPassword)
         {
-           
+
             var userToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(token.Trim(), "PasswordReset");
 
             if (userToken == null)
@@ -352,7 +352,7 @@ namespace Rafeeq.Services.Auth
             user.PasswordHash = PasswordHasher.HashPassword(newPassword);
             _unitOfWork.UserRepository.Update(user);
 
-            userToken.IsUsed = true; 
+            userToken.IsUsed = true;
             _unitOfWork.UserTokenRepository.Update(userToken);
 
             await _unitOfWork.SaveAsync();
@@ -363,23 +363,23 @@ namespace Rafeeq.Services.Auth
         {
             var userToken = await _unitOfWork.UserTokenRepository.GetTokenByValueAndTypeAsync(token, "EmailVerification");
 
-            if (userToken == null) 
+            if (userToken == null)
             {
                 return false;
             }
 
-            if (userToken.IsUsed.GetValueOrDefault()) 
+            if (userToken.IsUsed.GetValueOrDefault())
             {
                 return false;
             }
 
-            if (userToken.ExpiryDate < DateTime.UtcNow) 
+            if (userToken.ExpiryDate < DateTime.UtcNow)
             {
                 return false;
             }
 
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userToken.UserId.GetValueOrDefault());
-            if (user == null) 
+            if (user == null)
             {
                 return false;
             }

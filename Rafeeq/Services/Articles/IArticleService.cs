@@ -13,5 +13,18 @@ namespace Rafeeq.Services.Articles
 
         Task<ArticleDto?> GetArticleByIdAsync(int id);
         Task IncrementArticleViewCountAsync(int id);
+
+
+        // Admin-specific CRUD methods
+
+        Task<PagedResult<ArticleListDto>> GetAllArticlesForAdminAsync( 
+             string? category = null,
+             string? searchQuery = null,
+             int pageNumber = 1,
+             int pageSize = 10);
+        Task<ArticleDto?> GetArticleByIdForAdminAsync(int id); 
+        Task<ArticleDto> CreateArticleAsync(ArticleCreateDto articleDto);
+        Task<ArticleDto?> UpdateArticleAsync(int id, ArticleUpdateDto articleDto);
+        Task<bool> DeleteArticleAsync(int id);
     }
 }
