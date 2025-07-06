@@ -331,7 +331,7 @@ public partial class RafeeqContext : DbContext
             entity.HasOne(d => d.Author)
                   .WithMany(p => p.Articles)
                   .HasForeignKey(d => d.AuthorId)
-                  .OnDelete(DeleteBehavior.NoAction);
+                  .OnDelete(DeleteBehavior.SetNull);
         });
 
         modelBuilder.Entity<FAQ>(entity => 

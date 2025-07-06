@@ -6,10 +6,10 @@ namespace Rafeeq.DTOs.Articles
     {
         [Required(ErrorMessage = "Title is required.")]
         [StringLength(300, ErrorMessage = "Title cannot exceed 300 characters.")]
-        public string Title { get; set; } = string.Empty;
+        public string Title { get; set; }
 
         [Required(ErrorMessage = "Content is required.")]
-        public string Content { get; set; } = string.Empty;
+        public string Content { get; set; }
 
         [StringLength(500, ErrorMessage = "Summary cannot exceed 500 characters.")]
         public string? Summary { get; set; }
