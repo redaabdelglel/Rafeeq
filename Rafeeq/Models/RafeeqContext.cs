@@ -63,7 +63,10 @@ public partial class RafeeqContext : DbContext
     // ✅ NEW: AI Enhancement DbSets
     public virtual DbSet<MentorEmbedding> MentorEmbeddings { get; set; }
 
+    
     public virtual DbSet<AIConfiguration> AIConfigurations { get; set; }
+
+
 
     public virtual DbSet<TTSCache> TTSCaches { get; set; }
 
@@ -375,14 +378,14 @@ public partial class RafeeqContext : DbContext
         // ✅ NEW: AIConfiguration configuration
         modelBuilder.Entity<AIConfiguration>(entity =>
         {
+            entity.ToTable("AIConfiguration"); // <-- force singular
             entity.HasKey(e => e.ConfigId).HasName("PK_AIConfiguration");
-
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.IsActive).HasDefaultValue(true);
-
             entity.HasIndex(e => e.ConfigKey).IsUnique().HasDatabaseName("IX_AIConfiguration_ConfigKey");
         });
+
 
         // ✅ NEW: TTSCache configuration
         modelBuilder.Entity<TTSCache>(entity =>

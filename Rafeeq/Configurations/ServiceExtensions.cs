@@ -18,6 +18,9 @@ using Rafeeq.Services.Contact;
 using Rafeeq.Services.UserProfile;
 using Rafeeq.Services.Articles;
 using Rafeeq.Services.FAQ;
+using Rafeeq.Services.AI;
+
+using Rafeeq.Repositories.AI; 
 
 namespace Rafeeq.Configurations
 {
@@ -75,7 +78,16 @@ namespace Rafeeq.Configurations
             services.AddScoped<CVService>();
 
             // ✅ Chat & SignalR services 
-            services.AddScoped<SignalRService>(); 
+            services.AddScoped<SignalRService>();
+
+           
+         
+
+            // AI Service registrations
+            services.AddScoped<IEmbeddingService, EmbeddingService>();
+            //   HttpClient for OpenAI API calls
+            services.AddHttpClient<IEmbeddingService, EmbeddingService>();
+
 
             return services;
         }
