@@ -13,5 +13,7 @@ namespace Rafeeq.Repositories.Users
         //userPrfile
         new Task<User?> GetByIdAsync(int id);
         new Task<IEnumerable<User>> GetAllAsync();
+
+
     }
 }

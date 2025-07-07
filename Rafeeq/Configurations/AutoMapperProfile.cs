@@ -298,14 +298,34 @@ namespace Rafeeq.Configurations
 
 
             //  Article Mappings
-            CreateMap<Article, ArticleDto>()
-            .ForMember(dest => dest.AuthorName,
-                       opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Unknown Author"))
-            .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.AuthorId.HasValue ? src.AuthorId.Value : 0)); 
-
             CreateMap<Article, ArticleListDto>()
+           .ForMember(dest => dest.AuthorName,
+                       opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Unknown Author"))
+           .ForMember(dest => dest.IsPublished, opt => opt.MapFrom(src => src.IsPublished));
+
+            CreateMap<Article, ArticleDto>()
                 .ForMember(dest => dest.AuthorName,
-                           opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Unknown Author"));
+                            opt => opt.MapFrom(src => src.Author != null ? src.Author.FullName : "Unknown Author"))
+                .ForMember(dest => dest.AuthorId, opt => opt.MapFrom(src => src.AuthorId))
+                .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.UpdatedAt));
+
+            CreateMap<ArticleCreateDto, Article>()
+                .ForMember(dest => dest.ArticleId, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.ViewCount, opt => opt.Ignore())
+                .ForMember(dest => dest.Author, opt => opt.Ignore()); 
+
+            CreateMap<ArticleUpdateDto, Article>()
+                .ForMember(dest => dest.ArticleId, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore()) 
+                .ForMember(dest => dest.UpdatedAt, opt => opt.Ignore()) 
+                .ForMember(dest => dest.ViewCount, opt => opt.Ignore()) 
+                .ForMember(dest => dest.Author, opt => opt.Ignore());
+
+
+
+
 
 
             //  FAQ Mappings
@@ -316,6 +336,12 @@ namespace Rafeeq.Configurations
          .ForMember(dest => dest.NotHelpfulCount, opt => opt.MapFrom(src => src.NotHelpfulCount));
 
 
+            CreateMap<FaqCreateDto, Rafeeq.Models.FAQ>();
+            CreateMap<FaqUpdateDto, Rafeeq.Models.FAQ>();
+
+
+            CreateMap<User, UserFADto>() 
+            .ForMember(dest => dest.RoleName, opt => opt.MapFrom(src => src.Role != null ? src.Role.RoleName : null));
 
 
 

@@ -11,11 +11,11 @@ namespace Rafeeq.Models
 
         [Required]
         [StringLength(300)]
-        public string Title { get; set; }
+        public string Title { get; set; } = string.Empty;
 
         [Required]
         [Column(TypeName = "nvarchar(max)")]
-        public string Content { get; set; }
+        public string Content { get; set; } = string.Empty; 
 
         [StringLength(500)]
         public string? Summary { get; set; }
