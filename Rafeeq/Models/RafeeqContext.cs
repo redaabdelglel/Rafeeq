@@ -41,18 +41,34 @@ public partial class RafeeqContext : DbContext
     public virtual DbSet<User> Users { get; set; }
 
     public virtual DbSet<UserToken> UserTokens { get; set; }
+
     public virtual DbSet<MenteeCV> MenteeCVs { get; set; }
+
     public virtual DbSet<CVComment> CVComments { get; set; }
 
     public virtual DbSet<ContactMessage> ContactMessages { get; set; }
 
     public virtual DbSet<ChatConversation> ChatConversations { get; set; }
+
     public virtual DbSet<MessageReadStatus> MessageReadStatuses { get; set; }
+
     public virtual DbSet<MessageReaction> MessageReactions { get; set; }
+
     public virtual DbSet<Article> Articles { get; set; }
+
     public virtual DbSet<FAQ> FAQs { get; set; }
 
     public virtual DbSet<ContactReplies> ContactReplies { get; set; }
+
+    // ✅ NEW: AI Enhancement DbSets
+    public virtual DbSet<MentorEmbedding> MentorEmbeddings { get; set; }
+
+    
+    public virtual DbSet<AIConfiguration> AIConfigurations { get; set; }
+
+
+
+    public virtual DbSet<TTSCache> TTSCaches { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -98,7 +114,7 @@ public partial class RafeeqContext : DbContext
                 .HasConstraintName("FK__ChatAttac__Messa__70DDC3D8");
         });
 
-        // ✅ UPDATED: ChatMessage configuration with all cascade relationships
+        // ✅ UPDATED: ChatMessage configuration with all cascade relationships + AI features
         modelBuilder.Entity<ChatMessage>(entity =>
         {
             entity.HasKey(e => e.MessageId).HasName("PK_ChatMess_C87C0C9CDDF239B2");
@@ -135,6 +151,9 @@ public partial class RafeeqContext : DbContext
                 .WithOne(r => r.Message)
                 .HasForeignKey(r => r.MessageId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // ✅ NEW: Add index for audio file path searches
+            entity.HasIndex(e => e.AudioFilePath).HasDatabaseName("IX_ChatMessages_AudioFilePath");
         });
 
         modelBuilder.Entity<MenteeSkill>(entity =>
@@ -189,7 +208,6 @@ public partial class RafeeqContext : DbContext
 
         modelBuilder.Entity<Role>(entity =>
         {
-
             entity.HasKey(e => e.RoleId).HasName("PK_Roles_8AFACE1A4662431D");
         });
 
@@ -209,27 +227,12 @@ public partial class RafeeqContext : DbContext
             entity.Property(e => e.IsInterviewer).HasDefaultValue(false);
             entity.Property(e => e.IsMentor).HasDefaultValue(false);
 
+            // ✅ NEW: Set defaults for AI voice preferences
+            entity.Property(e => e.TTSEnabled).HasDefaultValue(false);
+            entity.Property(e => e.PreferredTTSVoice).HasDefaultValue("alloy");
+            entity.Property(e => e.VoiceSearchEnabled).HasDefaultValue(true);
+
             entity.HasOne(d => d.Role).WithMany(p => p.Users).HasConstraintName("FK_UsersRoleId_3B75D760");
-            entity.HasKey(e => e.RoleId).HasName("PK__Roles__8AFACE1A4662431D");
-        });
-
-        modelBuilder.Entity<Skill>(entity =>
-        {
-            entity.HasKey(e => e.SkillId).HasName("PK__Skills__DFA0918765B9AA60");
-        });
-
-        modelBuilder.Entity<User>(entity =>
-        {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C54AD77F5");
-
-            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-            entity.Property(e => e.IsActive).HasDefaultValue(true);
-            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
-            entity.Property(e => e.IsEmailVerified).HasDefaultValue(false);
-            entity.Property(e => e.IsInterviewer).HasDefaultValue(false);
-            entity.Property(e => e.IsMentor).HasDefaultValue(false);
-
-            entity.HasOne(d => d.Role).WithMany(p => p.Users).HasConstraintName("FK__Users__RoleId__3B75D760");
         });
 
         modelBuilder.Entity<MenteeCV>(entity =>
@@ -257,10 +260,6 @@ public partial class RafeeqContext : DbContext
 
             entity.HasOne(d => d.User).WithMany(p => p.UserTokens).HasConstraintName("FK_UserTokenUserI_6C190EBB");
         });
-
-
-
-
 
         modelBuilder.Entity<ContactMessage>(entity =>
         {
@@ -334,9 +333,9 @@ public partial class RafeeqContext : DbContext
                   .OnDelete(DeleteBehavior.SetNull);
         });
 
-        modelBuilder.Entity<FAQ>(entity => 
+        modelBuilder.Entity<FAQ>(entity =>
         {
-            entity.ToTable("FAQ"); 
+            entity.ToTable("FAQ");
             entity.HasKey(e => e.FAQId);
             entity.Property(e => e.SortOrder).HasDefaultValue(0);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
@@ -352,14 +351,52 @@ public partial class RafeeqContext : DbContext
             entity.HasOne(d => d.Message)
                 .WithMany(p => p.Reactions)
                 .HasForeignKey(d => d.MessageId)
-                .OnDelete(DeleteBehavior.Cascade); 
+                .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(d => d.User)
                 .WithMany()
                 .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.NoAction); 
+                .OnDelete(DeleteBehavior.NoAction);
         });
 
+        // ✅ NEW: MentorEmbedding configuration
+        modelBuilder.Entity<MentorEmbedding>(entity =>
+        {
+            entity.HasKey(e => e.EmbeddingId).HasName("PK_MentorEmbeddings");
+
+            entity.Property(e => e.LastUpdated).HasDefaultValueSql("(getdate())");
+
+            entity.HasIndex(e => e.UserId).IsUnique().HasDatabaseName("IX_MentorEmbeddings_UserId");
+
+            entity.HasOne(d => d.User)
+                .WithOne(p => p.MentorEmbedding)
+                .HasForeignKey<MentorEmbedding>(d => d.UserId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_MentorEmbeddings_Users");
+        });
+
+        // ✅ NEW: AIConfiguration configuration
+        modelBuilder.Entity<AIConfiguration>(entity =>
+        {
+            entity.ToTable("AIConfiguration"); // <-- force singular
+            entity.HasKey(e => e.ConfigId).HasName("PK_AIConfiguration");
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+            entity.HasIndex(e => e.ConfigKey).IsUnique().HasDatabaseName("IX_AIConfiguration_ConfigKey");
+        });
+
+
+        // ✅ NEW: TTSCache configuration
+        modelBuilder.Entity<TTSCache>(entity =>
+        {
+            entity.HasKey(e => e.CacheId).HasName("PK_TTSCache");
+
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.LastUsed).HasDefaultValueSql("(getdate())");
+
+            entity.HasIndex(e => e.TextHash).IsUnique().HasDatabaseName("IX_TTSCache_TextHash");
+        });
 
         OnModelCreatingPartial(modelBuilder);
     }

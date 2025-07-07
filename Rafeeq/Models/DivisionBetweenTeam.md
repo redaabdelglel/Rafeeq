@@ -742,3 +742,348 @@ CREATE TABLE FAQ (
     ViewCount INT DEFAULT 0,
     CreatedAt DATETIME DEFAULT GETDATE()
 );
+
+Collecting workspace information# 🎯 **Minimal AI Enhancement Plan for Rafeq Platform**
+
+## **What I Will Implement**
+
+### **1. Smart Mentor Search Enhancement**
+- Replace basic keyword matching with semantic search using OpenAI embeddings
+- When mentee searches "I need help with React interviews" → automatically finds mentors with "JavaScript", "Frontend", "Interview preparation" skills
+- Combine regular search results with AI-powered semantic matching for better mentor discovery
+
+### **2. Voice Messages in Chat System**
+- Add voice message recording capability to existing chat interface
+- Automatically transcribe voice messages using Whisper API for searchability
+- Display voice messages with audio player, transcript, and duration
+- Enable users to send voice messages when typing is inconvenient
+
+### **3. AI Chatbot Voice Output**
+- Add text-to-speech capability to existing AI chatbot responses
+- Users can toggle voice output on/off in chatbot interface
+- AI responses will be spoken aloud using OpenAI TTS API
+- Improves accessibility and user engagement with AI assistant
+
+---
+
+## **Database Changes Required**
+
+### **Execute These SQL Commands:**
+
+````sql
+-- 1. Add mentor embeddings for semantic search
+CREATE TABLE MentorEmbeddings (
+    EmbeddingId INT PRIMARY KEY IDENTITY(1,1),
+    UserId INT FOREIGN KEY REFERENCES Users(UserId),
+    BioEmbedding VARBINARY(MAX), -- Mentor bio + skills as vector
+    LastUpdated DATETIME DEFAULT GETDATE(),
+    CONSTRAINT IX_MentorEmbeddings_UserId UNIQUE(UserId)
+);
+
+-- 2. Store AI configuration securely
+CREATE TABLE AIConfiguration (
+    ConfigId INT PRIMARY KEY IDENTITY(1,1),
+    ConfigKey NVARCHAR(100) NOT NULL UNIQUE,
+    ConfigValue NVARCHAR(MAX) NOT NULL,
+    ConfigType NVARCHAR(50), -- 'embedding', 'whisper', 'tts'
+    IsActive BIT DEFAULT 1,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    UpdatedAt DATETIME DEFAULT GETDATE()
+);
+
+-- 3. Extend existing ChatMessages for voice capability (NON-BREAKING)
+ALTER TABLE ChatMessages ADD 
+    AudioFilePath NVARCHAR(255) NULL,
+    TranscriptText NVARCHAR(MAX) NULL,
+    AudioDuration INT NULL;
+
+-- 4. Add user voice preferences (NON-BREAKING)
+ALTER TABLE Users ADD 
+    TTSEnabled BIT DEFAULT 0,
+    PreferredTTSVoice NVARCHAR(50) DEFAULT 'alloy',
+    VoiceSearchEnabled BIT DEFAULT 1;
+
+-- 5. Cache TTS responses for performance (OPTIONAL)
+CREATE TABLE TTSCache (
+    CacheId INT PRIMARY KEY IDENTITY(1,1),
+    TextHash NVARCHAR(64) NOT NULL UNIQUE,
+    AudioFilePath NVARCHAR(255) NOT NULL,
+    Voice NVARCHAR(50) NOT NULL,
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    LastUsed DATETIME DEFAULT GETDATE()
+);
+
+-- 6. Insert AI configuration
+INSERT INTO AIConfiguration (ConfigKey, ConfigValue, ConfigType) VALUES
+('openai_api_key', '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', 'general'),
+('embedding_model', 'text-embedding-3-small', 'embedding'),
+('whisper_model', 'whisper-1', 'whisper'),
+('tts_model', 'tts-1', 'tts'),
+('similarity_threshold', '0.7', 'embedding'),
+('max_audio_duration', '300', 'whisper'),
+('tts_cache_enabled', 'true', 'tts');
+
+-- 7. Create performance indexes
+
+CREATE INDEX IX_AIConfiguration_ConfigKey ON AIConfiguration(ConfigKey);
+CREATE INDEX IX_TTSCache_TextHash ON TTSCache(TextHash);
+CREATE INDEX IX_ChatMessages_AudioFilePath ON ChatMessages(AudioFilePath);
+````
+
+---
+
+## **New API Endpoints Needed**
+
+### **Backend Developer Instructions:**
+
+### **1. Embedding & Semantic Search Endpoints**
+
+````csharp
+// EmbeddingController.cs
+[ApiController]
+[Route("api/[controller]")]
+public class EmbeddingController : ControllerBase
+{
+    [HttpPost("generate-mentor")]
+    public async Task<IActionResult> GenerateMentorEmbedding([FromBody] int mentorId)
+    {
+        // 1. Get mentor's bio, skills, and experience from database
+        // 2. Combine into single text string
+        // 3. Call OpenAI embedding API: text-embedding-3-small
+        // 4. Store 1536-dimension vector in MentorEmbeddings table
+        // 5. Return success/failure status
+    }
+
+    [HttpPost("mentors/semantic-search")]
+    public async Task<IActionResult> SemanticMentorSearch([FromBody] SemanticSearchRequest request)
+    {
+        // 1. Create embedding for search query using OpenAI
+        // 2. Calculate cosine similarity with all mentor embeddings
+        // 3. Return mentors with similarity > threshold (0.7)
+        // 4. Combine with regular search results
+        // 5. Remove duplicates and rank by relevance
+    }
+
+    [HttpPost("bulk-generate")]
+    public async Task<IActionResult> BulkGenerateEmbeddings()
+    {
+        // Background job to generate embeddings for all mentors
+        // Use this to populate embeddings for existing mentors
+    }
+}
+
+// Request/Response Models
+public class SemanticSearchRequest
+{
+    public string Query { get; set; }
+    public int? MinRating { get; set; }
+    public decimal? MaxHourlyRate { get; set; }
+    public List<string> Skills { get; set; }
+}
+
+public class SemanticSearchResponse
+{
+    public List<MentorResult> Mentors { get; set; }
+    public float SearchTime { get; set; }
+    public int TotalResults { get; set; }
+}
+
+public class MentorResult
+{
+    public int UserId { get; set; }
+    public string FullName { get; set; }
+    public string Bio { get; set; }
+    public decimal HourlyRate { get; set; }
+    public float SimilarityScore { get; set; } // 0-1
+    public List<string> Skills { get; set; }
+    public double AverageRating { get; set; }
+}
+````
+
+### **2. Voice Message Endpoints**
+
+````csharp
+// VoiceController.cs
+[ApiController]
+[Route("api/[controller]")]
+public class VoiceController : ControllerBase
+{
+    [HttpPost("upload-message")]
+    public async Task<IActionResult> UploadVoiceMessage([FromForm] VoiceMessageRequest request)
+    {
+        // 1. Validate audio file (max 25MB, supported formats)
+        // 2. Save audio file to storage (local or cloud)
+        // 3. Send to OpenAI Whisper API for transcription
+        // 4. Create ChatMessage with audio path and transcript
+        // 5. Send via SignalR to conversation participants
+        // 6. Return message details
+    }
+
+    [HttpPost("transcribe")]
+    public async Task<IActionResult> TranscribeAudio([FromForm] IFormFile audioFile)
+    {
+        // 1. Validate audio file
+        // 2. Call OpenAI Whisper API
+        // 3. Return transcription text
+        // Used for voice-to-text conversion
+    }
+
+    [HttpGet("message/{messageId}/audio")]
+    public async Task<IActionResult> GetVoiceMessageAudio(int messageId)
+    {
+        // 1. Get message from database
+        // 2. Verify user has access to conversation
+        // 3. Return audio file stream
+        // 4. Set appropriate content-type headers
+    }
+}
+
+// Request/Response Models
+public class VoiceMessageRequest
+{
+    public IFormFile AudioFile { get; set; }
+    public int BookingId { get; set; }
+    public string MessageText { get; set; } // Optional text with voice
+}
+
+public class VoiceMessageResponse
+{
+    public int MessageId { get; set; }
+    public string AudioUrl { get; set; }
+    public string TranscriptText { get; set; }
+    public int DurationSeconds { get; set; }
+    public DateTime SentAt { get; set; }
+}
+````
+
+### **3. Text-to-Speech Endpoints**
+
+````csharp
+// TTSController.cs
+[ApiController]
+[Route("api/[controller]")]
+public class TTSController : ControllerBase
+{
+    [HttpPost("generate")]
+    public async Task<IActionResult> GenerateTextToSpeech([FromBody] TTSRequest request)
+    {
+        // 1. Check cache first using text hash
+        // 2. If not cached, call OpenAI TTS API
+        // 3. Save audio file to storage
+        // 4. Cache the result
+        // 5. Return audio URL and duration
+    }
+
+    [HttpGet("voices")]
+    public async Task<IActionResult> GetAvailableVoices()
+    {
+        // Return list of available TTS voices
+        // ["alloy", "echo", "fable", "onyx", "nova", "shimmer"]
+    }
+
+    [HttpPut("user-preferences")]
+    public async Task<IActionResult> UpdateUserVoicePreferences([FromBody] VoicePreferencesRequest request)
+    {
+        // Update user's TTS preferences in database
+        // TTSEnabled, PreferredTTSVoice, VoiceSearchEnabled
+    }
+}
+
+// Request/Response Models
+public class TTSRequest
+{
+    public string Text { get; set; }
+    public string Voice { get; set; } = "alloy";
+    public float Speed { get; set; } = 1.0f;
+}
+
+public class TTSResponse
+{
+    public string AudioUrl { get; set; }
+    public int DurationSeconds { get; set; }
+    public string Voice { get; set; }
+    public bool FromCache { get; set; }
+}
+
+public class VoicePreferencesRequest
+{
+    public bool TTSEnabled { get; set; }
+    public string PreferredTTSVoice { get; set; }
+    public bool VoiceSearchEnabled { get; set; }
+}
+````
+
+### **4. Configuration Management**
+
+````csharp
+// ConfigController.cs
+[ApiController]
+[Route("api/[controller]")]
+public class ConfigController : ControllerBase
+{
+    [HttpGet("ai-settings")]
+    public async Task<IActionResult> GetAIConfiguration()
+    {
+        // Return non-sensitive AI configuration
+        // DO NOT return API keys in response
+    }
+
+    [HttpPut("ai-settings")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> UpdateAIConfiguration([FromBody] AIConfigRequest request)
+    {
+        // Admin-only endpoint to update AI settings
+        // Threshold values, cache settings, etc.
+    }
+}
+````
+
+---
+
+## **Integration Points**
+
+### **Existing Endpoints - NO CHANGES NEEDED**
+- All current chat endpoints continue working unchanged
+- All mentor search endpoints continue working unchanged
+- All user management endpoints continue working unchanged
+- All booking endpoints continue working unchanged
+
+### **Enhanced Endpoints - BACKWARD COMPATIBLE**
+- `GET /api/users/mentors` - Add optional `semanticQuery` parameter
+- `GET /api/chat/{bookingId}` - Add optional `includeTranscripts` parameter
+- `POST /api/chat` - Enhanced to handle voice messages automatically
+
+### **Frontend Integration**
+- Search component: Add semantic search toggle
+- Chat component: Add voice recording button
+- AI chatbot: Add voice output toggle
+- All features are optional and don't affect existing functionality
+
+---
+
+## **Why This Approach Works**
+
+### **✅ Zero Breaking Changes**
+- New columns have default values
+- New tables are independent
+- Existing API calls work unchanged
+- Features can be enabled/disabled per user
+
+### **✅ Minimal Implementation**
+- Only 3 core AI features
+- Uses existing chat and search infrastructure
+- Progressive enhancement approach
+- Each feature is independent
+
+### **✅ High Impact**
+- **Better mentor discovery** - semantic search finds relevant mentors
+- **Modern chat experience** - voice messages like WhatsApp
+- **Accessible AI** - voice output for chatbot responses
+
+### **✅ Secure & Scalable**
+- API keys stored in database configuration
+- File uploads validated and secured
+- Audio files cached for performance
+- Rate limiting on AI API calls
+
+This plan gives you **3 powerful AI features** with minimal database changes and zero disruption to existing functionality!
