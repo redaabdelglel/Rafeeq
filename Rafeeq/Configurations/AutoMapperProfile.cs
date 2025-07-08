@@ -153,10 +153,11 @@ namespace Rafeeq.Configurations
             CreateMap<ChatMessage, ChatMessageDto>()
                 .ForMember(dest => dest.SenderName, opt => opt.MapFrom(src => src.Sender.FullName))
                 .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.Sender.ProfilePicture))
-                .ForMember(dest => dest.IsVoiceMessage, opt => opt.MapFrom(src => src.IsVoiceMessage)) // ADD THIS LINE
+                .ForMember(dest => dest.IsVoiceMessage, opt => opt.MapFrom(src => src.IsVoiceMessage))
                 .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.ChatAttachments))
                 .ForMember(dest => dest.ReadByUserIds, opt => opt.MapFrom(src =>
-                    src.ReadStatuses.Select(rs => rs.UserId.ToString())));
+                    src.ReadStatuses.Select(rs => rs.UserId.ToString())))
+                .ForMember(dest => dest.TranscriptText, opt => opt.MapFrom(src => src.TranscriptText)); 
 
 
             // In your AutoMapperProfile.cs, update the ChatAttachment mapping:
@@ -393,6 +394,7 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.AverageRating, opt => opt.Ignore())
                 .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.ProfilePicture ?? ""));
 
+            
         }
 
     }

@@ -88,6 +88,10 @@ namespace Rafeeq.Configurations
             //   HttpClient for OpenAI API calls
             services.AddHttpClient<IEmbeddingService, EmbeddingService>();
 
+            
+            services.AddScoped<IAIConfigurationRepository, AIConfigurationRepository>();
+
+
 
             return services;
         }

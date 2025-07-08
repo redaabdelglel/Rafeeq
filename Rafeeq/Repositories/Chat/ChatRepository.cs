@@ -20,11 +20,12 @@ namespace Rafeeq.Repositories.Chat
         {
             return await _context.ChatMessages
                 .Include(m => m.Sender)
-                .Include(m => m.ChatAttachments) 
+                .Include(m => m.ChatAttachments) // <-- This ensures attachments are loaded
                 .Where(m => m.BookingId == bookingId)
                 .OrderBy(m => m.SentAt)
                 .ToListAsync();
         }
+
 
         // Add a new message
         public async Task<ChatMessage> AddMessageAsync(ChatMessage message)

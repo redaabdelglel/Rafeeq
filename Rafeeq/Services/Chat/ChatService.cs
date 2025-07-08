@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 
+
 namespace Rafeeq.Services.Chat
 {
     public class ChatService
@@ -39,23 +40,23 @@ namespace Rafeeq.Services.Chat
 
             try
             {
-                // ✅ FIXED: Use ContentRootPath + "uploads" to match Program.cs static files
+             
                 _uploadsBasePath = Path.Combine(environment.ContentRootPath, "uploads");
 
-                // Ensure base uploads directory exists
+              
                 if (!Directory.Exists(_uploadsBasePath))
                 {
                     Directory.CreateDirectory(_uploadsBasePath);
                 }
 
-                // ✅ FIXED: Ensure voice subdirectory exists
+                
                 var voiceDir = Path.Combine(_uploadsBasePath, "voice");
                 if (!Directory.Exists(voiceDir))
                 {
                     Directory.CreateDirectory(voiceDir);
                 }
 
-                // ✅ FIXED: Ensure chat subdirectory exists
+               
                 var chatDir = Path.Combine(_uploadsBasePath, "chat");
                 if (!Directory.Exists(chatDir))
                 {
@@ -82,7 +83,6 @@ namespace Rafeeq.Services.Chat
         }
 
 
-        // Get chat history for a booking
         public async Task<(bool Success, string Message, IEnumerable<ChatMessageDto> Data)> GetChatHistoryAsync(int bookingId, int userId)
         {
             // Check if user is part of the booking
@@ -92,17 +92,15 @@ namespace Rafeeq.Services.Chat
                 return (false, "You don't have permission to view this chat", null);
             }
 
-            // Get messages
+            // Get all messages for the booking
             var messages = await _unitOfWork.ChatRepository.GetMessagesByBookingIdAsync(bookingId);
 
-            // Map to DTOs
+            // Map to DTOs (AutoMapper will now include transcriptText)
             var messageDtos = _mapper.Map<IEnumerable<ChatMessageDto>>(messages);
-
-            // Set absolute URLs for all attachments
-            SetAbsoluteUrlsForAttachments(messageDtos);
 
             return (true, "Chat history retrieved successfully", messageDtos);
         }
+
 
         // Send a new message
         public async Task<(bool Success, string Message, ChatMessageDto Data)> SendMessageAsync(SendMessageDto dto, int senderId)

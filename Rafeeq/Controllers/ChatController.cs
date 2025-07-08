@@ -32,16 +32,15 @@ namespace Rafeeq.Controllers
     ChatService chatService,
     ILogger<ChatController> logger,
     IWebHostEnvironment hostingEnvironment,
-    IHubContext<ChatHub> chatHubContext) // Add this parameter
+    IHubContext<ChatHub> chatHubContext) 
         {
             _chatService = chatService;
             _logger = logger;
             _hostingEnvironment = hostingEnvironment;
-            _chatHubContext = chatHubContext; // Initialize the field
+            _chatHubContext = chatHubContext; 
         }
 
 
-        // GET: api/chat/{bookingId}
         [HttpGet("{bookingId}")]
         public async Task<IActionResult> GetChatHistory(int bookingId)
         {
@@ -69,6 +68,7 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, new { success = false, message = "An error occurred while retrieving chat history", error = ex.Message });
             }
         }
+
 
         // POST: api/chat
         [HttpPost]
