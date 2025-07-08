@@ -104,10 +104,24 @@ namespace Rafeeq.Controllers
                 AudioFilePath = audioUrl
             };
             await _unitOfWork.ChatRepository.AddMessageAsync(message);
+
+            // --- ADD THIS: Create and save the ChatAttachment for the audio file ---
+            var attachment = new ChatAttachment
+            {
+                MessageId = message.MessageId,
+                FilePath = audioUrl,
+                FileName = Path.GetFileName(audioUrl),
+                FileSize = (int)request.AudioFile.Length,
+                ContentType = request.AudioFile.ContentType,
+                IsVoiceMessage = true
+            };
+            await _unitOfWork.ChatAttachmentRepository.AddAttachmentAsync(attachment);
+
             await _unitOfWork.SaveAsync();
 
             // Map to DTO and notify via SignalR
-            var messageDto = _mapper.Map<ChatMessageDto>(message);
+            var messageWithAttachment = await _unitOfWork.ChatRepository.GetMessageByIdAsync(message.MessageId);
+            var messageDto = _mapper.Map<ChatMessageDto>(messageWithAttachment);
             await _signalRService.NotifyNewMessage(request.BookingId, messageDto);
 
             var response = new VoiceMessageResponse
@@ -120,6 +134,7 @@ namespace Rafeeq.Controllers
             };
             return Ok(new { success = true, data = response });
         }
+
 
         [HttpPost("transcribe")]
         public async Task<IActionResult> TranscribeAudio([FromForm] TranscribeAudioRequest request)
