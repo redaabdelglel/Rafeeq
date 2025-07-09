@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.Json.Serialization;
 
 namespace Rafeeq.DTOs.Chat
 {
@@ -17,5 +18,8 @@ namespace Rafeeq.DTOs.Chat
         public bool IsVoiceMessage { get; set; }
         public List<string> ReadByUserIds { get; set; } = new List<string>();
         public List<ChatAttachmentDto> Attachments { get; set; } = new List<ChatAttachmentDto>();
+
+        [JsonPropertyName("transcriptText")]
+        public string TranscriptText { get; set; } 
     }
 }

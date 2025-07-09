@@ -2,6 +2,7 @@
 using Rafeeq.Models;
 using Rafeeq.Repositories;
 using Rafeeq.Repositories.admin;
+using Rafeeq.Repositories.AI;
 using Rafeeq.Repositories.Articles;
 using Rafeeq.Repositories.Auth;
 using Rafeeq.Repositories.Availability;
@@ -50,6 +51,11 @@ namespace Rafeeq.UnitOfWork
 
         private ArticleRepository _articleRepository;
         private FAQRepository _faqRepository;
+
+        
+        private IEmbeddingRepository? _embeddingRepository;              
+        private IAIConfigurationRepository? _aiConfigurationRepository;  
+
 
 
 
@@ -280,6 +286,29 @@ namespace Rafeeq.UnitOfWork
                 return _faqRepository;
             }
         }
+        public IEmbeddingRepository EmbeddingRepository
+        {
+            get
+            {
+                if (_embeddingRepository == null)
+                {
+                    _embeddingRepository = new EmbeddingRepository(context);
+                }
+                return _embeddingRepository;
+            }
+        }
+
+        public IAIConfigurationRepository AIConfigurationRepository
+        {
+            get
+            {
+                if (_aiConfigurationRepository == null)
+                {
+                    _aiConfigurationRepository = new AIConfigurationRepository(context);
+                }
+                return _aiConfigurationRepository;
+            }
+        }
 
         public void Save()
         {
@@ -326,8 +355,21 @@ namespace Rafeeq.UnitOfWork
                 return _contactRepliesRepository;
             }
         }
+        private TTSCacheRepository _ttsCacheRepository;
+        public TTSCacheRepository TTSCacheRepository
+        {
+            get
+            {
+                if (_ttsCacheRepository == null)
+                {
+                    _ttsCacheRepository = new TTSCacheRepository(context);
+                }
+                return _ttsCacheRepository;
+            }
+        }
 
-      
+
+
 
     }
 }
