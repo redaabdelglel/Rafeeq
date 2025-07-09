@@ -20,7 +20,9 @@ using Rafeeq.Services.Articles;
 using Rafeeq.Services.FAQ;
 using Rafeeq.Services.AI;
 
-using Rafeeq.Repositories.AI; 
+using Rafeeq.Repositories.AI;
+using Rafeeq.Services.Forum.ForumComment;
+using Rafeeq.Services.Forum;
 
 namespace Rafeeq.Configurations
 {
@@ -52,6 +54,10 @@ namespace Rafeeq.Configurations
             // Articles and FAQ Services
             services.AddScoped<IArticleService, ArticleService>();
             services.AddScoped<IFAQService, FAQService>();
+
+
+            // NEW: Forum Services
+            services.AddScoped<IForumCommentService, ForumCommentService>();
 
             // User Services
             services.AddScoped<UserService>();

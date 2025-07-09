@@ -19,6 +19,7 @@ using Rafeeq.DTOs.Contact;
 using Rafeeq.DTOs.Articles;
 using Rafeeq.DTOs.FAQ;
 using Rafeeq.DTOs.AI;
+using Rafeeq.DTOs.ForumComment;
 
 namespace Rafeeq.Configurations
 {
@@ -394,8 +395,15 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.AverageRating, opt => opt.Ignore())
                 .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.ProfilePicture ?? ""));
 
-            
-        }
+
+
+            CreateMap<CreateForumCommentDto, ForumComment>();
+            CreateMap<UpdateForumCommentDto, ForumComment>();
+            CreateMap<ForumComment, ForumCommentDto>()
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName ?? "Unknown"))
+            .ForMember(dest => dest.UserProfilePicture, opt => opt.MapFrom(src => src.User.ProfilePicture))
+            .ForMember(dest => dest.CanEditDelete, opt => opt.MapFrom(src => false)); // Set this based on current user context
+    }
+    }
 
     }
-}

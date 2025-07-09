@@ -6,27 +6,16 @@ namespace Rafeeq.Models
 {
     public class ForumComment
     {
-        [Key]
         public int CommentId { get; set; }
-
-        [Required]
         public int PostId { get; set; }
-
-        [Required]
         public int UserId { get; set; }
-
-        [Required]
-        public string Content { get; set; } = string.Empty;
-
-        public bool IsAnswer { get; set; } = false;
+        public string Content { get; set; }
+        public bool IsAnswer { get; set; }
+        public bool IsDeleted { get; set; }
         public DateTime CreatedAt { get; set; }
-        public bool IsDeleted { get; set; } = false;
 
-        // Navigation
-        [ForeignKey("PostId")]
-        public ForumPost Post { get; set; }
-
-        [ForeignKey("UserId")]
-        public User User { get; set; }
+        // Navigation properties
+        public virtual User User { get; set; }
+        public virtual ForumPost Post { get; set; }
     }
 }
