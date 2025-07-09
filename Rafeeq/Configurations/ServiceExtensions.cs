@@ -91,7 +91,9 @@ namespace Rafeeq.Configurations
             
             services.AddScoped<IAIConfigurationRepository, AIConfigurationRepository>();
 
-
+            //tts services
+            services.AddScoped<ITTSCacheRepository, TTSCacheRepository>();
+            services.AddScoped<ITTSService, TTSService>();
 
             return services;
         }

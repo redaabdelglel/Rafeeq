@@ -355,8 +355,21 @@ namespace Rafeeq.UnitOfWork
                 return _contactRepliesRepository;
             }
         }
+        private TTSCacheRepository _ttsCacheRepository;
+        public TTSCacheRepository TTSCacheRepository
+        {
+            get
+            {
+                if (_ttsCacheRepository == null)
+                {
+                    _ttsCacheRepository = new TTSCacheRepository(context);
+                }
+                return _ttsCacheRepository;
+            }
+        }
 
-      
+
+
 
     }
 }

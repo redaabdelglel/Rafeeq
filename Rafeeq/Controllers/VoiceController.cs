@@ -16,6 +16,8 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using NAudio.Wave;
 using Rafeeq.DTOs.Chat;
+using Rafeeq.Services.AI;
+using Rafeeq.DTOs.AI;
 
 namespace Rafeeq.Controllers
 {
@@ -204,6 +206,23 @@ namespace Rafeeq.Controllers
             {
                 return 0;
             }
+        }
+        [HttpPost("tts/generate")]
+         [Authorize] 
+        public async Task<IActionResult> GenerateTextToSpeech([FromBody] TTSRequestDto request)
+        {
+            var ttsService = HttpContext.RequestServices.GetRequiredService<ITTSService>();
+            var result = await ttsService.GenerateSpeechAsync(request);
+            return Ok(new { success = true, data = result });
+        }
+
+        [HttpGet("tts/voices")]
+        [Authorize]
+        public async Task<IActionResult> GetAvailableVoices()
+        {
+            var ttsService = HttpContext.RequestServices.GetRequiredService<ITTSService>();
+            var voices = await ttsService.GetAvailableVoicesAsync();
+            return Ok(new { success = true, data = voices });
         }
     }
 }
