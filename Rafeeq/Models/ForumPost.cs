@@ -1,41 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using Rafeeq.Models;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
-namespace Rafeeq.Models
+public class ForumPost
 {
-    public class ForumPost
-    {
-        [Key]
-        public int PostId { get; set; }
+    [Key]
+    public int PostId { get; set; }
+    [Required]
+    public int UserId { get; set; }
+    [Required]
+    public int CategoryId { get; set; }
+    [Required, StringLength(200)]
+    public string Title { get; set; }
+    [Required]
+    public string Content { get; set; }
+    public bool IsSolved { get; set; }
+    public int Upvotes { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    public bool IsDeleted { get; set; }
 
-        [Required]
-        public int UserId { get; set; }
-
-        [Required]
-        public int CategoryId { get; set; }
-
-        [Required, StringLength(200)]
-        public string Title { get; set; } = string.Empty;
-
-        [Required]
-        public string Content { get; set; } = string.Empty;
-
-        public bool IsSolved { get; set; } = false;
-        public int Upvotes { get; set; } = 0;
-        public DateTime CreatedAt { get; set; }
-        public DateTime? UpdatedAt { get; set; }
-        public bool IsDeleted { get; set; } = false;
-
-        // Navigation
-        [ForeignKey("UserId")]
-        public User User { get; set; }
-
-        [ForeignKey("CategoryId")]
-        public ForumCategory Category { get; set; }
-
-        public ICollection<ForumComment> Comments { get; set; }
-        public ICollection<ForumPostUpvote> UpvoteUsers { get; set; }
-    }
+    [ForeignKey("UserId")]
+    public virtual User User { get; set; }
+    [ForeignKey("CategoryId")]
+    public virtual ForumCategory Category { get; set; }
+    public virtual ICollection<ForumComment> Comments { get; set; }
+    public virtual ICollection<ForumPostUpvote> UpvoteUsers { get; set; }
 }

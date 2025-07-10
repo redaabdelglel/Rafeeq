@@ -23,6 +23,7 @@ using Rafeeq.Services.AI;
 using Rafeeq.Repositories.AI;
 using Rafeeq.Services.Forum.ForumComment;
 using Rafeeq.Services.Forum;
+using Rafeeq.Repositories.Forum;
 
 namespace Rafeeq.Configurations
 {
@@ -100,6 +101,12 @@ namespace Rafeeq.Configurations
             //tts services
             services.AddScoped<ITTSCacheRepository, TTSCacheRepository>();
             services.AddScoped<ITTSService, TTSService>();
+
+            services.AddScoped<IForumCategoryRepository, ForumCategoryRepository>();
+            services.AddScoped<IForumCategoryService, ForumCategoryService>();
+            services.AddScoped<IForumPostMgmtRepository, ForumPostMgmtRepository>();
+            services.AddScoped<IForumPostMgmtService, ForumPostMgmtService>();
+
 
             return services;
         }

@@ -416,46 +416,37 @@ public partial class RafeeqContext : DbContext
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
             entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
             entity.Property(e => e.Description).HasMaxLength(255);
+
+            // Explicitly configure the one-to-many relationship
+            entity.HasMany(c => c.Posts)
+                .WithOne(p => p.Category)
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
-
-        //modelBuilder.Entity<ForumPost>(entity =>
-        //{
-        //    entity.HasKey(e => e.PostId);
-        //    entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
-        //    entity.Property(e => e.Content).IsRequired();
-        //    entity.Property(e => e.IsSolved).HasDefaultValue(false);
-        //    entity.Property(e => e.Upvotes).HasDefaultValue(0);
-        //    entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
-        //    entity.Property(e => e.IsDeleted).HasDefaultValue(false);
-
-        //    entity.HasOne(d => d.User)
-        //        .WithMany()
-        //        .HasForeignKey(d => d.UserId)
-        //        .OnDelete(DeleteBehavior.Restrict);
-
-        //    entity.HasOne(d => d.Category)
-        //        .WithMany(c => c.Posts)
-        //        .HasForeignKey(d => d.CategoryId)
-        //        .OnDelete(DeleteBehavior.Cascade);
-        //});
 
         modelBuilder.Entity<ForumPost>(entity =>
         {
             entity.ToTable("ForumPosts");
             entity.HasKey(e => e.PostId);
 
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Content).IsRequired();
+            entity.Property(e => e.IsSolved).HasDefaultValue(false);
+            entity.Property(e => e.Upvotes).HasDefaultValue(0);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
             entity.HasOne(e => e.User)
-                .WithMany()
+                .WithMany(u => u.ForumPosts)
                 .HasForeignKey(e => e.UserId)
-                .HasConstraintName("FK_ForumPosts_Users_UserId")
                 .OnDelete(DeleteBehavior.Restrict);
 
             entity.HasOne(e => e.Category)
-                .WithMany()
+                .WithMany(c => c.Posts)
                 .HasForeignKey(e => e.CategoryId)
-                .HasConstraintName("FK_ForumPosts_ForumCategories_CategoryId")
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.Cascade);
         });
+
 
         modelBuilder.Entity<ForumComment>(entity =>
         {
@@ -504,10 +495,12 @@ public partial class RafeeqContext : DbContext
                 .OnDelete(DeleteBehavior.Cascade);
 
             entity.HasOne(d => d.User)
-                .WithMany()
-                .HasForeignKey(d => d.UserId)
-                .OnDelete(DeleteBehavior.Restrict);
+    .WithMany(u => u.ForumPostUpvotes)
+    .HasForeignKey(d => d.UserId)
+    .OnDelete(DeleteBehavior.Restrict);
+
         });
+
 
 
         OnModelCreatingPartial(modelBuilder);
