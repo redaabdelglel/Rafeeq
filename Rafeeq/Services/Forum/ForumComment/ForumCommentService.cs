@@ -65,5 +65,14 @@ namespace Rafeeq.Services.Forum
             await _unitOfWork.SaveAsync();
             return true;
         }
+        public async Task<List<ForumCommentDto>> GetCommentsByPostAsync(int postId)
+        {
+            var comments = _unitOfWork.ForumCommentRepository
+                .GetCommentsByPostQuery(postId)
+                .ToList();
+
+            return comments.Select(c => _mapper.Map<ForumCommentDto>(c)).ToList();
+        }
+
     }
 }
