@@ -90,5 +90,33 @@ namespace Rafeeq.Repositories.Forum
         {
             _context.ForumPostUpvotes.Remove(upvote);
         }
+
+        public async Task AddReportAsync(ForumPostReport report)
+        {
+            await _context.ForumPostReports.AddAsync(report);
+        }
+
+        public async Task<List<ForumPostReport>> GetAllReportsAsync()
+        {
+            return await _context.ForumPostReports
+                .Include(r => r.Post)
+                .Include(r => r.ReportedByUser)
+                .OrderByDescending(r => r.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<ForumPostReport?> GetReportByIdAsync(int reportId)
+        {
+            return await _context.ForumPostReports
+                .Include(r => r.Post)
+                .Include(r => r.ReportedByUser)
+                .FirstOrDefaultAsync(r => r.ReportId == reportId);
+        }
+
+        public void UpdateReport(ForumPostReport report)
+        {
+            _context.ForumPostReports.Update(report);
+        }
+
     }
 }

@@ -22,8 +22,19 @@ namespace Rafeeq.Services.Forum
         public async Task<List<ForumPostDto>> GetAllAsync(int? categoryId = null, string? search = null, string? sortBy = "recent", bool? isSolved = null)
         {
             var posts = await _repo.GetAllAsync(categoryId, search, sortBy, isSolved);
-            return posts.Select(_mapper.Map<ForumPostDto>).ToList();
+
+            // Ensure pinned posts are always on top, then sort by created date or upvotes
+            var orderedPosts = posts.OrderByDescending(p => p.IsPinned);
+
+            if (sortBy == "upvotes")
+                orderedPosts = orderedPosts.ThenByDescending(p => p.Upvotes);
+            else
+                orderedPosts = orderedPosts.ThenByDescending(p => p.CreatedAt);
+
+            return orderedPosts.Select(_mapper.Map<ForumPostDto>).ToList();
+
         }
+
 
         public async Task<ForumPostDto?> GetByIdAsync(int postId)
         {
@@ -109,5 +120,121 @@ namespace Rafeeq.Services.Forum
             await _repo.SaveAsync();
             return true;
         }
+
+        public async Task<bool> ReportPostAsync(int postId, int userId, string reason)
+        {
+            // Check if post exists and is not deleted
+            var post = await _repo.GetByIdWithDetailsAsync(postId);
+            if (post == null || post.IsDeleted)
+                return false;
+
+            // Prevent duplicate reports by the same user for the same post
+            var existingReports = await _repo.GetAllReportsAsync();
+            if (existingReports.Any(r => r.PostId == postId && r.ReportedByUserId == userId))
+                return false;
+
+            var report = new ForumPostReport
+            {
+                PostId = postId,
+                ReportedByUserId = userId,
+                Reason = reason,
+                CreatedAt = DateTime.UtcNow,
+                Status = "Pending"
+            };
+
+            await _repo.AddReportAsync(report);
+            await _repo.SaveAsync();
+            return true;
+        }
+
+        public async Task<List<ForumPostReportDto>> GetAllReportsAsync()
+        {
+            var reports = await _repo.GetAllReportsAsync();
+            return reports.Select(r => new ForumPostReportDto
+            {
+                ReportId = r.ReportId,
+                PostId = r.PostId,
+                ReportedByUserId = r.ReportedByUserId,
+                Reason = r.Reason,
+                CreatedAt = r.CreatedAt,
+                Status = r.Status,
+                AdminNote = r.AdminNote,
+                PostTitle = r.Post?.Title ?? "",
+                PostOwnerName = r.Post?.User?.FullName,
+                ReportedByUserName = r.ReportedByUser?.FullName ?? ""
+            }).ToList();
+        }
+
+
+        public async Task<bool> TakeActionOnReportAsync(int reportId, string action, string? adminNote)
+        {
+            var report = await _repo.GetReportByIdAsync(reportId);
+            if (report == null || report.Status != "Pending")
+                return false;
+
+            // Only allow "delete" or "ignore"
+            if (action.Equals("delete", StringComparison.OrdinalIgnoreCase))
+            {
+                // Soft delete the post
+                var post = await _repo.GetByIdWithDetailsAsync(report.PostId);
+                if (post != null && !post.IsDeleted)
+                {
+                    post.IsDeleted = true;
+                    _repo.Update(post);
+                }
+                report.Status = "Resolved";
+                report.AdminNote = adminNote ?? "Post deleted by admin.";
+            }
+            else if (action.Equals("ignore", StringComparison.OrdinalIgnoreCase))
+            {
+                report.Status = "Ignored";
+                report.AdminNote = adminNote ?? "Report ignored by admin.";
+            }
+            else
+            {
+                return false;
+            }
+
+            _repo.UpdateReport(report);
+            await _repo.SaveAsync();
+            return true;
+        }
+
+        public async Task AddReportAsync(ForumPostReport report)
+        {
+            await _repo.AddReportAsync(report);
+            await _repo.SaveAsync();
+        }
+
+        public async Task<ForumPostReport?> GetReportByIdAsync(int reportId)
+        {
+            return await _repo.GetReportByIdAsync(reportId);
+        }
+
+        public void UpdateReport(ForumPostReport report)
+        {
+            _repo.UpdateReport(report);
+        }
+
+        public async Task<bool> PinPostAsync(int postId)
+        {
+            var post = await _repo.GetByIdWithDetailsAsync(postId);
+            if (post == null || post.IsDeleted) return false;
+            post.IsPinned = true;
+            _repo.Update(post);
+            await _repo.SaveAsync();
+            return true;
+        }
+
+        public async Task<bool> UnpinPostAsync(int postId)
+        {
+            var post = await _repo.GetByIdWithDetailsAsync(postId);
+            if (post == null || post.IsDeleted) return false;
+            post.IsPinned = false;
+            _repo.Update(post);
+            await _repo.SaveAsync();
+            return true;
+        }
+
     }
 }

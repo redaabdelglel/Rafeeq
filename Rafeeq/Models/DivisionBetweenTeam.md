@@ -1327,3 +1327,18 @@ Absolutely! Here’s a **clear division** for the Community Forum feature so you
 - **No overlap**—work in parallel, no merge conflicts!
 
 If you need sample controller/component code, just ask!
+
+# A. Add Pinning Support 
+  ALTER TABLE ForumPosts ADD IsPinned BIT DEFAULT 0;
+
+  # B. Add Reporting Support
+ CREATE TABLE ForumPostReports (
+    ReportId INT PRIMARY KEY IDENTITY(1,1),
+    PostId INT FOREIGN KEY REFERENCES ForumPosts(PostId),
+    ReportedByUserId INT FOREIGN KEY REFERENCES Users(UserId),
+    Reason NVARCHAR(255),
+    CreatedAt DATETIME DEFAULT GETDATE(),
+    Status NVARCHAR(50) DEFAULT 'Pending', -- e.g. Pending, Resolved, Ignored
+    AdminNote NVARCHAR(255) NULL
+);
+

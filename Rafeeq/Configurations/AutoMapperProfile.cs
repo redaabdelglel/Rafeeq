@@ -416,6 +416,9 @@ namespace Rafeeq.Configurations
             CreateMap<UpdateForumPostDto, ForumPost>();
             ;
 
+
+            
+
         }
     }
 
