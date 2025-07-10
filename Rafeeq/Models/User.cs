@@ -116,7 +116,6 @@ public partial class User
     [InverseProperty("User")]
     public virtual ICollection<ForumComment> ForumComments { get; set; } = new List<ForumComment>();
 
-    [InverseProperty("User")]
     public virtual ICollection<ForumPostUpvote> ForumPostUpvotes { get; set; } = new List<ForumPostUpvote>();
 
 }

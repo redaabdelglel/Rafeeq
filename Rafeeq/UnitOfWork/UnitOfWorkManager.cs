@@ -378,7 +378,7 @@ namespace Rafeeq.UnitOfWork
                 return _forumCommentRepository;
             }
         }
-        public IForumPostRepository ForumPostRepository 
+        public IForumPostRepository ForumPostRepository
         {
             get
             {
@@ -386,6 +386,28 @@ namespace Rafeeq.UnitOfWork
                 return _forumPostRepository;
             }
         }
+        private IForumCategoryRepository _forumCategoryRepository;
+        public IForumCategoryRepository ForumCategoryRepository
+        {
+            get
+            {
+                if (_forumCategoryRepository == null)
+                    _forumCategoryRepository = new ForumCategoryRepository(context);
+                return _forumCategoryRepository;
+            }
+        }
+
+        private IForumPostMgmtRepository _forumPostMgmtRepository;
+        public IForumPostMgmtRepository ForumPostMgmtRepository
+        {
+            get
+            {
+                if (_forumPostMgmtRepository == null)
+                    _forumPostMgmtRepository = new ForumPostMgmtRepository(context);
+                return _forumPostMgmtRepository;
+            }
+        }
+
 
     }
 }

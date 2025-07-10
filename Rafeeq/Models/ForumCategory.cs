@@ -1,26 +1,22 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using Rafeeq.Models;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
-namespace Rafeeq.Models
+public class ForumCategory
 {
-    public class ForumCategory
-    {
-        [Key]
-        public int CategoryId { get; set; }
+    [Key]
+    public int CategoryId { get; set; }
 
-        [Required]
-        [StringLength(100)]
-        public string Name { get; set; }
+    [Required]
+    [StringLength(100)]
+    public string Name { get; set; }
 
-        [StringLength(255)]
-        public string? Description { get; set; }
+    [StringLength(255)]
+    public string? Description { get; set; }
 
-        [Column(TypeName = "datetime")]
-        public DateTime? CreatedAt { get; set; }
+    [Column(TypeName = "datetime")]
+    public DateTime? CreatedAt { get; set; }
 
-        [InverseProperty("Category")]
-        public virtual ICollection<ForumPost> Posts { get; set; } = new List<ForumPost>();
-    }
+    [InverseProperty("Category")]
+    public virtual ICollection<ForumPost> Posts { get; set; } = new List<ForumPost>();
 }
