@@ -118,6 +118,14 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, new { success = false, message = "An internal server error occurred", error = ex.Message });
             }
         }
+        [AllowAnonymous]
+        [HttpGet("~/api/forum/posts/{postId}/comments")]
+        public async Task<IActionResult> GetCommentsForPost(int postId)
+        {
+            var comments = await _forumCommentService.GetCommentsByPostAsync(postId);
+            return Ok(comments);
+        }
+
 
     }
 }
