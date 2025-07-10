@@ -22,5 +22,7 @@
         public bool HasUpvoted { get; set; }
         public bool CanEditDelete { get; set; }
         public bool CanMarkAsSolved { get; set; }
+        public bool IsPinned { get; set; }
+
     }
 }

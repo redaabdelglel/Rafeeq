@@ -75,6 +75,8 @@ public partial class RafeeqContext : DbContext
     public virtual DbSet<ForumPost> ForumPosts { get; set; }
     public virtual DbSet<ForumComment> ForumComments { get; set; }
     public virtual DbSet<ForumPostUpvote> ForumPostUpvotes { get; set; }
+    public virtual DbSet<ForumPostReport> ForumPostReports { get; set; }
+
 
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -498,6 +500,23 @@ public partial class RafeeqContext : DbContext
     .WithMany(u => u.ForumPostUpvotes)
     .HasForeignKey(d => d.UserId)
     .OnDelete(DeleteBehavior.Restrict);
+
+
+            modelBuilder.Entity<ForumPostReport>(entity =>
+            {
+                entity.HasKey(e => e.ReportId);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Status).HasDefaultValue("Pending");
+                entity.HasOne(e => e.Post)
+                    .WithMany()
+                    .HasForeignKey(e => e.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.ReportedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ReportedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
 
         });
 

@@ -15,6 +15,7 @@ public class ForumPost
     [Required]
     public string Content { get; set; }
     public bool IsSolved { get; set; }
+    public bool IsPinned { get; set; }
     public int Upvotes { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }

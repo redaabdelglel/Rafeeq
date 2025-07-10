@@ -17,5 +17,11 @@ namespace Rafeeq.Repositories.Forum
         Task<ForumPostUpvote?> GetUserUpvoteAsync(int postId, int userId);
         Task AddUpvoteAsync(ForumPostUpvote upvote);
         void RemoveUpvote(ForumPostUpvote upvote);
+
+        Task AddReportAsync(ForumPostReport report);
+        Task<List<ForumPostReport>> GetAllReportsAsync();
+        Task<ForumPostReport?> GetReportByIdAsync(int reportId);
+        void UpdateReport(ForumPostReport report);
+
     }
 }

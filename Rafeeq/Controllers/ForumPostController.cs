@@ -100,5 +100,56 @@ namespace Rafeeq.Controllers.Forum
             var posts = await _service.GetByUserIdAsync(userId);
             return Ok(posts);
         }
+
+        // User reports a post
+        [HttpPost("{postId}/report")]
+        [Authorize]
+        public async Task<IActionResult> ReportPost(int postId, [FromBody] CreateForumPostReportDto dto)
+        {
+            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
+            var success = await _service.ReportPostAsync(postId, userId, dto.Reason);
+            if (!success) return BadRequest("Already reported or post not found.");
+            return Ok();
+        }
+
+        // Admin: get all reports
+        [HttpGet("/api/admin/forum/reports")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllReports()
+        {
+            var reports = await _service.GetAllReportsAsync();
+            return Ok(reports);
+        }
+
+
+        // Admin: take action on a report
+        [HttpPut("/api/admin/forum/reports/{reportId}/action")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> TakeActionOnReport(int reportId, [FromBody] AdminReportActionDto dto)
+        {
+            var success = await _service.TakeActionOnReportAsync(reportId, dto.Action, dto.AdminNote);
+            if (!success) return BadRequest("Invalid action or report not found.");
+            return Ok();
+        }
+
+        [HttpPost("{postId}/pin")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> PinPost(int postId)
+        {
+            var success = await _service.PinPostAsync(postId);
+            if (!success) return NotFound();
+            return Ok();
+        }
+
+        [HttpPost("{postId}/unpin")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UnpinPost(int postId)
+        {
+            var success = await _service.UnpinPostAsync(postId);
+            if (!success) return NotFound();
+            return Ok();
+        }
+
+
     }
 }
