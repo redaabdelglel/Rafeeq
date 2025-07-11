@@ -423,17 +423,24 @@ namespace Rafeeq.Configurations
 
 
 
-            CreateMap<ForumCategory, ForumCategoryDto>();
-            CreateMap<CreateForumCategoryDto, ForumCategory>();
             CreateMap<ForumPost, Rafeeq.DTOs.Forum.ForumPostDto>()
-       .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
-       .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.User.FullName));
-            CreateMap<CreateForumPostDto, ForumPost>();
-            CreateMap<UpdateForumPostDto, ForumPost>();
+     .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+     .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.User.FullName))
+     .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName))
+
+     .ForMember(dest => dest.UserProfilePicture, opt => opt.MapFrom(src => src.User.ProfilePicture))
+     .ForMember(dest => dest.IsPinned, opt => opt.MapFrom(src => src.IsPinned))
+     .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.UpdatedAt))
+     .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.Comments.Where(c => !c.IsDeleted)))
+     // Ignore these, set in service:
+     .ForMember(dest => dest.HasUpvoted, opt => opt.Ignore())
+     .ForMember(dest => dest.CanEditDelete, opt => opt.Ignore())
+     .ForMember(dest => dest.CanMarkAsSolved, opt => opt.Ignore());
+
             ;
 
 
-            
+
 
         }
     }

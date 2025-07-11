@@ -30,6 +30,7 @@ namespace Rafeeq.Services.Forum
 
         Task<bool> PinPostAsync(int postId);
         Task<bool> UnpinPostAsync(int postId);
+        Task<ForumPostDto?> GetByIdAsync(int postId, int? currentUserId = null);
 
     }
 }
