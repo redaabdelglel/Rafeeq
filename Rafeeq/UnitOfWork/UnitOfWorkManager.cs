@@ -11,6 +11,7 @@ using Rafeeq.Repositories.Chat;
 using Rafeeq.Repositories.Contact;
 using Rafeeq.Repositories.CV;
 using Rafeeq.Repositories.FAQ;
+using Rafeeq.Repositories.Forum;
 using Rafeeq.Repositories.Mentee;
 using Rafeeq.Repositories.Notifications;
 using Rafeeq.Repositories.Payments;
@@ -54,9 +55,10 @@ namespace Rafeeq.UnitOfWork
 
         
         private IEmbeddingRepository? _embeddingRepository;              
-        private IAIConfigurationRepository? _aiConfigurationRepository;  
+        private IAIConfigurationRepository? _aiConfigurationRepository;
 
-
+        private IForumCommentRepository _forumCommentRepository;
+        private IForumPostRepository _forumPostRepository;
 
 
         public UnitOfWorkManager(RafeeqContext context)
@@ -355,8 +357,57 @@ namespace Rafeeq.UnitOfWork
                 return _contactRepliesRepository;
             }
         }
+        private TTSCacheRepository _ttsCacheRepository;
+        public TTSCacheRepository TTSCacheRepository
+        {
+            get
+            {
+                if (_ttsCacheRepository == null)
+                {
+                    _ttsCacheRepository = new TTSCacheRepository(context);
+                }
+                return _ttsCacheRepository;
+            }
+        }
 
-      
+        public IForumCommentRepository ForumCommentRepository 
+        {
+            get
+            {
+                if (_forumCommentRepository == null) { _forumCommentRepository = new ForumCommentRepository(context); }
+                return _forumCommentRepository;
+            }
+        }
+        public IForumPostRepository ForumPostRepository
+        {
+            get
+            {
+                if (_forumPostRepository == null) { _forumPostRepository = new ForumPostRepository(context); }
+                return _forumPostRepository;
+            }
+        }
+        private IForumCategoryRepository _forumCategoryRepository;
+        public IForumCategoryRepository ForumCategoryRepository
+        {
+            get
+            {
+                if (_forumCategoryRepository == null)
+                    _forumCategoryRepository = new ForumCategoryRepository(context);
+                return _forumCategoryRepository;
+            }
+        }
+
+        private IForumPostMgmtRepository _forumPostMgmtRepository;
+        public IForumPostMgmtRepository ForumPostMgmtRepository
+        {
+            get
+            {
+                if (_forumPostMgmtRepository == null)
+                    _forumPostMgmtRepository = new ForumPostMgmtRepository(context);
+                return _forumPostMgmtRepository;
+            }
+        }
+
 
     }
 }

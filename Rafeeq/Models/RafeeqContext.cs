@@ -70,6 +70,15 @@ public partial class RafeeqContext : DbContext
 
     public virtual DbSet<TTSCache> TTSCaches { get; set; }
 
+    //Forum
+    public virtual DbSet<ForumCategory> ForumCategories { get; set; }
+    public virtual DbSet<ForumPost> ForumPosts { get; set; }
+    public virtual DbSet<ForumComment> ForumComments { get; set; }
+    public virtual DbSet<ForumPostUpvote> ForumPostUpvotes { get; set; }
+    public virtual DbSet<ForumPostReport> ForumPostReports { get; set; }
+
+
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -226,6 +235,11 @@ public partial class RafeeqContext : DbContext
             entity.Property(e => e.IsEmailVerified).HasDefaultValue(false);
             entity.Property(e => e.IsInterviewer).HasDefaultValue(false);
             entity.Property(e => e.IsMentor).HasDefaultValue(false);
+
+            //entity.HasMany(u => u.ForumComments)
+            //    .WithOne(fc => fc.User)
+            //    .HasForeignKey(fc => fc.UserId)
+            //    .OnDelete(DeleteBehavior.Restrict);
 
             // ✅ NEW: Set defaults for AI voice preferences
             entity.Property(e => e.TTSEnabled).HasDefaultValue(false);
@@ -397,6 +411,116 @@ public partial class RafeeqContext : DbContext
 
             entity.HasIndex(e => e.TextHash).IsUnique().HasDatabaseName("IX_TTSCache_TextHash");
         });
+
+        modelBuilder.Entity<ForumCategory>(entity =>
+        {
+            entity.HasKey(e => e.CategoryId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Description).HasMaxLength(255);
+
+            // Explicitly configure the one-to-many relationship
+            entity.HasMany(c => c.Posts)
+                .WithOne(p => p.Category)
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<ForumPost>(entity =>
+        {
+            entity.ToTable("ForumPosts");
+            entity.HasKey(e => e.PostId);
+
+            entity.Property(e => e.Title).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Content).IsRequired();
+            entity.Property(e => e.IsSolved).HasDefaultValue(false);
+            entity.Property(e => e.Upvotes).HasDefaultValue(0);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+            entity.Property(e => e.IsDeleted).HasDefaultValue(false);
+
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.ForumPosts)
+                .HasForeignKey(e => e.UserId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Category)
+                .WithMany(c => c.Posts)
+                .HasForeignKey(e => e.CategoryId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
+
+        modelBuilder.Entity<ForumComment>(entity =>
+        {
+            entity.ToTable("ForumComments");
+            entity.HasKey(e => e.CommentId);
+
+            entity.Property(e => e.Content)
+                .IsRequired()
+                .HasMaxLength(2000);
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("GETDATE()");
+
+            entity.Property(e => e.IsDeleted)
+                .HasDefaultValue(false);
+
+            entity.Property(e => e.IsAnswer)
+                .HasDefaultValue(false);
+
+            // CRITICAL: Explicitly configure foreign key relationships
+            entity.HasOne(e => e.User)
+                .WithMany(u => u.ForumComments)
+                .HasForeignKey(e => e.UserId)
+                .HasConstraintName("FK_ForumComments_Users_UserId")
+                .OnDelete(DeleteBehavior.Restrict);
+
+            entity.HasOne(e => e.Post)
+                .WithMany(p => p.Comments)
+                .HasForeignKey(e => e.PostId)
+                .HasConstraintName("FK_ForumComments_ForumPosts_PostId")
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+
+
+
+        modelBuilder.Entity<ForumPostUpvote>(entity =>
+        {
+            entity.HasKey(e => e.UpvoteId);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+
+            entity.HasIndex(e => new { e.PostId, e.UserId }).IsUnique();
+
+            entity.HasOne(d => d.Post)
+                .WithMany(p => p.UpvoteUsers)
+                .HasForeignKey(d => d.PostId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(d => d.User)
+    .WithMany(u => u.ForumPostUpvotes)
+    .HasForeignKey(d => d.UserId)
+    .OnDelete(DeleteBehavior.Restrict);
+
+
+            modelBuilder.Entity<ForumPostReport>(entity =>
+            {
+                entity.HasKey(e => e.ReportId);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("(getdate())");
+                entity.Property(e => e.Status).HasDefaultValue("Pending");
+                entity.HasOne(e => e.Post)
+                    .WithMany()
+                    .HasForeignKey(e => e.PostId)
+                    .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(e => e.ReportedByUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.ReportedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+
+        });
+
+
 
         OnModelCreatingPartial(modelBuilder);
     }

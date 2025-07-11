@@ -106,7 +106,16 @@ public partial class User
     public ICollection<MenteeCV> CVs { get; set; }
     public ICollection<CVComment> CVComments { get; set; }
 
-// Navigation property for AI embeddings
+    // Navigation property for AI embeddings
     [InverseProperty("User")]
     public virtual MentorEmbedding? MentorEmbedding { get; set; }
+
+    [InverseProperty("User")]
+    public virtual ICollection<ForumPost> ForumPosts { get; set; } = new List<ForumPost>();
+
+    [InverseProperty("User")]
+    public virtual ICollection<ForumComment> ForumComments { get; set; } = new List<ForumComment>();
+
+    public virtual ICollection<ForumPostUpvote> ForumPostUpvotes { get; set; } = new List<ForumPostUpvote>();
+
 }

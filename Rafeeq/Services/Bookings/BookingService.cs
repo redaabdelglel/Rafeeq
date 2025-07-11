@@ -1,5 +1,4 @@
 ﻿using AutoMapper;
-using Hangfire;
 using Rafeeq.DTOs.Bookings;
 using Rafeeq.Models;
 using Rafeeq.UnitOfWork;
@@ -89,7 +88,7 @@ namespace Rafeeq.Services.Bookings
         }
 
         public async Task<(bool Success, string Message, string Data)> GetBookingMeetLinkAsync(
-     int bookingId, int currentUserId, string userRole)
+            int bookingId, int currentUserId, string userRole)
         {
             var booking = await _unitOfWork.BookingRepository.GetByIdAsync(bookingId);
 
@@ -104,43 +103,43 @@ namespace Rafeeq.Services.Bookings
                 return (false, "You don't have permission to join this booking", null);
             }
 
-            // ✅ UPDATED: More flexible joining logic
-            if (booking.Status == "Cancelled")
+            // Check if booking is in a valid state for joining
+            if (booking.Status != "Confirmed" && booking.Status != "InProgress")
             {
-                return (false, "This booking has been cancelled", null);
+                return (false, "This booking is not confirmed or in progress", null);
             }
 
-            // Allow joining if session hasn't ended (even if it started)
-            if (booking.EndDateTime < DateTime.UtcNow)
+            // Check if Google Meet link already exists
+            if (!string.IsNullOrEmpty(booking.GoogleMeetLink))
             {
-                return (false, "This session has already ended", null);
+                return (true, "Meeting link retrieved successfully", booking.GoogleMeetLink);
             }
 
-            // Allow joining if session starts within 15 minutes or already started
-            var sessionStartsSoon = booking.StartDateTime <= DateTime.UtcNow.AddMinutes(15);
-            if (!sessionStartsSoon)
+            // Generate a new Google Meet link if one doesn't exist
+            try
             {
-                return (false, "You can join 15 minutes before the session starts", null);
-            }
+                string meetingName = $"Session with {booking.Mentee.FullName} and {booking.Mentor.FullName}";
+                string description = $"Booking ID: {booking.BookingId}, Type: {booking.SessionType}";
 
-            // Check if meeting link exists
-            if (string.IsNullOrEmpty(booking.GoogleMeetLink))
+                string meetLink = await _googleMeetService.CreateMeetingAsync(
+                    meetingName,
+                    booking.StartDateTime.GetValueOrDefault(),
+                    booking.EndDateTime.GetValueOrDefault(),
+                    description);
+
+                // Update booking with the new link
+                booking.GoogleMeetLink = meetLink;
+                _unitOfWork.BookingRepository.Update(booking);
+                await _unitOfWork.SaveAsync();
+
+                return (true, "Meeting link created successfully", meetLink);
+            }
+            catch (Exception ex)
             {
-                if (booking.MentorId == currentUserId)
-                {
-                    return (false, "Please set up the meeting link first", null);
-                }
-                else
-                {
-                    return (false, "Meeting link not yet provided by mentor", null);
-                }
+                _logger.LogError(ex, $"Error creating Google Meet link for booking {bookingId}");
+                return (false, $"Failed to create meeting link: {ex.Message}", null);
             }
-
-            return (true, "Meeting link retrieved successfully", booking.GoogleMeetLink);
         }
-
-
-
 
         public async Task<(bool Success, string Message, IEnumerable<BookingDto> Data)> GetUpcomingBookingsAsync(
             int userId, string userRole)
@@ -296,71 +295,5 @@ namespace Rafeeq.Services.Bookings
                     return false;
             }
         }
-     
-        public async Task<(bool Success, string Message, BookingDto Data)> UpdateMeetingLinkAsync(
-            int bookingId, string meetingLink, int currentUserId, string userRole)
-        {
-            var booking = await _unitOfWork.BookingRepository.GetByIdAsync(bookingId);
-
-            if (booking == null)
-            {
-                return (false, "Booking not found", null);
-            }
-
-            // Security check - Only the mentor or admin can update meeting link
-            if (booking.MentorId != currentUserId && userRole != "Admin")
-            {
-                return (false, "You don't have permission to update this meeting link", null);
-            }
-
-            // Validate meeting link format
-            if (!IsValidMeetingLink(meetingLink))
-            {
-                return (false, "Please provide a valid meeting link", null);
-            }
-
-            // Update the meeting link
-            booking.GoogleMeetLink = meetingLink;
-            booking.UpdatedAt = DateTime.UtcNow;
-
-            // If this is the first time adding a link, mark as confirmed
-            if (booking.Status == "Pending")
-            {
-                booking.Status = "Confirmed";
-            }
-
-            _unitOfWork.BookingRepository.Update(booking);
-            await _unitOfWork.SaveAsync();
-        
-            var reminderTime = booking.StartDateTime.HasValue
-                ? booking.StartDateTime.Value.AddMinutes(-2)
-                : DateTime.UtcNow; 
-            var delay = reminderTime - DateTime.UtcNow;
-            var mentee = await _unitOfWork.UserRepository.GetByIdAsync((int)booking.MenteeId);
-
-            if (delay.TotalSeconds > 0)
-            {
-                BackgroundJob.Schedule<EmailReminderServices>(
-                service => service.SendReminderEmail(
-                 mentee.Email,
-                 "Meeting link will be provided by your mentor soon.",
-                 booking.StartDateTime.Value),
-                booking.StartDateTime.Value.AddMinutes(-2) - DateTime.UtcNow);
-
-            }
-
-            var bookingDto = _mapper.Map<BookingDto>(booking);
-            return (true, "Meeting link updated successfully", bookingDto);
-        }
-
-        private bool IsValidMeetingLink(string link)
-        {
-            return !string.IsNullOrEmpty(link) &&
-                   (link.Contains("meet.google.com") ||
-                    link.Contains("zoom.us") ||
-                    link.Contains("teams.microsoft.com") ||
-                    link.StartsWith("http"));
-        }
-
     }
 }

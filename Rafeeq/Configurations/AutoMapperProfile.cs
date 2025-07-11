@@ -1,4 +1,4 @@
-// In AutoMapperProfile.cs
+
 using AutoMapper;
 using Rafeeq.Models;
 using Rafeeq.DTOs.Users;
@@ -19,6 +19,8 @@ using Rafeeq.DTOs.Contact;
 using Rafeeq.DTOs.Articles;
 using Rafeeq.DTOs.FAQ;
 using Rafeeq.DTOs.AI;
+using Rafeeq.DTOs.ForumComment;
+using Rafeeq.DTOs.Forum;
 
 namespace Rafeeq.Configurations
 {
@@ -157,7 +159,7 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.Attachments, opt => opt.MapFrom(src => src.ChatAttachments))
                 .ForMember(dest => dest.ReadByUserIds, opt => opt.MapFrom(src =>
                     src.ReadStatuses.Select(rs => rs.UserId.ToString())))
-                .ForMember(dest => dest.TranscriptText, opt => opt.MapFrom(src => src.TranscriptText)); 
+                .ForMember(dest => dest.TranscriptText, opt => opt.MapFrom(src => src.TranscriptText));
 
 
             // In your AutoMapperProfile.cs, update the ChatAttachment mapping:
@@ -394,8 +396,30 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.AverageRating, opt => opt.Ignore())
                 .ForMember(dest => dest.ProfilePicture, opt => opt.MapFrom(src => src.ProfilePicture ?? ""));
 
-            
-        }
 
+
+            CreateMap<CreateForumCommentDto, ForumComment>();
+            CreateMap<UpdateForumCommentDto, ForumComment>();
+            CreateMap<ForumComment, ForumCommentDto>()
+            .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName ?? "Unknown"))
+            .ForMember(dest => dest.UserProfilePicture, opt => opt.MapFrom(src => src.User.ProfilePicture))
+            .ForMember(dest => dest.CanEditDelete, opt => opt.MapFrom(src => false)); // Set this based on current user context
+
+
+
+            CreateMap<ForumCategory, ForumCategoryDto>();
+            CreateMap<CreateForumCategoryDto, ForumCategory>();
+            CreateMap<ForumPost, Rafeeq.DTOs.Forum.ForumPostDto>()
+       .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.Name))
+       .ForMember(dest => dest.UserFullName, opt => opt.MapFrom(src => src.User.FullName));
+            CreateMap<CreateForumPostDto, ForumPost>();
+            CreateMap<UpdateForumPostDto, ForumPost>();
+            ;
+
+
+            
+
+        }
     }
+
 }

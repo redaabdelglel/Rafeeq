@@ -20,7 +20,10 @@ using Rafeeq.Services.Articles;
 using Rafeeq.Services.FAQ;
 using Rafeeq.Services.AI;
 
-using Rafeeq.Repositories.AI; 
+using Rafeeq.Repositories.AI;
+using Rafeeq.Services.Forum.ForumComment;
+using Rafeeq.Services.Forum;
+using Rafeeq.Repositories.Forum;
 
 namespace Rafeeq.Configurations
 {
@@ -52,6 +55,10 @@ namespace Rafeeq.Configurations
             // Articles and FAQ Services
             services.AddScoped<IArticleService, ArticleService>();
             services.AddScoped<IFAQService, FAQService>();
+
+
+            // NEW: Forum Services
+            services.AddScoped<IForumCommentService, ForumCommentService>();
 
             // User Services
             services.AddScoped<UserService>();
@@ -91,6 +98,14 @@ namespace Rafeeq.Configurations
             
             services.AddScoped<IAIConfigurationRepository, AIConfigurationRepository>();
 
+            //tts services
+            services.AddScoped<ITTSCacheRepository, TTSCacheRepository>();
+            services.AddScoped<ITTSService, TTSService>();
+
+            services.AddScoped<IForumCategoryRepository, ForumCategoryRepository>();
+            services.AddScoped<IForumCategoryService, ForumCategoryService>();
+            services.AddScoped<IForumPostMgmtRepository, ForumPostMgmtRepository>();
+            services.AddScoped<IForumPostMgmtService, ForumPostMgmtService>();
 
 
             return services;
