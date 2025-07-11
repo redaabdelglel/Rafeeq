@@ -64,13 +64,50 @@ namespace Rafeeq.Controllers
 
 
         // update user
+        //[HttpPut("users/{id}")]
+        //public async Task<IActionResult> UpdateUser(int id, [FromBody] CreateUserDto userDto)
+        //{
+        //    if (userDto == null)
+        //    {
+        //        return BadRequest("User data is null.");
+        //    }
+        //    var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
+        //    if (user == null)
+        //    {
+        //        return NotFound($"User with ID {id} not found.");
+        //    }
+
+        //    _map.Map(userDto, user);
+
+        //    var role = await _unitOfWork.RoleRepository.GetByCondition(r => r.RoleName == userDto.Role);
+        //    if (role == null)
+        //        return BadRequest("Invalid role.");
+
+
+        //    user.RoleId = role.RoleId;
+
+        //    _unitOfWork.UserRepository.Update(user);
+        //    await _unitOfWork.SaveAsync();
+
+        //    return Ok(_map.Map<CreateUserDto>(user));
+        //}
+
+
+
+      
+
+        // update user
+
+
+        //update user
         [HttpPut("users/{id}")]
-        public async Task<IActionResult> UpdateUser(int id, [FromBody] CreateUserDto userDto)
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] EditUserDto userDto)
         {
             if (userDto == null)
             {
                 return BadRequest("User data is null.");
             }
+
             var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
             if (user == null)
             {
@@ -83,18 +120,17 @@ namespace Rafeeq.Controllers
             if (role == null)
                 return BadRequest("Invalid role.");
 
-
             user.RoleId = role.RoleId;
 
             _unitOfWork.UserRepository.Update(user);
             await _unitOfWork.SaveAsync();
 
-            return Ok(_map.Map<CreateUserDto>(user));
+            return Ok(_map.Map<EditUserDto>(user));
         }
 
 
 
-        // create user 
+        // create user
         [HttpPost("users")]
 
         public async Task<IActionResult> CreateUser([FromBody] CreateUserDto createdto)
