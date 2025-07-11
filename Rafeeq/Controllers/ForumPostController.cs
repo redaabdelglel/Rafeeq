@@ -112,14 +112,7 @@ namespace Rafeeq.Controllers.Forum
             return Ok();
         }
 
-        // Admin: get all reports
-        [HttpGet("/api/admin/forum/reports")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> GetAllReports()
-        {
-            var reports = await _service.GetAllReportsAsync();
-            return Ok(reports);
-        }
+       
 
 
         // Admin: take action on a report
@@ -150,6 +143,59 @@ namespace Rafeeq.Controllers.Forum
             return Ok();
         }
 
+        [HttpGet("/api/admin/forum/reports")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllReports([FromQuery] string? status = null)
+        {
+            var reports = await _service.GetAllReportsAsync();
+            // Defensive: always set Status to a non-empty string
+            foreach (var r in reports)
+            {
+                r.Status = string.IsNullOrWhiteSpace(r.Status) ? "Unknown" : r.Status;
+            }
+            if (!string.IsNullOrEmpty(status))
+                reports = reports.Where(r => r.Status.Equals(status, StringComparison.OrdinalIgnoreCase)).ToList();
+            return Ok(reports);
+        }
+
+        [HttpGet("/api/admin/forum/reports/{reportId}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetReportById(int reportId)
+        {
+            var report = await _service.GetReportByIdAsync(reportId);
+            if (report == null) return NotFound();
+
+            var dto = new ForumPostReportDto
+            {
+                ReportId = report.ReportId,
+                PostId = report.PostId,
+                ReportedByUserId = report.ReportedByUserId,
+                Reason = report.Reason,
+                CreatedAt = report.CreatedAt,
+                Status = string.IsNullOrWhiteSpace(report.Status) ? "Unknown" : report.Status, // Defensive
+                AdminNote = report.AdminNote,
+                PostTitle = report.Post?.Title ?? "",
+                PostOwnerName = report.Post?.User?.FullName,
+                ReportedByUserName = report.ReportedByUser?.FullName ?? ""
+            };
+
+            return Ok(dto);
+        }
+
+        [HttpGet("/api/admin/forum/reports/stats")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetReportStats()
+        {
+            var reports = await _service.GetAllReportsAsync();
+            var stats = new
+            {
+                total = reports.Count,
+                pending = reports.Count(r => r.Status == "Pending"),
+                resolved = reports.Count(r => r.Status == "Resolved"),
+                ignored = reports.Count(r => r.Status == "Ignored")
+            };
+            return Ok(stats);
+        }
 
     }
 }
