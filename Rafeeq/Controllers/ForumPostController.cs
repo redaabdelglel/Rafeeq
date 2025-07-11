@@ -158,6 +158,7 @@ namespace Rafeeq.Controllers.Forum
             return Ok(reports);
         }
 
+
         [HttpGet("/api/admin/forum/reports/{reportId}")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetReportById(int reportId)
