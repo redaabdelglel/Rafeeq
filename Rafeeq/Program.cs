@@ -17,7 +17,7 @@ using Microsoft.Extensions.FileProviders;
 using Rafeeq.Repositories.Auth;
 using Rafeeq.Services.Auth;
 using SendGrid.Helpers.Mail;
-
+using Hangfire;
 var builder = WebApplication.CreateBuilder(args);
 var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<Program>();
 
@@ -205,6 +205,7 @@ builder.Services.AddScoped<IUnitOfWork, CVBookingUnitOfWork>();
 // AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
 
+
 // HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
 
@@ -227,6 +228,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
+
 
 // ? CRITICAL: Add middleware to bypass authentication for uploads
 app.Use(async (context, next) =>

@@ -295,7 +295,7 @@ namespace Rafeeq.Services.Bookings
                     return false;
             }
         }
-     
+
         public async Task<(bool Success, string Message, BookingDto Data)> UpdateMeetingLinkAsync(
             int bookingId, string meetingLink, int currentUserId, string userRole)
         {
