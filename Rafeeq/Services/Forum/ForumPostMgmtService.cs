@@ -235,6 +235,32 @@ namespace Rafeeq.Services.Forum
             await _repo.SaveAsync();
             return true;
         }
+        public async Task<ForumPostDto?> GetByIdAsync(int postId, int? currentUserId = null)
+        {
+            var post = await _repo.GetByIdWithDetailsAsync(postId);
+            if (post == null) return null;
+
+            var dto = _mapper.Map<ForumPostDto>(post);
+
+            // Set HasUpvoted for the current user
+            if (currentUserId.HasValue)
+            {
+                var upvote = await _repo.GetUserUpvoteAsync(postId, currentUserId.Value);
+                dto.HasUpvoted = upvote != null;
+            }
+            else
+            {
+                dto.HasUpvoted = false;
+            }
+
+            // Set CanEditDelete and CanMarkAsSolved
+            dto.CanEditDelete = currentUserId.HasValue && post.UserId == currentUserId.Value;
+            dto.CanMarkAsSolved = currentUserId.HasValue && post.UserId == currentUserId.Value && !post.IsSolved;
+
+            // IsPinned, UserName, UserProfilePicture, Comments, etc. are already mapped by AutoMapper
+
+            return dto;
+        }
 
     }
 }

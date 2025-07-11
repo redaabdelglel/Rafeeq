@@ -28,10 +28,18 @@ namespace Rafeeq.Controllers.Forum
         [HttpGet("{postId}")]
         public async Task<IActionResult> GetPost(int postId)
         {
-            var post = await _service.GetByIdAsync(postId);
+            int? userId = null;
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (int.TryParse(userIdStr, out var parsedId))
+                    userId = parsedId;
+            }
+            var post = await _service.GetByIdAsync(postId, userId);
             if (post == null) return NotFound();
             return Ok(post);
         }
+
 
         [HttpPost]
         [Authorize]
