@@ -20,13 +20,23 @@ public partial class ChatMessage
     public int? SenderId { get; set; }
 
     public string MessageText { get; set; }
+
     public bool IsEdited { get; set; }
+
     public bool IsVoiceMessage { get; set; }
 
     public bool? IsRead { get; set; }
 
     [Column(TypeName = "datetime")]
     public DateTime? SentAt { get; set; }
+
+    // ✅ NEW: Voice Message Fields 
+    [StringLength(255)]
+    public string? AudioFilePath { get; set; }
+
+    public string? TranscriptText { get; set; }
+
+    public int? AudioDuration { get; set; }
 
     [ForeignKey("BookingId")]
     [InverseProperty("ChatMessages")]
@@ -45,7 +55,6 @@ public partial class ChatMessage
     [ForeignKey("SenderId")]
     [InverseProperty("ChatMessages")]
     public virtual User Sender { get; set; }
-   
 
     // Add navigation property for reactions
     [InverseProperty("Message")]

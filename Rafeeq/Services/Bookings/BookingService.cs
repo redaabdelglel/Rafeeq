@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Hangfire;
 using Rafeeq.DTOs.Bookings;
 using Rafeeq.Models;
 using Rafeeq.UnitOfWork;
@@ -330,6 +331,23 @@ namespace Rafeeq.Services.Bookings
 
             _unitOfWork.BookingRepository.Update(booking);
             await _unitOfWork.SaveAsync();
+        
+            var reminderTime = booking.StartDateTime.HasValue
+                ? booking.StartDateTime.Value.AddMinutes(-2)
+                : DateTime.UtcNow; 
+            var delay = reminderTime - DateTime.UtcNow;
+            var mentee = await _unitOfWork.UserRepository.GetByIdAsync((int)booking.MenteeId);
+
+            if (delay.TotalSeconds > 0)
+            {
+                BackgroundJob.Schedule<EmailReminderServices>(
+                service => service.SendReminderEmail(
+                 mentee.Email,
+                 "Meeting link will be provided by your mentor soon.",
+                 booking.StartDateTime.Value),
+                booking.StartDateTime.Value.AddMinutes(-2) - DateTime.UtcNow);
+
+            }
 
             var bookingDto = _mapper.Map<BookingDto>(booking);
             return (true, "Meeting link updated successfully", bookingDto);

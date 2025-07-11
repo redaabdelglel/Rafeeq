@@ -27,7 +27,7 @@ public partial class User
     public string PasswordHash { get; set; }
 
     [StringLength(255)]
-    public string ?ProfilePicture { get; set; }
+    public string? ProfilePicture { get; set; }
 
     public string? Bio { get; set; }
 
@@ -56,6 +56,14 @@ public partial class User
 
     [Column(TypeName = "decimal(10, 2)")]
     public decimal? HourlyRate { get; set; }
+
+    //   AI Voice Preferences 
+    public bool TTSEnabled { get; set; } = false;
+
+    [StringLength(50)]
+    public string PreferredTTSVoice { get; set; } = "alloy";
+
+    public bool VoiceSearchEnabled { get; set; } = true;
 
     [InverseProperty("User")]
     public virtual ICollection<Availability> Availabilities { get; set; } = new List<Availability>();
@@ -90,13 +98,15 @@ public partial class User
 
     [InverseProperty("User")]
     public virtual ICollection<UserToken> UserTokens { get; set; } = new List<UserToken>();
+
     //new things for faq and articles 
     [InverseProperty("Author")]
     public virtual ICollection<Article> Articles { get; set; } = new List<Article>();
 
-    
-
     public ICollection<MenteeCV> CVs { get; set; }
     public ICollection<CVComment> CVComments { get; set; }
 
+// Navigation property for AI embeddings
+    [InverseProperty("User")]
+    public virtual MentorEmbedding? MentorEmbedding { get; set; }
 }
