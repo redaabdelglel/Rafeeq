@@ -206,14 +206,6 @@ builder.Services.AddScoped<IUnitOfWork, CVBookingUnitOfWork>();
 builder.Services.AddAutoMapper(typeof(Program));
 
 
-// hangeFire for email reminder
-builder.Services.AddHangfire(configuration =>
-{
-    configuration.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection"));
-});
-
-
-
 // HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
 
@@ -236,8 +228,7 @@ builder.Services.AddCors(options =>
 });
 
 var app = builder.Build();
-app.UseHangfireDashboard();
-app.UseHangfireServer();
+
 
 // ? CRITICAL: Add middleware to bypass authentication for uploads
 app.Use(async (context, next) =>
