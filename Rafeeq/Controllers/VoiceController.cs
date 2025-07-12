@@ -107,7 +107,7 @@ namespace Rafeeq.Controllers
             };
             await _unitOfWork.ChatRepository.AddMessageAsync(message);
 
-            // --- ADD THIS: Create and save the ChatAttachment for the audio file ---
+           
             var attachment = new ChatAttachment
             {
                 MessageId = message.MessageId,

@@ -249,9 +249,14 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerDocumentation();
     logger.LogInformation("Running in Development environment");
 }
+else if (app.Environment.IsProduction())
+{
+    app.UseSwaggerDocumentation();
+    logger.LogInformation("Running in Development environment");
+}
 
-// ? STEP 1: Static files MUST come FIRST (before authentication)
-app.UseStaticFiles(); // Default static files (wwwroot)
+    // ? STEP 1: Static files MUST come FIRST (before authentication)
+    app.UseStaticFiles(); // Default static files (wwwroot)
 
 // ? STEP 2: Serve uploads directory WITHOUT authentication
 app.UseStaticFiles(new StaticFileOptions
@@ -276,9 +281,8 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles(new StaticFileOptions
 {
-    FileProvider = new PhysicalFileProvider(
-        Path.Combine(builder.Environment.ContentRootPath, "Uploads")), 
-    RequestPath = "/Uploads" 
+    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), @"uploads")),
+    RequestPath = new PathString("/uploads")
 });
 app.UseRouting();
 
