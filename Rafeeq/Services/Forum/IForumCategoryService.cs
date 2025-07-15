@@ -8,5 +8,7 @@ namespace Rafeeq.Services.Forum
     {
         Task<List<ForumCategoryDto>> GetAllCategoriesAsync();
         Task<ForumCategoryDto?> CreateCategoryAsync(CreateForumCategoryDto dto);
+        Task<ForumCategoryDto?> UpdateCategoryAsync(int id, CreateForumCategoryDto dto); 
+        Task<bool> DeleteCategoryAsync(int id); 
     }
 }

@@ -21,7 +21,7 @@ namespace Rafeeq.Controllers
             _mapper = mapper;
         }
 
-        
+
         // GET: api/reviews/written-by/{userId}
         [HttpGet("written-by/{userId}")]
         public async Task<IActionResult> GetReviewsWrittenByUser(int userId)
@@ -59,7 +59,7 @@ namespace Rafeeq.Controllers
             if (reviewDto == null || reviewDto.BookingId <= 0)
                 return BadRequest("Invalid review data or booking ID.");
 
-            var booking = await _unitOfWork.BookingRepository.GetByIdAsync(reviewDto.BookingId ?? 0); 
+            var booking = await _unitOfWork.BookingRepository.GetByIdAsync(reviewDto.BookingId ?? 0);
             if (booking == null)
             {
                 return NotFound("Booking not found");
@@ -107,6 +107,29 @@ namespace Rafeeq.Controllers
 
             return Ok("Review created successfully.");
         }
+
+        [HttpGet("mentor/me")]
+        [Authorize(Roles = "Mentor,Admin")] // Only mentors (and optionally admins) can access
+        public async Task<IActionResult> GetMyReviews()
+        {
+            // Get current user ID from claims
+            var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
+            if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int mentorId))
+                return Unauthorized("User not authenticated.");
+
+            // Optionally, check if user is a mentor (if not enforced by role)
+            // var user = await _unitOfWork.UserRepository.GetByIdAsync(mentorId);
+            // if (user == null || user.IsMentor != true)
+            //     return Forbid("Only mentors can access this endpoint.");
+
+            var reviews = await _unitOfWork.ReviewRepository.GetReviewsForMentorAsync(mentorId);
+
+            if (reviews == null || !reviews.Any())
+                return NotFound("No reviews found for this mentor.");
+
+            return Ok(reviews);
+        }
+
 
     }
 }

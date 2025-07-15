@@ -38,5 +38,25 @@ namespace Rafeeq.Services.Forum
             await _repo.SaveAsync();
             return _mapper.Map<ForumCategoryDto>(entity);
         }
+
+        public async Task<ForumCategoryDto?> UpdateCategoryAsync(int id, CreateForumCategoryDto dto)
+        {
+            var category = await _repo.GetByIdAsync(id);
+            if (category == null) return null;
+            category.Name = dto.Name;
+            category.Description = dto.Description;
+            _repo.Update(category);
+            await _repo.SaveAsync();
+            return _mapper.Map<ForumCategoryDto>(category);
+        }
+
+        public async Task<bool> DeleteCategoryAsync(int id)
+        {
+            var category = await _repo.GetByIdAsync(id);
+            if (category == null) return false;
+            _repo.Delete(category);
+            await _repo.SaveAsync();
+            return true;
+        }
     }
 }

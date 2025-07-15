@@ -437,6 +437,12 @@ namespace Rafeeq.Configurations
      .ForMember(dest => dest.CanEditDelete, opt => opt.Ignore())
      .ForMember(dest => dest.CanMarkAsSolved, opt => opt.Ignore());
 
+
+
+            CreateMap<ForumCategory, ForumCategoryDto>();
+            CreateMap<CreateForumCategoryDto, ForumCategory>();
+
+
             ;
 
 
