@@ -1,4 +1,5 @@
-﻿using Rafeeq.UnitOfWork;
+﻿using Rafeeq.DTOs.Reviews;
+using Rafeeq.UnitOfWork;
 
 namespace Rafeeq.Services.Reviews
 {
@@ -10,5 +11,11 @@ namespace Rafeeq.Services.Reviews
         {
             this.unitOfWork = unitOfWork;
         }
+
+        public async Task<IEnumerable<ReviewDto>> GetReviewsForMentorAsync(int mentorId)
+        {
+            return await unitOfWork.ReviewRepository.GetReviewsForMentorAsync(mentorId);
+        }
+
     }
 }

@@ -137,6 +137,24 @@ namespace Rafeeq.Repositories.Reviews
                 .FirstOrDefaultAsync(r => r.BookingId == bookingId);
         }
 
+        public async Task<IEnumerable<ReviewDto>> GetReviewsForMentorAsync(int mentorId)
+        {
+            return await _context.Reviews
+                .Include(r => r.Reviewer)
+                .Where(r => r.ReviewedUserId == mentorId)
+                .Select(r => new ReviewDto
+                {
+                    ReviewId = r.ReviewId,
+                    ReviewerId = r.ReviewerId,
+                    ReviewerName = r.Reviewer.FullName,
+                    ReviewedUserId = r.ReviewedUserId,
+                    ReviewedUserName = r.ReviewedUser.FullName,
+                    Rating = r.Rating,
+                    Comment = r.Comment,
+                    CreatedAt = r.CreatedAt
+                })
+                .ToListAsync();
+        }
 
     }
 }
