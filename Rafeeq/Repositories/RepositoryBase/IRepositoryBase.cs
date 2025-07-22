@@ -18,6 +18,6 @@ namespace Rafeeq.Repositories.RepositoryBase
 
 
         IQueryable<T> GetQuery();
-        //Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType);
+      
     }
 }

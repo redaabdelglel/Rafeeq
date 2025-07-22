@@ -9,7 +9,7 @@
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
-        // Navigation properties
+      
         public MenteeCV CV { get; set; }
         public User Mentor { get; set; }
     }

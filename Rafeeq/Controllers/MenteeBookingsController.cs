@@ -42,7 +42,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Verify the requested menteeId matches the authenticated user
 
                 var currentUserId = GetCurrentUserId();
                 if (currentUserId != menteeId)
@@ -238,138 +237,7 @@ namespace Rafeeq.Controllers
 
 
 
-        //[HttpPost("mentee/{menteeId}/bookings")]
-        ////[ProducesResponseType(typeof(BookingDto), StatusCodes.Status201Created)]
-        ////[ProducesResponseType(StatusCodes.Status400BadRequest)]
-        ////[ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        ////[ProducesResponseType(StatusCodes.Status404NotFound)]
-        //public async Task<IActionResult> CreateBooking(
-        //    int menteeId,
-        //    [FromQuery] int mentorId,
-        //    [FromBody] CreateBookingDTO bookingDto)
-        //{
-        //    try
-        //    {
-        //        // Verify the authenticated user matches the menteeId
-        //        var currentUserId = GetCurrentUserId();
-        //        if (currentUserId != menteeId)
-        //        {
-        //            return Unauthorized("You can only create bookings for yourself");
-        //        }
-
-        //        // Verify mentor exists
-        //        var mentor = await _unitOfWork.Mentors.GetMentorByIdAsync(mentorId);
-        //        if (mentor == null)
-        //        {
-        //            return NotFound("Mentor not found");
-        //        }
-
-        //        // Map and validate booking
-        //        var booking = _mapper.Map<Booking>(bookingDto);
-        //        booking.MenteeId = menteeId;
-        //        booking.MentorId = mentorId;
-        //        booking.CreatedAt = DateTime.Now;
-        //        booking.Status = "Scheduled"; // Default status
-
-        //        // Validate booking time
-        //        if (booking.StartDateTime < DateTime.Now.AddMinutes(30))
-        //        {
-        //            return BadRequest("Booking must be scheduled at least 30 minutes in advance");
-        //        }
-
-        //        var createdBooking = await _unitOfWork.Bookings.CreateBookingAsync(booking);
-        //        await _unitOfWork.CompleteAsync();
-
-        //        var result = _mapper.Map<BookingDto>(createdBooking);
-
-        //        return CreatedAtAction(
-        //            nameof(GetBookingDetails),
-        //            new { id = createdBooking.BookingId },
-        //            result);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error creating booking for mentee {MenteeId} with mentor {MentorId}",
-        //            menteeId, mentorId);
-        //        return StatusCode(500, "An error occurred while creating the booking");
-        //    }
-        //}
-
-
-        //  [HttpPost("mentee/{menteeId}/bookings")]
-        //  [ProducesResponseType(typeof(BookingDto), StatusCodes.Status201Created)]
-        //  [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        //  [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-        //  [ProducesResponseType(StatusCodes.Status404NotFound)]
-        //  public async Task<ActionResult<BookingDto>> CreateBooking(
-        //int menteeId,
-        //[FromBody] CreateBookingDTO createBookingDto)
-        //  {
-        //      try
-        //      {
-        //          // 1. Authorization Check
-        //          var currentUserId = GetCurrentUserId();
-        //          if (currentUserId != menteeId)
-        //          {
-        //              return Unauthorized("You can only create bookings for yourself");
-        //          }
-
-        //          // 2. Validate Input
-        //          if (!ModelState.IsValid)
-        //          {
-        //              return BadRequest(ModelState);
-        //          }
-
-        //          // 3. Verify Mentor Exists
-        //          var mentor = await _unitOfWork.Mentors.GetMentorByIdAsync(createBookingDto.MentorId);
-        //          if (mentor == null)
-        //          {
-        //              return NotFound($"Mentor with ID {createBookingDto.MentorId} not found");
-        //          }
-
-        //          // 4. Validate Booking Times
-        //          if (createBookingDto.StartDateTime >= createBookingDto.EndDateTime)
-        //          {
-        //              return BadRequest("End time must be after start time");
-        //          }
-
-        //          if (createBookingDto.StartDateTime < DateTime.UtcNow.AddMinutes(30))
-        //          {
-        //              return BadRequest("Bookings must be made at least 30 minutes in advance");
-        //          }
-
-        //          // 5. Check Slot Availability
-        //          var isSlotAvailable = await _unitOfWork.Bookings.IsSlotAvailableAsync(
-        //              createBookingDto.MentorId,
-        //              createBookingDto.StartDateTime,
-        //              createBookingDto.EndDateTime);
-
-        //          if (!isSlotAvailable)
-        //          {
-        //              return BadRequest("The selected time slot is already booked");
-        //          }
-
-        //          // 6. Create Booking
-        //          var booking = _mapper.Map<Booking>(createBookingDto);
-        //          booking.MenteeId = menteeId; // From route parameter
-        //          booking.CreatedAt = DateTime.UtcNow;
-        //          booking.Status = "Scheduled";
-
-        //          var createdBooking = await _unitOfWork.Bookings.CreateBookingAsync(booking);
-        //          await _unitOfWork.CompleteAsync();
-
-        //          // 7. Return Response
-        //          return CreatedAtAction(
-        //              nameof(GetBookingDetails),
-        //              new { id = createdBooking.BookingId },
-        //              _mapper.Map<BookingDto>(createdBooking));
-        //      }
-        //      catch (Exception ex)
-        //      {
-        //          _logger.LogError(ex, "Error creating booking for mentee {MenteeId}", menteeId);
-        //          return StatusCode(500, "An error occurred while creating the booking");
-        //      }
-        //  }
+        
 
 
         [HttpPost("mentee/{menteeId}")]
@@ -398,7 +266,6 @@ namespace Rafeeq.Controllers
 
                 
 
-                // Availability check
                 var isAvailable = await _unitOfWork.Mentors.IsTimeSlotAvailableAsync(
                     bookingDto.MentorId,
                     bookingDto.StartDateTime,
@@ -415,7 +282,6 @@ namespace Rafeeq.Controllers
                     });
                 }
 
-                // Create booking
                 var booking = new Booking
                 {
                     MenteeId = menteeId,
@@ -453,7 +319,6 @@ namespace Rafeeq.Controllers
                     return NotFound();
                 }
 
-                // Verify the current user is either the mentee or mentor of this booking
                 var currentUserId = GetCurrentUserId();
                 if (currentUserId != booking.MenteeId && currentUserId != booking.MentorId)
                 {
@@ -482,14 +347,12 @@ namespace Rafeeq.Controllers
                     return NotFound();
                 }
 
-                // Verify the current user is either the mentee or mentor of this booking
                 var currentUserId = GetCurrentUserId();
                 if (currentUserId != booking.MenteeId && currentUserId != booking.MentorId)
                 {
                     return Forbid();
                 }
 
-                // Manual update for critical fields
                 if (!string.IsNullOrEmpty(updateBookingDTO.GoogleMeetLink))
                 {
                     booking.GoogleMeetLink = updateBookingDTO.GoogleMeetLink;
@@ -515,37 +378,7 @@ namespace Rafeeq.Controllers
                 return StatusCode(500, "An error occurred while updating the booking");
             }
         }
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> UpdateBooking(int id, UpdateBookingStatusDto updateBookingDTO)
-        //{
-        //    try
-        //    {
-        //        var booking = await _unitOfWork.Bookings.GetBookingDetailsAsync(id);
-        //        if (booking == null)
-        //        {
-        //            return NotFound();
-        //        }
-
-        //        // Verify the current user is either the mentee or mentor of this booking
-        //        var currentUserId = GetCurrentUserId();
-        //        if (currentUserId != booking.MenteeId && currentUserId != booking.MentorId)
-        //        {
-        //            return Forbid();
-        //        }
-
-        //        _mapper.Map(updateBookingDTO, booking);
-        //        booking.UpdatedAt = DateTime.Now;
-
-        //        await _unitOfWork.Bookings.UpdateBookingAsync(booking);
-
-        //        return NoContent();
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error updating booking {BookingId}", id);
-        //        return StatusCode(500, "An error occurred while updating the booking");
-        //    }
-        //}
+       
 
         // POST: api/bookings/{id}/join
         [HttpPost("{id}/join")]
@@ -559,7 +392,6 @@ namespace Rafeeq.Controllers
                     return NotFound("Booking not found");
                 }
 
-                // Verify the current user is either the mentee or mentor of this booking
 
                 var currentUserId = GetCurrentUserId();
                 if (currentUserId != booking.MenteeId && currentUserId != booking.MentorId)
@@ -598,7 +430,6 @@ namespace Rafeeq.Controllers
                     return NotFound();
                 }
 
-                // Verify the current user is either the mentee or mentor of this booking
                 var currentUserId = GetCurrentUserId();
                 if (currentUserId != booking.MenteeId && currentUserId != booking.MentorId)
                 {

@@ -1,4 +1,4 @@
-﻿// Controllers/MenteeMentorsController.cs
+﻿
 using Microsoft.AspNetCore.Mvc;
 using Rafeeq.DTOs.Users;
 using Rafeeq.UnitOfWork;
@@ -30,10 +30,7 @@ namespace Rafeeq.Controllers
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        /// <summary>
-        /// Gets all mentors
-        /// </summary>
-        /// <returns>List of all mentors</returns>
+      
         [HttpGet("all")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -52,11 +49,8 @@ namespace Rafeeq.Controllers
             }
         }
 
-        /// <summary>
-        /// Gets filtered list of mentors for mentees
-        /// </summary>
         /// <param name="filter">Filter criteria for mentors</param>
-        /// <returns>List of mentors matching the criteria</returns>
+     
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -75,11 +69,9 @@ namespace Rafeeq.Controllers
             }
         }
 
-        /// <summary>
-        /// Gets detailed profile of a specific mentor
-        /// </summary>
+        
         /// <param name="id">Mentor ID</param>
-        /// <returns>Mentor profile details</returns>
+       
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -96,12 +88,10 @@ namespace Rafeeq.Controllers
 
                 _logger.LogInformation("Fetching mentor profile for ID: {MentorId}", id);
 
-                // 1. Log before fetching
                 _logger.LogDebug("Attempting to fetch mentor with ID: {MentorId}", id);
 
                 var mentor = await _unitOfWork.Mentors.GetMentorProfileAsync(id);
 
-                // 2. Log raw database results
                 if (mentor == null)
                 {
                     _logger.LogWarning("Mentor not found with ID: {MentorId}", id);
@@ -119,12 +109,10 @@ namespace Rafeeq.Controllers
                     }) ?? Enumerable.Empty<object>()
                 });
 
-                // 3. Log before mapping
                 _logger.LogDebug("Attempting to map mentor to DTO");
 
                 var mentorDto = _mapper.Map<MentorDto>(mentor);
 
-                // 4. Log after mapping
                 _logger.LogDebug("Mapped mentor DTO: {@MentorDto}", new
                 {
                     mentorDto.UserId,
@@ -136,7 +124,6 @@ namespace Rafeeq.Controllers
                     }) ?? Enumerable.Empty<object>()
                 });
 
-                // 5. Log before serialization
                 _logger.LogDebug("Attempting to serialize response");
 
                 return Ok(mentorDto);
@@ -211,7 +198,7 @@ namespace Rafeeq.Controllers
     int mentorId,
     [FromQuery] DateTime? startDate = null,
     [FromQuery] DateTime? endDate = null,
-    [FromQuery] int durationMinutes = 60) // Default 1 hour sessions
+    [FromQuery] int durationMinutes = 60) 
         {
             try
             {
@@ -224,7 +211,6 @@ namespace Rafeeq.Controllers
                     startDate.Value,
                     endDate.Value);
 
-                // Filter slots that can accommodate the requested duration
                 var availableSlots = slots
                     .Where(s => (s.EndTime - s.StartTime).TotalMinutes >= durationMinutes)
                     .ToList();

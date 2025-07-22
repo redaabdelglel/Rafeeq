@@ -24,7 +24,7 @@ namespace Rafeeq.Controllers
 
         [HttpGet("admin")]
         [Authorize(Roles = "Admin")]
-        [ProducesResponseType(typeof(PagedResult<UserFADto>), 200)] // Changed to UserFADto
+        [ProducesResponseType(typeof(PagedResult<UserFADto>), 200)] 
         public async Task<IActionResult> GetAllUsersForAdmin(
             [FromQuery] int pageNumber = 1,
             [FromQuery] int pageSize = 100)
@@ -38,9 +38,9 @@ namespace Rafeeq.Controllers
                 .Take(pageSize)
                 .ToList();
 
-            var userDtos = _mapper.Map<List<UserFADto>>(pagedUsers); // Changed to UserFADto
+            var userDtos = _mapper.Map<List<UserFADto>>(pagedUsers); 
 
-            return Ok(new PagedResult<UserFADto> // Changed to UserFADto
+            return Ok(new PagedResult<UserFADto> 
             {
                 Items = userDtos,
                 TotalCount = totalCount,
@@ -51,7 +51,7 @@ namespace Rafeeq.Controllers
 
         [HttpGet("admin/{id}")]
         [Authorize(Roles = "Admin")]
-        [ProducesResponseType(typeof(UserFADto), 200)] // Changed to UserFADto
+        [ProducesResponseType(typeof(UserFADto), 200)] 
         public async Task<IActionResult> GetUserForAdmin(int id)
         {
             var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
@@ -61,7 +61,7 @@ namespace Rafeeq.Controllers
                 return NotFound("User not found.");
             }
 
-            var userDto = _mapper.Map<UserFADto>(user); // Changed to UserFADto
+            var userDto = _mapper.Map<UserFADto>(user); 
             return Ok(userDto);
         }
     }

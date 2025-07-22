@@ -16,7 +16,7 @@ namespace Rafeeq.Configurations
         {
             app.UseEndpoints(endpoints =>
             {
-                // Example hub endpoint
+               
                 endpoints.MapHub<ChatHub>("/chatHub");
             });
         }

@@ -42,7 +42,6 @@ namespace Rafeeq.Services.Bookings
                 return (false, "Booking not found", null);
             }
 
-            // Security check - Only the mentor, mentee, or an admin can view booking details
             if (booking.MentorId != currentUserId && booking.MenteeId != currentUserId && userRole != "Admin")
             {
                 return (false, "You don't have permission to view this booking", null);
@@ -62,27 +61,23 @@ namespace Rafeeq.Services.Bookings
                 return (false, "Booking not found", null);
             }
 
-            // Security check - Only the mentor of this booking or an admin can update status
-            // Mentee can only cancel a booking
+           
             if ((booking.MentorId != currentUserId && userRole != "Admin") &&
                 !(booking.MenteeId == currentUserId && newStatus == "Cancelled"))
             {
                 return (false, "You don't have permission to update this booking", null);
             }
 
-            // Validate the status change
             if (!IsValidStatusTransition(booking.Status, newStatus))
             {
                 return (false, $"Cannot change status from '{booking.Status}' to '{newStatus}'", null);
             }
 
-            // Update the booking status
             booking.Status = newStatus;
             booking.UpdatedAt = DateTime.UtcNow;
             _unitOfWork.BookingRepository.Update(booking);
             await _unitOfWork.SaveAsync();
 
-            // Map to DTO and return
             var bookingDto = _mapper.Map<BookingDto>(booking);
             return (true, "Booking status updated successfully", bookingDto);
         }
@@ -97,32 +92,27 @@ namespace Rafeeq.Services.Bookings
                 return (false, "Booking not found", null);
             }
 
-            // Security check - Only the mentor, mentee, or an admin can get the meeting link
             if (booking.MentorId != currentUserId && booking.MenteeId != currentUserId && userRole != "Admin")
             {
                 return (false, "You don't have permission to join this booking", null);
             }
 
-            // ✅ UPDATED: More flexible joining logic
             if (booking.Status == "Cancelled")
             {
                 return (false, "This booking has been cancelled", null);
             }
 
-            // Allow joining if session hasn't ended (even if it started)
             if (booking.EndDateTime < DateTime.UtcNow)
             {
                 return (false, "This session has already ended", null);
             }
 
-            // Allow joining if session starts within 15 minutes or already started
             var sessionStartsSoon = booking.StartDateTime <= DateTime.UtcNow.AddMinutes(15);
             if (!sessionStartsSoon)
             {
                 return (false, "You can join 15 minutes before the session starts", null);
             }
 
-            // Check if meeting link exists
             if (string.IsNullOrEmpty(booking.GoogleMeetLink))
             {
                 if (booking.MentorId == currentUserId)
@@ -148,7 +138,6 @@ namespace Rafeeq.Services.Bookings
             {
                 IEnumerable<Booking> bookings;
 
-                // Check if user is mentor or mentee
                 var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
 
                 if (user == null)
@@ -158,12 +147,10 @@ namespace Rafeeq.Services.Bookings
 
                 if (user.IsMentor == true)
                 {
-                    // Get upcoming mentor bookings
                     bookings = await _unitOfWork.BookingRepository.GetUpcomingMentorBookingsAsync(userId);
                 }
                 else
                 {
-                    // Get upcoming mentee bookings
                     bookings = await _unitOfWork.BookingRepository.GetUpcomingMenteeBookingsAsync(userId);
                 }
 
@@ -184,7 +171,6 @@ namespace Rafeeq.Services.Bookings
             {
                 IEnumerable<Booking> bookings;
 
-                // Check if user is mentor or mentee
                 var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
 
                 if (user == null)
@@ -194,12 +180,10 @@ namespace Rafeeq.Services.Bookings
 
                 if (user.IsMentor == true)
                 {
-                    // Get completed mentor bookings
                     bookings = await _unitOfWork.BookingRepository.GetCompletedMentorBookingsAsync(userId);
                 }
                 else
                 {
-                    // Get completed mentee bookings
                     bookings = await _unitOfWork.BookingRepository.GetCompletedMenteeBookingsAsync(userId);
                 }
 
@@ -223,19 +207,16 @@ namespace Rafeeq.Services.Bookings
                 return (false, "Booking not found", null);
             }
 
-            // Security check - Only the mentor or an admin can reschedule
             if (booking.MentorId != currentUserId && userRole != "Admin")
             {
                 return (false, "You don't have permission to reschedule this booking", null);
             }
 
-            // Validate the booking status - can only reschedule pending or confirmed bookings
             if (booking.Status != "Pending" && booking.Status != "Confirmed")
             {
                 return (false, "Only pending or confirmed bookings can be rescheduled", null);
             }
 
-            // Validate the new dates
             if (rescheduleDto.StartDateTime >= rescheduleDto.EndDateTime)
             {
                 return (false, "End time must be after start time", null);
@@ -246,52 +227,41 @@ namespace Rafeeq.Services.Bookings
                 return (false, "Start time cannot be in the past", null);
             }
 
-            // Check for availability conflicts
             var mentorId = booking.MentorId.Value;
             var dayOfWeek = (int)rescheduleDto.StartDateTime.DayOfWeek;
             var startTime = rescheduleDto.StartDateTime.TimeOfDay;
             var endTime = rescheduleDto.EndDateTime.TimeOfDay;
 
-            // Check if mentor has overlapping bookings
             if (await _unitOfWork.BookingRepository.HasOverlappingBookingsAsync(
                 mentorId, rescheduleDto.StartDateTime, rescheduleDto.EndDateTime, bookingId))
             {
                 return (false, "The mentor has another booking during this time", null);
             }
 
-            // Update booking dates
             booking.StartDateTime = rescheduleDto.StartDateTime;
             booking.EndDateTime = rescheduleDto.EndDateTime;
             booking.UpdatedAt = DateTime.UtcNow;
 
-            // Google Meet link needs to be regenerated after rescheduling
             booking.GoogleMeetLink = null;
 
             _unitOfWork.BookingRepository.Update(booking);
             await _unitOfWork.SaveAsync();
 
-            // Map to DTO and return
             var bookingDto = _mapper.Map<BookingDto>(booking);
             return (true, "Booking rescheduled successfully", bookingDto);
         }
 
-        // Helper method to validate status transitions
         private bool IsValidStatusTransition(string currentStatus, string newStatus)
         {
-            // Define valid status transitions
             switch (currentStatus)
             {
                 case "Pending":
-                    // From Pending, can go to Confirmed or Cancelled
                     return newStatus == "Confirmed" || newStatus == "Cancelled";
                 case "Confirmed":
-                    // From Confirmed, can go to InProgress, Completed, or Cancelled
                     return newStatus == "InProgress" || newStatus == "Completed" || newStatus == "Cancelled";
                 case "InProgress":
-                    // From InProgress, can go to Completed or Cancelled
                     return newStatus == "Completed" || newStatus == "Cancelled";
                 default:
-                    // Once Completed or Cancelled, cannot change status
                     return false;
             }
         }
@@ -306,23 +276,19 @@ namespace Rafeeq.Services.Bookings
                 return (false, "Booking not found", null);
             }
 
-            // Security check - Only the mentor or admin can update meeting link
             if (booking.MentorId != currentUserId && userRole != "Admin")
             {
                 return (false, "You don't have permission to update this meeting link", null);
             }
 
-            // Validate meeting link format
             if (!IsValidMeetingLink(meetingLink))
             {
                 return (false, "Please provide a valid meeting link", null);
             }
 
-            // Update the meeting link
             booking.GoogleMeetLink = meetingLink;
             booking.UpdatedAt = DateTime.UtcNow;
 
-            // If this is the first time adding a link, mark as confirmed
             if (booking.Status == "Pending")
             {
                 booking.Status = "Confirmed";

@@ -1,5 +1,4 @@
-﻿// ContactService.cs - Updated Version
-// Cleaned and structured for better readability and maintainability
+﻿
 
 using AutoMapper;
 using Microsoft.Extensions.Logging;

@@ -6,7 +6,7 @@
         public int? MinRating { get; set; }
         public decimal? MaxHourlyRate { get; set; }
         public List<string> Skills { get; set; } = new();
-        public int MaxResults { get; set; } = 3; // Default to 3, or set to 1/2 as you prefer
+        public int MaxResults { get; set; } = 3; 
     }
 
 
@@ -25,7 +25,7 @@
         public string FullName { get; set; } = string.Empty;
         public string Bio { get; set; } = string.Empty;
         public decimal HourlyRate { get; set; }
-        public float SimilarityScore { get; set; } // 0-1
+        public float SimilarityScore { get; set; } 
         public List<string> Skills { get; set; } = new();
         public double AverageRating { get; set; }
         public string ProfilePicture { get; set; } = string.Empty;

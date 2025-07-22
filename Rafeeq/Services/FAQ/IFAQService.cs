@@ -22,7 +22,6 @@ namespace Rafeeq.Services.FAQ
 
 
 
-        // Admin-specific CRUD methods
         Task<PagedResult<FaqDto>> GetAllFaqsForAdminAsync( 
             string? category = null,
             string? searchQuery = null,

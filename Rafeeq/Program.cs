@@ -24,11 +24,9 @@ var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<
 builder.Configuration.AddUserSecrets<Program>();
 
 
-// Add services to the container
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();  // For Swagger
+builder.Services.AddEndpointsApiExplorer();  
 
-// Configure DbContext
 builder.Services.AddDbContext<RafeeqContext>(options =>
 {
     var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
@@ -41,31 +39,24 @@ builder.Services.AddDbContext<RafeeqContext>(options =>
     });
 });
 
-// Add SignalR services with enhanced configuration
 builder.Services.AddSignalR(options =>
 {
-    // Increase timeout values to handle slow connections
     options.ClientTimeoutInterval = TimeSpan.FromMinutes(2);
     options.KeepAliveInterval = TimeSpan.FromMinutes(1);
 
-    // Enable detailed error messages in development
     if (builder.Environment.IsDevelopment())
     {
         options.EnableDetailedErrors = true;
     }
 });
 
-// Configure AutoMapper
 builder.Services.AddAutoMapper(typeof(AutoMapperProfile));
 builder.Services.AddApplicationServices();
 
-// Add Stripe configuration
 builder.Services.AddStripeConfiguration(builder.Configuration);
 
-// Register repositories
 builder.Services.AddScoped<UnitOfWorkManager>();
 
-// Configure JWT Authentication
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 var secretKey = jwtSettings["Key"] ?? throw new InvalidOperationException("JWT Key is not configured.");
 
@@ -97,10 +88,8 @@ builder.Services.AddAuthentication(options =>
         {
             var path = context.HttpContext.Request.Path;
 
-            // ? FIXED: Skip authentication for static files
             if (path.StartsWithSegments("/uploads"))
             {
-                // Mark this request to skip authentication
                 context.HttpContext.Items["SkipJwtAuth"] = true;
                 return Task.CompletedTask;
             }
@@ -117,7 +106,6 @@ builder.Services.AddAuthentication(options =>
 
         OnTokenValidated = context =>
         {
-            // Skip token validation for uploads
             if (context.HttpContext.Items.ContainsKey("SkipJwtAuth"))
             {
                 context.Success();
@@ -129,7 +117,6 @@ builder.Services.AddAuthentication(options =>
         {
             var path = context.Request.Path;
 
-            // ? FIXED: Don't fail authentication for static files
             if (path.StartsWithSegments("/uploads"))
             {
                 context.NoResult();
@@ -144,7 +131,6 @@ builder.Services.AddAuthentication(options =>
         {
             var path = context.Request.Path;
 
-            // ? FIXED: Don't challenge for static files
             if (path.StartsWithSegments("/uploads"))
             {
                 context.HandleResponse();
@@ -163,7 +149,6 @@ builder.Services.AddAuthentication(options =>
 
 });
 
-// Configure Authorization
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
@@ -176,19 +161,14 @@ builder.Services.AddAuthorization(options =>
         .Build();
 });
 
-// Configure Swagger
 builder.Services.AddSwaggerDocumentation();
 
-// Add HttpClientFactory
 builder.Services.AddHttpClient();
 
-// Register UnitOfWork
 builder.Services.AddScoped<UnitOfWorkManager>();
 
-// Google meet
 builder.Services.AddGoogleMeetConfiguration(builder.Configuration);
 
-// Register repositories
 builder.Services.AddScoped<IMenteeBookingRepository, MenteeBookingRepository>();
 builder.Services.AddScoped<ICVRepository, MenteeCVRepository>();
 builder.Services.AddScoped<IMentorRepository, MenteeMentorRepository>();
@@ -199,48 +179,40 @@ builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 
 
 
-// Register Unit of Work
 builder.Services.AddScoped<IUnitOfWork, CVBookingUnitOfWork>();
 
-// AutoMapper
 builder.Services.AddAutoMapper(typeof(Program));
 
 
 // HttpContextAccessor
 builder.Services.AddHttpContextAccessor();
 
-// Register CORS policy with proper SignalR support
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowSpecificOrigin", policy =>
     {
-        // Read frontend URL from configuration
         var frontendUrl = builder.Configuration["FrontendUrl"];
 
-        // Log the frontend URL for debugging
         logger.LogInformation($"Configuring CORS for frontend URL: {frontendUrl}");
 
         policy.WithOrigins(frontendUrl!)
               .AllowAnyHeader()
               .AllowAnyMethod()
-              .AllowCredentials(); // Required for SignalR
+              .AllowCredentials(); 
     });
 });
 
 var app = builder.Build();
 
 
-// ? CRITICAL: Add middleware to bypass authentication for uploads
 app.Use(async (context, next) =>
 {
-    // If this is an uploads request, bypass authentication completely
     if (context.Request.Path.StartsWithSegments("/uploads"))
     {
         await next();
         return;
     }
 
-    // For all other requests, proceed normally
     await next();
 });
 
@@ -255,10 +227,15 @@ else if (app.Environment.IsProduction())
     logger.LogInformation("Running in Development environment");
 }
 
-    // ? STEP 1: Static files MUST come FIRST (before authentication)
-    app.UseStaticFiles(); // Default static files (wwwroot)
+app.UseStaticFiles(); 
 
-// ? STEP 2: Serve uploads directory WITHOUT authentication
+var uploadsPhysicalPath = Path.Combine(builder.Environment.WebRootPath, "uploads");
+if (!Directory.Exists(uploadsPhysicalPath))
+{
+    Directory.CreateDirectory(uploadsPhysicalPath);
+    logger.LogInformation($"Created uploads directory at: {uploadsPhysicalPath}");
+}
+
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(
@@ -271,11 +248,9 @@ app.UseStaticFiles(new StaticFileOptions
 
 logger.LogInformation("Static files configured for uploads directory");
 
-// ? STEP 3: CORS (before routing for SignalR)
 app.UseCors("AllowSpecificOrigin");
 logger.LogInformation("CORS middleware configured");
 
-// ? STEP 4: Other middleware
 app.UseHttpsRedirection();
 
 
@@ -286,11 +261,9 @@ app.UseStaticFiles(new StaticFileOptions
 });
 app.UseRouting();
 
-// ? STEP 5: Authentication/Authorization AFTER static files
 app.UseAuthentication();
 app.UseAuthorization();
 
-// ? STEP 6: Configure endpoints last
 app.UseEndpoints(endpoints =>
 {
     endpoints.MapControllers();

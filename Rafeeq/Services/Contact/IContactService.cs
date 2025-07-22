@@ -15,7 +15,6 @@ namespace Rafeeq.Services.Contact
         Task<(bool Success, string Message, IEnumerable<ContactMessageDto> Data)> GetMessagesByEmailAsync(string email);
         Task <(bool success, string Message , int count)> GetMessagesCountAsync(); //for admin
         Task <(bool success , string Message , IEnumerable<ContactMessageDto> Data)> GetRespondedMessagesByEmailAsync(string email); // for user
-        //Task<(bool Success, string Message, IEnumerable<ContactConversationDto> Data)> GetConversationByEmailAsync(string email);
         Task<(bool Success, string Message)> AddReplyAsync(CreateReplyDto dto, int responderId);
         Task<(bool Success, string Message, ContactConversationDto Data)> GetFullConversationAsync(string email);
 

@@ -55,7 +55,6 @@ namespace Rafeeq.Repositories.CV
                 .ToListAsync();
         }
 
-        // Check if a user is the author of a comment
         public async Task<bool> IsMentorAuthorAsync(int commentId, int mentorId)
         {
             return await _context.CVComments

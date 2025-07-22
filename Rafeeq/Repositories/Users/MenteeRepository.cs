@@ -1,4 +1,4 @@
-﻿// Repositories/Mentee/MenteeRepository.cs
+﻿
 using Microsoft.EntityFrameworkCore;
 using Rafeeq.DTOs.Mentee;
 using Rafeeq.Models;
@@ -72,7 +72,7 @@ namespace Rafeeq.Repositories.Mentee
                 {
                     ActivityType = a.Type,
                     Text = a.Message,
-                    ActivityDate = a.CreatedAt ?? DateTime.MinValue // Handle nullable DateTime
+                    ActivityDate = a.CreatedAt ?? DateTime.MinValue 
                 }).ToList()
             };
         }

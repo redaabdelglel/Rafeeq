@@ -16,7 +16,6 @@ namespace Rafeeq.Hubs
         private readonly ChatService _chatService;
         private readonly ILogger<ChatHub> _logger;
 
-        // ✅ EXISTING TRACKING
         private static readonly ConcurrentDictionary<string, List<string>> _userConnectionMap =
             new ConcurrentDictionary<string, List<string>>();
         private static readonly ConcurrentDictionary<string, HashSet<string>> _userGroupMap =
@@ -32,7 +31,6 @@ namespace Rafeeq.Hubs
             _logger = logger;
         }
 
-        // ✅ UPDATED: Enhanced OnConnectedAsync with notification support
         public override async Task OnConnectedAsync()
         {
             try
@@ -42,7 +40,6 @@ namespace Rafeeq.Hubs
 
                 if (!string.IsNullOrEmpty(userId))
                 {
-                    // Track user connections
                     _userConnectionMap.AddOrUpdate(userId,
                         new List<string> { connectionId },
                         (key, existingConnections) =>
@@ -51,17 +48,14 @@ namespace Rafeeq.Hubs
                             return existingConnections;
                         });
 
-                    // ✅ NEW: Join user to their personal notification group
                     await Groups.AddToGroupAsync(connectionId, $"user-{userId}");
 
-                    // ✅ NEW: Get user role and join role-based notification group
                     var user = await _unitOfWork.UserRepository.GetUserWithRoleAsync(int.Parse(userId));
                     if (user?.Role != null)
                     {
                         await Groups.AddToGroupAsync(connectionId, $"notifications-{user.Role.RoleName}");
                     }
 
-                    // Broadcast user's online status to relevant conversations
                     var bookings = await _unitOfWork.BookingRepository.GetBookingsForUserAsync(int.Parse(userId));
                     foreach (var booking in bookings)
                     {
@@ -83,7 +77,6 @@ namespace Rafeeq.Hubs
             }
         }
 
-        // ✅ UPDATED: Enhanced OnDisconnectedAsync
         public override async Task OnDisconnectedAsync(Exception exception)
         {
             try
@@ -93,7 +86,6 @@ namespace Rafeeq.Hubs
 
                 if (!string.IsNullOrEmpty(userId))
                 {
-                    // Remove connection from tracking
                     if (_userConnectionMap.TryGetValue(userId, out var connections))
                     {
                         connections.Remove(connectionId);
@@ -101,7 +93,6 @@ namespace Rafeeq.Hubs
                         {
                             _userConnectionMap.TryRemove(userId, out _);
 
-                            // Broadcast user's offline status to relevant conversations
                             var bookings = await _unitOfWork.BookingRepository.GetBookingsForUserAsync(int.Parse(userId));
                             foreach (var booking in bookings)
                             {
@@ -110,7 +101,6 @@ namespace Rafeeq.Hubs
                         }
                     }
 
-                    // Remove from groups
                     if (_userGroupMap.TryGetValue(userId, out var groups))
                     {
                         foreach (var group in groups.ToList())
@@ -136,10 +126,7 @@ namespace Rafeeq.Hubs
             }
         }
 
-        // ✅ NEW NOTIFICATION METHODS
-        /// <summary>
-        /// Join user to notification updates (called from frontend)
-        /// </summary>
+        
         public async Task JoinNotifications()
         {
             var userId = Context.UserIdentifier;
@@ -150,9 +137,7 @@ namespace Rafeeq.Hubs
             }
         }
 
-        /// <summary>
-        /// Leave notification updates
-        /// </summary>
+        
         public async Task LeaveNotifications()
         {
             var userId = Context.UserIdentifier;
@@ -163,9 +148,7 @@ namespace Rafeeq.Hubs
             }
         }
 
-        /// <summary>
-        /// Mark notification as read (called from frontend)
-        /// </summary>
+     
         public async Task MarkNotificationAsRead(int notificationId)
         {
             try
@@ -173,9 +156,6 @@ namespace Rafeeq.Hubs
                 var userId = Context.UserIdentifier;
                 if (!string.IsNullOrEmpty(userId))
                 {
-                    // Update notification in database
-                    // You'll need to implement this in NotificationRepository
-                    // await _unitOfWork.NotificationRepository.MarkAsReadAsync(notificationId, int.Parse(userId));
 
                     _logger.LogInformation($"Notification {notificationId} marked as read by user {userId}");
                 }
@@ -186,28 +166,27 @@ namespace Rafeeq.Hubs
             }
         }
 
-        // ✅ EXISTING CHAT METHODS (keeping your current implementation)
+
         public async Task JoinBookingChat(int bookingId)
         {
             try
             {
-                // Get user ID from claims
+               
                 var userId = int.Parse(Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var userIdStr = userId.ToString();
 
-                // Verify user is authorized to join this booking chat
                 var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(bookingId, userId);
                 if (!isAuthorized)
                 {
-                    // Silently fail to avoid exposing that the booking exists
+                   
                     return;
                 }
 
-                // Add to SignalR group
+              
                 string groupName = $"booking-{bookingId}";
                 await Groups.AddToGroupAsync(Context.ConnectionId, groupName);
 
-                // Track this user-group association
+               
                 _userGroupMap.AddOrUpdate(userIdStr,
                     new HashSet<string> { groupName },
                     (key, existingHashSet) =>
@@ -216,18 +195,17 @@ namespace Rafeeq.Hubs
                         return existingHashSet;
                     });
 
-                // Get user name
+       
                 var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
                 string userName = user?.FullName ?? "Unknown User";
 
-                // Notify others that user joined
+               
                 await Clients.OthersInGroup(groupName)
                     .SendAsync("UserJoined", userName);
             }
             catch (Exception)
             {
-                // Log exception but don't expose details to client
-                // _logger.LogError(ex, $"Error in JoinBookingChat: {ex.Message}");
+               
             }
         }
 
@@ -238,11 +216,11 @@ namespace Rafeeq.Hubs
 
             try
             {
-                // Get user ID from claims
+               
                 var userId = int.Parse(Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var userIdStr = userId.ToString();
 
-                // Remove tracking for this group
+                
                 if (_userGroupMap.TryGetValue(userIdStr, out var groups))
                 {
                     groups.Remove(groupName);
@@ -252,17 +230,17 @@ namespace Rafeeq.Hubs
                     }
                 }
 
-                // Get user name
+              
                 var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
                 string userName = user?.FullName ?? "Unknown User";
 
-                // Notify others that user left
+                
                 await Clients.OthersInGroup(groupName)
                     .SendAsync("UserLeft", userName);
             }
             catch (Exception)
             {
-                // Log exception but don't expose details to client
+                
             }
         }
 
@@ -270,11 +248,11 @@ namespace Rafeeq.Hubs
         {
             try
             {
-                // Get user ID from claims
+               
                 var userId = int.Parse(Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0) return;
 
-                // Notify others in the group
+               
                 await Clients.OthersInGroup($"booking-{bookingId}")
                     .SendAsync("AllMessagesRead", userId);
             }
@@ -284,20 +262,20 @@ namespace Rafeeq.Hubs
             }
         }
 
-        // Send typing indicator
+      
         public async Task SendTypingIndicator(int bookingId, bool isTyping)
         {
             try
             {
-                // Get user ID from claims
+                
                 var userId = int.Parse(Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0) return;
 
-                // Get user details
+               
                 var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
                 if (user == null) return;
 
-                // Create typing data
+               
                 var typingData = new
                 {
                     UserId = userId,
@@ -306,7 +284,7 @@ namespace Rafeeq.Hubs
                     IsTyping = isTyping
                 };
 
-                // Notify others in the group
+               
                 await Clients.OthersInGroup($"booking-{bookingId}")
                     .SendAsync("UserTyping", typingData);
             }
@@ -320,20 +298,20 @@ namespace Rafeeq.Hubs
         {
             try
             {
-                // Get user ID from claims
+                
                 var userId = int.Parse(Context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0) return;
 
-                // Verify user is authorized to join this booking chat
+                
                 var isAuthorized = await _unitOfWork.ChatRepository.IsUserInBookingAsync(bookingId, userId);
                 if (!isAuthorized) return;
 
-                // Get messages through the chat service
+              
                 var result = await _chatService.GetChatHistoryAsync(bookingId, userId, page, pageSize);
 
                 if (result.Success)
                 {
-                    // Send the messages only to the requesting client
+                   
                     await Clients.Caller.SendAsync("ReceiveMoreMessages", result.Data, new
                     {
                         currentPage = page,

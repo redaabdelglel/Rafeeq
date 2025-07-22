@@ -89,7 +89,7 @@ namespace Rafeeq.Services.Auth
                     IsEmailAlreadyRegistered = false
                 };
             }
-            //var verificationLink = $"{frontendUrl}/verify-email/{token}";
+         
 
             await _emailService.SendVerificationEmailAsync(user.Email, token);
 
@@ -112,7 +112,7 @@ namespace Rafeeq.Services.Auth
             {
                 return new LoginResult { ErrorMessage = "Email not verified. Please check your email for a verification" };
             }
-            // ... rest of login logic ...
+     
             var tokenResponse = _jwtService.GenerateTokens(user);
             await InvalidateRefreshTokenAsync(user.UserId);
             var refreshTokenExpiresInDays = double.Parse(_config.GetSection("Jwt")["RefreshTokenExpirationDays"] ?? "7");
@@ -151,7 +151,7 @@ namespace Rafeeq.Services.Auth
 
                         verifiedEmail = payload.Email;
                         verifiedFullName = payload.Name;
-                        verifiedExternalId = payload.Subject; // Google's unique user ID
+                        verifiedExternalId = payload.Subject; 
                         verifiedProfilePicture = payload.Picture;
                     }
                     catch (InvalidJwtException ex)
@@ -323,7 +323,7 @@ namespace Rafeeq.Services.Auth
             {
                 return;
             }
-            //  var resetLink = $"{frontendUrl}/reset-password/{resetToken}";
+          
 
             await _emailService.SendPasswordResetEmailAsync(user.Email, resetToken);
         }

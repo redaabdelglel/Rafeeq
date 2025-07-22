@@ -66,7 +66,6 @@ namespace Rafeeq.UnitOfWork
             this.context = context;
         }
 
-        // Repositories with lazy loading
         public UserRepository UserRepository
         {
             get
@@ -78,7 +77,7 @@ namespace Rafeeq.UnitOfWork
                 return _userRepository;
             }
         }
-        public UserTokenRepository UserTokenRepository // Added for Auth
+        public UserTokenRepository UserTokenRepository 
         {
             get
             {
@@ -269,7 +268,7 @@ namespace Rafeeq.UnitOfWork
 
 
 
-        //  ArticleRepository
+       
         public ArticleRepository ArticleRepository
         {
             get
@@ -279,7 +278,7 @@ namespace Rafeeq.UnitOfWork
             }
         }
 
-        //  FAQRepository
+  
         public FAQRepository FAQRepository
         {
             get

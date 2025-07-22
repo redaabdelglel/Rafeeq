@@ -109,7 +109,6 @@ namespace Rafeeq.Controllers.Forum
             return Ok(posts);
         }
 
-        // User reports a post
         [HttpPost("{postId}/report")]
         [Authorize]
         public async Task<IActionResult> ReportPost(int postId, [FromBody] CreateForumPostReportDto dto)
@@ -123,7 +122,6 @@ namespace Rafeeq.Controllers.Forum
        
 
 
-        // Admin: take action on a report
         [HttpPut("/api/admin/forum/reports/{reportId}/action")]
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> TakeActionOnReport(int reportId, [FromBody] AdminReportActionDto dto)
@@ -156,7 +154,6 @@ namespace Rafeeq.Controllers.Forum
         public async Task<IActionResult> GetAllReports([FromQuery] string? status = null)
         {
             var reports = await _service.GetAllReportsAsync();
-            // Defensive: always set Status to a non-empty string
             foreach (var r in reports)
             {
                 r.Status = string.IsNullOrWhiteSpace(r.Status) ? "Unknown" : r.Status;

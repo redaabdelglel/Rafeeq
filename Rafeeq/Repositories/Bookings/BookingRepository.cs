@@ -47,23 +47,17 @@ namespace Rafeeq.Repositories.Bookings
 
         public async Task<bool> HasBookingsForAvailabilityAsync(int mentorId, int dayOfWeek, TimeSpan startTime, TimeSpan endTime)
         {
-            // Get the current date
             DateTime now = DateTime.UtcNow.Date;
 
-            // Look ahead up to 3 months for bookings
             DateTime endDate = now.AddMonths(3);
 
-            // Loop through all dates in the next 3 months
             for (DateTime date = now; date <= endDate; date = date.AddDays(1))
             {
-                // Check if this date matches the day of week we're checking
                 if ((int)date.DayOfWeek == dayOfWeek)
                 {
-                    // Create datetime for start and end of this slot on this date
                     DateTime slotStartDateTime = date.Add(startTime);
                     DateTime slotEndDateTime = date.Add(endTime);
 
-                    // Look for any bookings that overlap with this slot
                     bool hasBooking = await _context.Bookings
                         .AnyAsync(b => b.MentorId == mentorId
                                    && b.Status != "Cancelled"
@@ -119,7 +113,6 @@ namespace Rafeeq.Repositories.Bookings
             _context.Bookings.Update(booking);
         }
 
-        // Add the missing Update method
         public void Update(Booking booking)
         {
             booking.UpdatedAt = DateTime.UtcNow;
@@ -184,7 +177,6 @@ namespace Rafeeq.Repositories.Bookings
                 .ToListAsync();
         }
 
-        // Check for overlapping bookings (excluding current booking)
         public async Task<bool> HasOverlappingBookingsAsync(
             int mentorId, DateTime startDateTime, DateTime endDateTime, int excludeBookingId = 0)
         {
@@ -208,7 +200,6 @@ namespace Rafeeq.Repositories.Bookings
                 .FirstOrDefaultAsync(b => b.BookingId == bookingId && b.IsDeleted != true);
         }
 
-        // Get all bookings for a user (either as mentor or mentee)
         public async Task<IEnumerable<Booking>> GetBookingsForUserAsync(int userId)
         {
             return await _context.Bookings

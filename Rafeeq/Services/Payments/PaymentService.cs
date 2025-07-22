@@ -32,52 +32,51 @@ namespace Rafeeq.Services.Payments
             _emailService = emailService;
         }
 
-        // Create payment intent for a booking
+     
         public async Task<(bool Success, string Message, PaymentIntentDto Data)> CreatePaymentIntentAsync(PaymentIntentDto dto, int userId)
         {
             try
             {
-                // Get booking
+                
                 var booking = await _unitOfWork.BookingRepository.GetByIdAsync(dto.BookingId);
                 if (booking == null)
                 {
                     return (false, "Booking not found", null);
                 }
 
-                // Verify the user is the mentee for this booking
+               
                 if (booking.MenteeId != userId)
                 {
                     return (false, "You are not authorized to make payment for this booking", null);
                 }
 
-                // Check if booking is already paid
                 if (booking.PaymentStatus == "Paid")
                 {
                     return (false, "This booking has already been paid for", null);
                 }
 
-                // Check if booking amount is set
+                
                 if (!booking.TotalAmount.HasValue || booking.TotalAmount <= 0)
                 {
                     return (false, "Invalid booking amount", null);
                 }
 
-                // Calculate commission
+                
                 var commission = _stripeService.CalculateCommission(booking.TotalAmount.Value);
                 booking.Commission = commission;
                 _unitOfWork.BookingRepository.Update(booking);
                 await _unitOfWork.SaveAsync();
 
-                // Create description for payment
+               
                 var description = $"Booking ID: {booking.BookingId}, Session with {booking.Mentor?.FullName}";
 
-                // Create payment intent with Stripe
+             
                 var (paymentIntentId, clientSecret, amount) = await _stripeService.CreatePaymentIntentAsync(
                     booking.TotalAmount.Value,
                     "usd",
                     description);
 
-                // Return payment intent details to client
+               
                 dto.ClientSecret = clientSecret;
                 dto.PaymentIntentId = paymentIntentId;
                 dto.Amount = booking.TotalAmount.Value;
@@ -91,19 +90,19 @@ namespace Rafeeq.Services.Payments
             }
         }
 
-        // Confirm payment for a booking
+      
         public async Task<(bool Success, string Message, PaymentDto Data)> ConfirmPaymentAsync(PaymentConfirmationDto dto, int userId)
         {
             try
             {
-                // Get booking with related entities using BookingRepository
+               
                 var booking = await _unitOfWork.BookingRepository.GetByIdAsync(dto.BookingId);
                 if (booking == null)
                 {
                     return (false, "Booking not found", null);
                 }
 
-                // Load the related entities if they're not already loaded
+                
                 if (booking.Mentor == null || booking.Mentee == null)
                 {
                     booking = await _unitOfWork.context.Bookings
@@ -112,27 +111,27 @@ namespace Rafeeq.Services.Payments
                         .FirstOrDefaultAsync(b => b.BookingId == dto.BookingId);
                 }
 
-                // Verify the user is the mentee for this booking
+               
                 if (booking.MenteeId != userId)
                 {
                     return (false, "You are not authorized to confirm payment for this booking", null);
                 }
 
-                // Check if already paid
+               
                 var existingPayment = await _unitOfWork.PaymentRepository.GetByBookingIdAsync(dto.BookingId);
                 if (existingPayment != null)
                 {
                     return (false, "Payment already exists for this booking", null);
                 }
 
-                // Verify payment with Stripe
+               
                 var isPaymentConfirmed = await _stripeService.ConfirmPaymentIntentAsync(dto.PaymentIntentId);
                 if (!isPaymentConfirmed)
                 {
                     return (false, "Payment verification failed", null);
                 }
 
-                // Create payment record (only with existing columns)
+               
                 var payment = new Payment
                 {
                     BookingId = dto.BookingId,
@@ -144,27 +143,27 @@ namespace Rafeeq.Services.Payments
 
                 var savedPayment = await _unitOfWork.PaymentRepository.AddAsync(payment);
 
-                // Update booking status
+              
                 booking.PaymentStatus = "Paid";
                 booking.Status = "Confirmed";
                 booking.UpdatedAt = DateTime.UtcNow;
 
-                // Generate Google Meet link if not already set
+               
                 if (string.IsNullOrEmpty(booking.GoogleMeetLink))
                 {
                     booking.GoogleMeetLink = $"https://meet.google.com/rafeeq-{Guid.NewGuid().ToString().Substring(0, 8)}";
                 }
 
-                // Update booking using repository
+               
                 await _unitOfWork.MenteeBookingRepository.UpdateBookingAsync(booking);
 
-                // Send notifications and emails
+                
                 await SendPaymentNotificationsAsync(booking, savedPayment);
 
-                // Get the payment with booking data using repository method
+               
                 var paymentWithBooking = await _unitOfWork.PaymentRepository.GetByIdAsync(savedPayment.PaymentId);
 
-                // Map to DTO using AutoMapper
+                
                 var paymentDto = _mapper.Map<PaymentDto>(paymentWithBooking);
 
                 return (true, "Payment confirmed successfully", paymentDto);
@@ -177,7 +176,7 @@ namespace Rafeeq.Services.Payments
 
 
 
-        // Get payment history for current user
+    
         public async Task<(bool Success, string Message, IEnumerable<PaymentDto> Data)> GetPaymentHistoryAsync(int userId)
         {
             try
@@ -185,7 +184,7 @@ namespace Rafeeq.Services.Payments
                 var payments = await _unitOfWork.PaymentRepository.GetPaymentHistoryAsync(userId);
                 var paymentDtos = _mapper.Map<IEnumerable<PaymentDto>>(payments);
 
-                // Enrich DTOs with additional data
+                
                 foreach (var dto in paymentDtos)
                 {
                     var payment = payments.FirstOrDefault(p => p.PaymentId == dto.PaymentId);
@@ -219,7 +218,7 @@ namespace Rafeeq.Services.Payments
                     return (false, "Payment not found", null);
                 }
 
-                // Check if user is part of this payment (either mentor or mentee)
+               
                 if (payment.Booking.MentorId != userId && payment.Booking.MenteeId != userId)
                 {
                     return (false, "You are not authorized to view this payment", null);
@@ -227,7 +226,7 @@ namespace Rafeeq.Services.Payments
 
                 var paymentDto = _mapper.Map<PaymentDto>(payment);
 
-                // Add extra data
+               
                 paymentDto.MentorName = payment.Booking?.Mentor?.FullName;
                 paymentDto.MenteeName = payment.Booking?.Mentee?.FullName;
                 paymentDto.SessionType = payment.Booking?.SessionType;
@@ -243,12 +242,12 @@ namespace Rafeeq.Services.Payments
             }
         }
 
-        // Get mentor earnings summary
+    
         public async Task<(bool Success, string Message, EarningsSummaryDto Data)> GetMentorEarningsAsync(int mentorId)
         {
             try
             {
-                // Verify user is a mentor
+             
                 var user = await _unitOfWork.UserRepository.GetByIdAsync(mentorId);
                 if (user == null || !user.IsMentor.GetValueOrDefault())
                 {
@@ -257,22 +256,22 @@ namespace Rafeeq.Services.Payments
 
                 var summary = new EarningsSummaryDto();
 
-                // Get total earnings
+               
                 summary.TotalEarnings = await _unitOfWork.PaymentRepository.GetTotalEarningsAsync(mentorId);
 
-                // Get current month earnings
+                
                 var now = DateTime.UtcNow;
                 summary.ThisMonthEarnings = await _unitOfWork.PaymentRepository.GetMonthlyEarningsAsync(mentorId, now.Year, now.Month);
 
-                // Get last month earnings
+              
                 var lastMonth = now.AddMonths(-1);
                 summary.LastMonthEarnings = await _unitOfWork.PaymentRepository.GetMonthlyEarningsAsync(mentorId, lastMonth.Year, lastMonth.Month);
 
-                // Get session counts
+              
                 summary.CompletedSessions = await _unitOfWork.PaymentRepository.GetCompletedSessionsCountAsync(mentorId);
                 summary.UpcomingSessions = await _unitOfWork.PaymentRepository.GetUpcomingSessionsCountAsync(mentorId);
 
-                // Get monthly breakdown for chart data
+               
                 var monthlyBreakdown = await _unitOfWork.PaymentRepository.GetMonthlyEarningsBreakdownAsync(mentorId);
 
                 foreach (var item in monthlyBreakdown)
@@ -293,15 +292,15 @@ namespace Rafeeq.Services.Payments
             }
         }
 
-        // Helper method to send payment notifications
+        
         private async Task SendPaymentNotificationsAsync(Booking booking, Payment payment)
         {
             try
             {
-                // Notify mentor
+              
                 if (booking.MentorId.HasValue)
                 {
-                    // Create notification record
+                    
                     await _unitOfWork.NotificationRepository.AddNotificationAsync(new Notification
                     {
                         UserId = booking.MentorId,
@@ -312,7 +311,7 @@ namespace Rafeeq.Services.Payments
                         CreatedAt = DateTime.UtcNow
                     });
 
-                    // Send email notification
+                   
                     await _emailService.SendPaymentConfirmationEmailAsync(
                         booking.Mentor.Email,
                         booking.Mentor.FullName,
@@ -322,10 +321,10 @@ namespace Rafeeq.Services.Payments
                         "mentor");
                 }
 
-                // Notify mentee
+            
                 if (booking.MenteeId.HasValue)
                 {
-                    // Create notification record
+                    
                     await _unitOfWork.NotificationRepository.AddNotificationAsync(new Notification
                     {
                         UserId = booking.MenteeId,
@@ -336,7 +335,7 @@ namespace Rafeeq.Services.Payments
                         CreatedAt = DateTime.UtcNow
                     });
 
-                    // Send email notification
+             
                     await _emailService.SendPaymentConfirmationEmailAsync(
                         booking.Mentee.Email,
                         booking.Mentee.FullName,
@@ -348,7 +347,7 @@ namespace Rafeeq.Services.Payments
             }
             catch
             {
-                // Log but continue - don't fail the payment process if notifications fail
+              
             }
         }
 

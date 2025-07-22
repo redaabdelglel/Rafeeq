@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
 using Rafeeq.DTOs.ForumComment;
-using Rafeeq.Models; // Ensure Models namespace is here
+using Rafeeq.Models; 
 using Rafeeq.Services.Forum.ForumComment;
 using Rafeeq.UnitOfWork;
 using System.Linq;
@@ -33,7 +33,6 @@ namespace Rafeeq.Services.Forum
             _unitOfWork.ForumCommentRepository.Add(comment);
             await _unitOfWork.SaveAsync();
 
-            // FIX: Explicitly use Rafeeq.Models.ForumComment for the entity type
             var createdComment = await _unitOfWork.ForumCommentRepository.GetCommentByIdWithUserAsync(comment.CommentId);
             if (createdComment == null) return null;
 
@@ -42,7 +41,6 @@ namespace Rafeeq.Services.Forum
 
         public async Task<bool> UpdateForumCommentAsync(int commentId, int currentUserId, UpdateForumCommentDto dto)
         {
-            // FIX: Explicitly use Rafeeq.Models.ForumComment for the entity type
             var comment = await _unitOfWork.ForumCommentRepository.GetCommentByIdWithUserAsync(commentId); // The error was in accessing .UserId directly on the nullable type here.
             if (comment == null || comment.IsDeleted == true) return false; // Check for null before accessing properties
             if (comment.UserId != currentUserId) return false;
@@ -55,7 +53,6 @@ namespace Rafeeq.Services.Forum
 
         public async Task<bool> DeleteForumCommentAsync(int commentId, int currentUserId)
         {
-            // FIX: Explicitly use Rafeeq.Models.ForumComment for the entity type
             var comment = await _unitOfWork.ForumCommentRepository.GetCommentByIdWithUserAsync(commentId);
             if (comment == null || comment.IsDeleted == true) return false; // Check for null
             if (comment.UserId != currentUserId) return false;

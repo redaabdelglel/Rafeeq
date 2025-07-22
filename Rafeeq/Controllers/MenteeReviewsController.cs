@@ -90,7 +90,6 @@ namespace Rafeeq.Controllers
                     return NotFound();
                 }
 
-                // Verify the current user is the reviewer
                 var currentUserId = GetCurrentUserId();
                 if (currentUserId != review.ReviewerId)
                 {
@@ -114,7 +113,6 @@ namespace Rafeeq.Controllers
             {
                 var currentUserId = GetCurrentUserId();
 
-                // Verify mentee can review this mentor
                 if (!createReviewDto.ReviewedUserId.HasValue)
                 {
                     return BadRequest("ReviewedUserId is required");
@@ -124,7 +122,6 @@ namespace Rafeeq.Controllers
                     .CanMenteeReviewMentorAsync(currentUserId, createReviewDto.ReviewedUserId.Value);
 
 
-                // Check if mentee already reviewed this mentor for this booking
                 if (createReviewDto.BookingId.HasValue)
                 {
                     var existingReview = await _unitOfWork.MenteeReviewsRepository.GetReviewForBookingAsync(createReviewDto.BookingId.Value);
@@ -165,14 +162,12 @@ namespace Rafeeq.Controllers
                     return NotFound();
                 }
 
-                // Verify the current user is the reviewer
                 var currentUserId = GetCurrentUserId();
                 if (currentUserId != review.ReviewerId)
                 {
                     return Forbid();
                 }
 
-                // Only allow updating rating and comment
                 review.Rating = updateReviewDto.Rating;
                 review.Comment = updateReviewDto.Comment;
                 review.UpdatedAt = DateTime.Now;
@@ -201,7 +196,6 @@ namespace Rafeeq.Controllers
                     return NotFound();
                 }
 
-                // Verify the current user is the reviewer
                 var currentUserId = GetCurrentUserId();
                 if (currentUserId != review.ReviewerId)
                 {

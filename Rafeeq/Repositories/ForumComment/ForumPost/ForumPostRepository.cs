@@ -39,7 +39,7 @@ namespace Rafeeq.Repositories.Forum
                 query = query.Where(p => p.IsSolved == isSolved.Value);
             }
 
-            query = query.Include(p => p.User).Include(p => p.Category); // Include User and Category
+            query = query.Include(p => p.User).Include(p => p.Category); 
 
             switch (sortBy?.ToLower())
             {

@@ -12,14 +12,14 @@ namespace Rafeeq.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
-        private readonly IEmailService _emailService; // Add this
+        private readonly IEmailService _emailService; 
         private readonly IConfiguration _config;
 
         public AuthController(IAuthService authService, IEmailService emailService, IConfiguration config)
         {
             _authService = authService;
             _emailService = emailService;
-            _config = config; // Initialize the missing field
+            _config = config; 
         }
     
         [HttpPost("Register")]
@@ -144,7 +144,6 @@ namespace Rafeeq.Controllers
         }
 
      
-        // commit Auth15
         [HttpPost("logout")]
         [AllowAnonymous]
         public async Task<IActionResult> Logout([FromBody] LogoutDto dto)

@@ -15,7 +15,7 @@ namespace Rafeeq.Services.Articles
         Task IncrementArticleViewCountAsync(int id);
 
 
-        // Admin-specific CRUD methods
+    
 
         Task<PagedResult<ArticleListDto>> GetAllArticlesForAdminAsync( 
              string? category = null,

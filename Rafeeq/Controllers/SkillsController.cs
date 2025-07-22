@@ -125,7 +125,6 @@ namespace Rafeeq.Controllers
                 return BadRequest(new { success = false, message = "Failed to add skill to user. The skill might not exist." });
             }
 
-            // Get updated skills list
             var skills = await _skillService.GetUserSkillsAsync(userId);
             return Ok(new { success = true, message = "Skill added successfully to user", skills });
         }
@@ -148,7 +147,6 @@ namespace Rafeeq.Controllers
                 return BadRequest(new { success = false, message = "Failed to remove skill from user. The skill might not be associated with the user." });
             }
 
-            // Get updated skills list
             var skills = await _skillService.GetUserSkillsAsync(userId);
             return Ok(new { success = true, message = "Skill removed successfully from user", skills });
         }

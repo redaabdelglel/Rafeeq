@@ -1,4 +1,4 @@
-﻿// Mapping/MentorProfile.cs
+﻿
 using AutoMapper;
 using Rafeeq.DTOs.Availability;
 using Rafeeq.DTOs.Users;

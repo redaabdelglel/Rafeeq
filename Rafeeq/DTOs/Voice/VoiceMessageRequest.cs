@@ -4,7 +4,7 @@
     {
         public int BookingId { get; set; }
         public IFormFile AudioFile { get; set; }
-        public string? MessageText { get; set; } // Optional
+        public string? MessageText { get; set; } 
     }
     
 }

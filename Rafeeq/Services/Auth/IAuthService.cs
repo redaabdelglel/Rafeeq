@@ -4,7 +4,7 @@ namespace Rafeeq.Services.Auth
 {
     public interface IAuthService
     {
-        // Changed return type
+      
         Task<RegisterResponseDto> RegisterAsync(RegisterDto dto);
         Task<LoginResult> LoginAsync(LoginDto dto);
         Task<TokenResponseDto?> ExternalLoginAsync(ExternalLoginDto dto);

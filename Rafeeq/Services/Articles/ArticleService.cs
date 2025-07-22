@@ -74,7 +74,7 @@ namespace Rafeeq.Services.Articles
             }
         }
 
-        // Admin-specific implementations
+     
         public async Task<ArticleDto> CreateArticleAsync(ArticleCreateDto articleDto)
         {
             var article = _mapper.Map<Article>(articleDto);
@@ -103,13 +103,12 @@ namespace Rafeeq.Services.Articles
                 return null;
             }
 
-            _mapper.Map(articleDto, article); // Map DTO properties to existing entity
-            article.UpdatedAt = DateTime.UtcNow; // Update timestamp
+            _mapper.Map(articleDto, article); 
+            article.UpdatedAt = DateTime.UtcNow; 
 
-            _unitOfWork.ArticleRepository.Update(article); // Mark for update
+            _unitOfWork.ArticleRepository.Update(article); 
             await _unitOfWork.SaveAsync();
 
-            // Fetch updated article with author for accurate DTO mapping
             var updatedArticleWithAuthor = await _unitOfWork.ArticleRepository.GetByIdWithAuthorAsync(article.ArticleId);
             if (updatedArticleWithAuthor == null)
             {
@@ -141,7 +140,7 @@ namespace Rafeeq.Services.Articles
         {
             IQueryable<Article> query = _unitOfWork.ArticleRepository.GetQuery();
 
-            // Apply filters first
+       
             if (!string.IsNullOrEmpty(category))
             {
                 query = query.Where(a => a.Category == category);

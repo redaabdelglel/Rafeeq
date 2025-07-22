@@ -46,7 +46,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -76,7 +75,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -105,7 +103,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -163,7 +160,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -191,7 +187,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -220,7 +215,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -249,7 +243,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -272,20 +265,18 @@ namespace Rafeeq.Controllers
             }
         }
         // GET: api/chat/attachments/{messageId}
-        // GET: api/chat/attachments/{messageId}
+      
         [HttpGet("attachments/{messageId}")]
         public async Task<IActionResult> DownloadAttachment(int messageId)
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
                     return Unauthorized(new { success = false, message = "User not authenticated properly" });
                 }
 
-                // ✅ FIXED: Add timeout and logging
                 _logger.LogInformation($"🔍 Starting download for messageId: {messageId}, userId: {userId}");
 
                 var result = await _chatService.DownloadAttachmentAsync(messageId, userId);
@@ -298,7 +289,6 @@ namespace Rafeeq.Controllers
 
                 _logger.LogInformation($"✅ Service success, looking for file: {result.Data.FilePath}");
 
-                // ✅ FIXED: Try multiple possible file locations with early exit
                 var possiblePaths = new[]
                 {
             Path.Combine(_hostingEnvironment.WebRootPath ?? "", result.Data.FilePath.TrimStart('/')),
@@ -329,11 +319,9 @@ namespace Rafeeq.Controllers
                     });
                 }
 
-                // ✅ FIXED: Get file info and validate size
                 var fileInfo = new FileInfo(physicalPath);
                 _logger.LogInformation($"📁 File size: {fileInfo.Length} bytes");
 
-                // ✅ FIXED: Stream the file properly without loading into memory
                 var stream = new FileStream(physicalPath, FileMode.Open, FileAccess.Read);
 
                 return File(stream, result.Data.ContentType ?? "application/octet-stream", result.Data.FileName, enableRangeProcessing: true);
@@ -454,7 +442,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -483,7 +470,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -511,13 +497,11 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Validate the DTO
                 if (dto.MessageId != messageId)
                 {
                     return BadRequest(new { success = false, message = "Message ID mismatch" });
                 }
 
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -546,13 +530,11 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Validate the DTO
                 if (dto.MessageId != messageId)
                 {
                     return BadRequest(new { success = false, message = "Message ID mismatch" });
                 }
 
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -586,7 +568,6 @@ namespace Rafeeq.Controllers
                     return BadRequest(new { success = false, message = "Reaction type is required" });
                 }
 
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -615,7 +596,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -644,7 +624,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -673,7 +652,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -778,7 +756,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Check the actual file locations
                 var possiblePaths = new[]
                 {
             Path.Combine(_hostingEnvironment.WebRootPath, "uploads", "chat", "voice", fileName),
@@ -793,7 +770,6 @@ namespace Rafeeq.Controllers
                     {
                         var fileInfo = new FileInfo(path);
 
-                        // Determine the correct URL based on file location
                         string correctUrl = "";
                         if (path.Contains("wwwroot\\uploads\\chat\\voice"))
                         {
@@ -842,7 +818,6 @@ namespace Rafeeq.Controllers
 
                 _logger.LogInformation($"🎤 Voice request for: {fileName}");
 
-                // Check voice file locations
                 var possiblePaths = new[]
                 {
             Path.Combine(_hostingEnvironment.WebRootPath, "uploads", "chat", "voice", fileName),
@@ -877,7 +852,6 @@ namespace Rafeeq.Controllers
                 var fileInfo = new FileInfo(physicalPath);
                 _logger.LogInformation($"🎤 Voice file size: {fileInfo.Length} bytes");
 
-                // Return file with correct content type for audio
                 var stream = new FileStream(physicalPath, FileMode.Open, FileAccess.Read);
                 return File(stream, "audio/webm", fileName, enableRangeProcessing: true);
             }
@@ -901,7 +875,6 @@ namespace Rafeeq.Controllers
             {
                 _logger.LogInformation($"🎤 Voice info request for: {fileName}");
 
-                // Check voice file locations
                 var possiblePaths = new[]
                 {
             Path.Combine(_hostingEnvironment.WebRootPath, "uploads", "chat", "voice", fileName),
@@ -916,7 +889,6 @@ namespace Rafeeq.Controllers
                     {
                         var fileInfo = new FileInfo(path);
 
-                        // Generate the correct streaming URL
                         string streamUrl = $"{Request.Scheme}://{Request.Host}/api/chat/voice/{fileName}";
 
                         return Ok(new
@@ -925,7 +897,7 @@ namespace Rafeeq.Controllers
                             fileName = fileName,
                             fileSize = fileInfo.Length,
                             fileSizeFormatted = FormatFileSize(fileInfo.Length),
-                            streamUrl = streamUrl, // URL for playing the audio
+                            streamUrl = streamUrl, 
                             contentType = "audio/webm",
                             physicalPath = path,
                             lastModified = fileInfo.LastWriteTime
@@ -948,7 +920,6 @@ namespace Rafeeq.Controllers
             }
         }
 
-        // Helper method to format file size
         private string FormatFileSize(long bytes)
         {
             string[] sizes = { "B", "KB", "MB", "GB" };
