@@ -178,7 +178,7 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.TranscriptText, opt => opt.MapFrom(src => src.TranscriptText));
 
 
-            // In your AutoMapperProfile.cs, update the ChatAttachment mapping:
+            // ChatAttachment mapping:
 
             CreateMap<ChatAttachment, ChatAttachmentDto>()
                 .ForMember(dest => dest.IsVoiceMessage, opt => opt.MapFrom(src => src.IsVoiceMessage))
@@ -193,7 +193,7 @@ namespace Rafeeq.Configurations
             // Notification mappings
             CreateMap<Notification, NotificationDto>();
 
-            // Payment mappings - Update the existing mapping
+            // Payment mappings
             CreateMap<Payment, PaymentDto>()
                 .ForMember(dest => dest.PaymentId, opt => opt.MapFrom(src => src.PaymentId))
                 .ForMember(dest => dest.BookingId, opt => opt.MapFrom(src => src.BookingId ?? 0))
@@ -201,7 +201,7 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.PaymentMethod, opt => opt.MapFrom(src => src.PaymentMethod))
                 .ForMember(dest => dest.TransactionId, opt => opt.MapFrom(src => src.TransactionId))
                 .ForMember(dest => dest.PaymentDate, opt => opt.MapFrom(src => src.PaymentDate ?? DateTime.MinValue))
-                // Map from related Booking entity
+               
                 .ForMember(dest => dest.MentorName, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.Mentor.FullName : ""))
                 .ForMember(dest => dest.MenteeName, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.Mentee.FullName : ""))
                 .ForMember(dest => dest.SessionType, opt => opt.MapFrom(src => src.Booking != null ? src.Booking.SessionType : ""))
@@ -217,7 +217,7 @@ namespace Rafeeq.Configurations
                 .ForMember(dest => dest.SkillId, opt => opt.MapFrom(src => src.SkillId))
                 .ForMember(dest => dest.SkillName, opt => opt.MapFrom(src => src.Name));
 
-            // MentorDto mapping (comprehensive version)
+            // MentorDto mapping 
             CreateMap<User, MentorDto>()
                 .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName))
@@ -432,7 +432,7 @@ namespace Rafeeq.Configurations
      .ForMember(dest => dest.IsPinned, opt => opt.MapFrom(src => src.IsPinned))
      .ForMember(dest => dest.UpdatedAt, opt => opt.MapFrom(src => src.UpdatedAt))
      .ForMember(dest => dest.Comments, opt => opt.MapFrom(src => src.Comments.Where(c => !c.IsDeleted)))
-     // Ignore these, set in service:
+    
      .ForMember(dest => dest.HasUpvoted, opt => opt.Ignore())
      .ForMember(dest => dest.CanEditDelete, opt => opt.Ignore())
      .ForMember(dest => dest.CanMarkAsSolved, opt => opt.Ignore());

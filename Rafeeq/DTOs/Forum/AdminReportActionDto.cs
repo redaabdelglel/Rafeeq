@@ -2,7 +2,7 @@
 {
     public class AdminReportActionDto
     {
-        public string Action { get; set; } // "delete" or "ignore"
+        public string Action { get; set; }
         public string? AdminNote { get; set; }
     }
 }

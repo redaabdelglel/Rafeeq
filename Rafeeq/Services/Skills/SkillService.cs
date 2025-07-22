@@ -1,4 +1,4 @@
-﻿// In Rafeeq/Services/Skills/SkillService.cs
+﻿
 using AutoMapper;
 using Microsoft.EntityFrameworkCore;
 using Rafeeq.DTOs.Skills;
@@ -23,17 +23,14 @@ namespace Rafeeq.Services.Skills
 
         public async Task<bool> AddSkillToUserAsync(int userId, int skillId)
         {
-            // Check if user exists
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
             if (user == null)
                 return false;
 
-            // Check if skill exists
             var skill = await _unitOfWork.SkillRepository.GetByIdAsync(skillId);
             if (skill == null)
                 return false;
 
-            // Check if user already has this skill
             bool alreadyHasSkill = false;
 
             if (user.IsMentor.GetValueOrDefault())
@@ -68,7 +65,7 @@ namespace Rafeeq.Services.Skills
             }
 
             if (alreadyHasSkill)
-                return true; // Already has the skill, consider this a success
+                return true; 
 
             await _unitOfWork.SaveAsync();
             return true;
@@ -76,7 +73,7 @@ namespace Rafeeq.Services.Skills
 
         public async Task<bool> RemoveSkillFromUserAsync(int userId, int skillId)
         {
-            // Check if user exists
+          
             var user = await _unitOfWork.UserRepository.GetByIdAsync(userId);
             if (user == null)
                 return false;

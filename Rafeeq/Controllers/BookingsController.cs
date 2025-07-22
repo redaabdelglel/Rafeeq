@@ -12,7 +12,7 @@ namespace Rafeeq.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Require authentication for all endpoints
+    [Authorize] 
     public class BookingsController : ControllerBase
     {
         private readonly BookingService _bookingService;
@@ -50,7 +50,6 @@ namespace Rafeeq.Controllers
 
                 _logger.LogInformation("Successfully retrieved meet link for booking {BookingId}: {Link}", id, result.Data);
 
-                // Check if it's a real meeting link
                 bool isRealLink = !string.IsNullOrEmpty(result.Data) &&
                                   (result.Data.Contains("meet.google.com") ||
                                    result.Data.Contains("zoom.us") ||
@@ -81,7 +80,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims
                 var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
@@ -107,7 +105,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims
                 var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
@@ -133,7 +130,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims
                 var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
@@ -234,10 +230,8 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims for authorization check
                 var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
-                // Check if user is the mentor or an admin
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
                 if (mentorId != currentUserId && userRole != "Admin")
                 {
@@ -260,7 +254,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims
                 var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
@@ -285,7 +278,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims
                 var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 

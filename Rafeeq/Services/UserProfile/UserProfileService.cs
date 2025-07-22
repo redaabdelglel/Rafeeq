@@ -51,8 +51,7 @@ namespace Rafeeq.Services.UserProfile
             {
                 userProfileDto.HourlyRate = user.HourlyRate;
                 userProfileDto.IsInterviewer = user.IsInterviewer;
-                // MentorSkills are already mapped by AutoMapper based on default configuration
-                // userProfileDto.MentorSkills = user.MentorSkills.Select(ms => _mapper.Map<SkillDto>(ms.Skill)).ToList(); // This might be redundant if AutoMapper handles it
+              
             }
             else if (user.Role?.RoleName == "Mentee")
             {

@@ -10,7 +10,6 @@ namespace Rafeeq.Controllers
     [Route("api/[controller]")]
     [ApiController]
     [Authorize(Policy = "MentorOrMenteePolicy")]
-    //[AllowAnonymous]
 
     public class ForumCommentController : ControllerBase
     {
@@ -31,9 +30,7 @@ namespace Rafeeq.Controllers
             throw new UnauthorizedAccessException("Current user ID is not available or invalid.");
         }
 
-        // <summary>
-        /// Add a new comment to a forum post.
-        /// </summary>
+       
         [HttpPost]
         [Route("~/api/forum/posts/{postId}/comments")]
         public async Task<IActionResult> AddCommentToPost(int postId, [FromBody] CreateForumCommentDto dto)
@@ -65,10 +62,7 @@ namespace Rafeeq.Controllers
             }
         }
 
-        /// <summary>
-        /// Update an existing comment.
-        /// Endpoint: PUT /api/forum/comments/{commentId}
-        /// </summary>
+     
         [HttpPut("{commentId}")]
         public async Task<IActionResult> UpdateComment(int commentId, [FromBody] UpdateForumCommentDto dto)
         {

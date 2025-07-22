@@ -32,9 +32,9 @@ namespace Rafeeq.Configurations
         public static IServiceCollection AddApplicationServices(this IServiceCollection services)
         {
             // Register Repositories
-            services.AddScoped(typeof(IRepositoryBase<>), typeof(RepositoryBase<>)); // Generic base repository
+            services.AddScoped(typeof(IRepositoryBase<>), typeof(RepositoryBase<>)); 
             services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IUserTokenRepository, UserTokenRepository>(); // Added for Auth
+            services.AddScoped<IUserTokenRepository, UserTokenRepository>(); 
 
             // Auth Services
             services.AddScoped<AuthService>();
@@ -84,7 +84,7 @@ namespace Rafeeq.Configurations
             // CV Services
             services.AddScoped<CVService>();
 
-            // ✅ Chat & SignalR services 
+            // Chat & SignalR services 
             services.AddScoped<SignalRService>();
 
            

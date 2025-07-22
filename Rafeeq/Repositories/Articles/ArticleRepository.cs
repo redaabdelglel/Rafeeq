@@ -20,7 +20,7 @@ namespace Rafeeq.Repositories.Articles
                 query = query.Where(a => a.Category == category);
             }
 
-            // Apply search query filter
+           
             if (!string.IsNullOrEmpty(searchQuery))
             {
                 var lowerCaseQuery = searchQuery.ToLower();
@@ -31,7 +31,6 @@ namespace Rafeeq.Repositories.Articles
                 );
             }
 
-            // Always include Author for projection in service/controller
             return query.Include(a => a.Author);
         }
 

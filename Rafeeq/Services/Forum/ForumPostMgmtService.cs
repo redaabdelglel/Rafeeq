@@ -23,7 +23,6 @@ namespace Rafeeq.Services.Forum
         {
             var posts = await _repo.GetAllAsync(categoryId, search, sortBy, isSolved);
 
-            // Ensure pinned posts are always on top, then sort by created date or upvotes
             var orderedPosts = posts.OrderByDescending(p => p.IsPinned);
 
             if (sortBy == "upvotes")
@@ -89,7 +88,7 @@ namespace Rafeeq.Services.Forum
             var post = await _repo.GetByIdWithDetailsAsync(postId);
             if (post == null || post.IsDeleted) return false;
             var upvote = await _repo.GetUserUpvoteAsync(postId, userId);
-            if (upvote != null) return false; // already upvoted
+            if (upvote != null) return false; 
             var newUpvote = new ForumPostUpvote { PostId = postId, UserId = userId, CreatedAt = DateTime.UtcNow };
             await _repo.AddUpvoteAsync(newUpvote);
             post.Upvotes += 1;
@@ -123,12 +122,10 @@ namespace Rafeeq.Services.Forum
 
         public async Task<bool> ReportPostAsync(int postId, int userId, string reason)
         {
-            // Check if post exists and is not deleted
             var post = await _repo.GetByIdWithDetailsAsync(postId);
             if (post == null || post.IsDeleted)
                 return false;
 
-            // Prevent duplicate reports by the same user for the same post
             var existingReports = await _repo.GetAllReportsAsync();
             if (existingReports.Any(r => r.PostId == postId && r.ReportedByUserId == userId))
                 return false;
@@ -172,10 +169,8 @@ namespace Rafeeq.Services.Forum
             if (report == null || report.Status != "Pending")
                 return false;
 
-            // Only allow "delete" or "ignore"
             if (action.Equals("delete", StringComparison.OrdinalIgnoreCase))
             {
-                // Soft delete the post
                 var post = await _repo.GetByIdWithDetailsAsync(report.PostId);
                 if (post != null && !post.IsDeleted)
                 {
@@ -242,7 +237,6 @@ namespace Rafeeq.Services.Forum
 
             var dto = _mapper.Map<ForumPostDto>(post);
 
-            // Set HasUpvoted for the current user
             if (currentUserId.HasValue)
             {
                 var upvote = await _repo.GetUserUpvoteAsync(postId, currentUserId.Value);
@@ -253,11 +247,9 @@ namespace Rafeeq.Services.Forum
                 dto.HasUpvoted = false;
             }
 
-            // Set CanEditDelete and CanMarkAsSolved
             dto.CanEditDelete = currentUserId.HasValue && post.UserId == currentUserId.Value;
             dto.CanMarkAsSolved = currentUserId.HasValue && post.UserId == currentUserId.Value && !post.IsSolved;
 
-            // IsPinned, UserName, UserProfilePicture, Comments, etc. are already mapped by AutoMapper
 
             return dto;
         }

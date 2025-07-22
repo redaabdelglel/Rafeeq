@@ -10,7 +10,7 @@ namespace Rafeeq.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // Requiring authentication for all endpoints
+    [Authorize] 
     public class AvailabilityController : ControllerBase
     {
         private readonly AvailabilityService _availabilityService;
@@ -30,7 +30,7 @@ namespace Rafeeq.Controllers
             {
                 _logger.LogInformation($"GetUserAvailability called for userId: {userId}");
 
-                // Log authentication information
+                
                 var identity = User.Identity;
                 _logger.LogInformation($"Is user authenticated: {identity?.IsAuthenticated}");
                 _logger.LogInformation($"Authentication type: {identity?.AuthenticationType}");
@@ -54,13 +54,13 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Check if user is authenticated
+              
                 if (User.Identity?.IsAuthenticated != true)
                 {
                     return Unauthorized(new { success = false, message = "Not authenticated" });
                 }
 
-                // Get claims information
+               
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var name = User.FindFirst(ClaimTypes.Name)?.Value;
                 var role = User.FindFirst(ClaimTypes.Role)?.Value;
@@ -89,12 +89,12 @@ namespace Rafeeq.Controllers
             {
                 _logger.LogInformation($"AddAvailability called with UserId: {dto.UserId}, DayOfWeek: {dto.DayOfWeek}");
 
-                // Log authentication information
+              
                 _logger.LogInformation($"Is user authenticated: {User.Identity?.IsAuthenticated}");
                 var nameIdentifierClaim = User.FindFirst(ClaimTypes.NameIdentifier);
                 _logger.LogInformation($"NameIdentifier claim: {nameIdentifierClaim?.Value ?? "not found"}");
 
-                // Special case handling to make debugging easier
+               
                 if (User.Identity?.IsAuthenticated != true)
                 {
                     return Unauthorized(new
@@ -105,7 +105,7 @@ namespace Rafeeq.Controllers
                     });
                 }
 
-                // Security check - ensure current user can only add availability for themselves
+               
                 var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
 
@@ -119,7 +119,6 @@ namespace Rafeeq.Controllers
                     return StatusCode(403, new { success = false, message = "You can only add availability for your own account" });
                 }
 
-                // Continue with adding availability
                 var result = await _availabilityService.AddAvailabilityAsync(dto);
 
                 if (!result.Success)
@@ -144,7 +143,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims
                 var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (currentUserId == 0)
                     return Unauthorized(new { success = false, message = "User not authenticated properly" });
@@ -168,7 +166,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims
                 var currentUserId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (currentUserId == 0)
                     return Unauthorized(new { success = false, message = "User not authenticated properly" });

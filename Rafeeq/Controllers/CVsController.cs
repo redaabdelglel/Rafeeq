@@ -40,7 +40,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims
                 var mentorId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (mentorId == 0)
                 {
@@ -70,7 +69,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (userId == 0)
                 {
@@ -100,21 +98,18 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims
                 var mentorId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (mentorId == 0)
                 {
                     return Unauthorized(new { success = false, message = "User not authenticated properly" });
                 }
 
-                // Check if user is a mentor
                 var mentor = await _context.Users.FirstOrDefaultAsync(u => u.UserId == mentorId);
                 if (mentor == null || !mentor.IsMentor.GetValueOrDefault())
                 {
                     return Forbid();
                 }
 
-                // Get CVs from mentees who had sessions with this mentor
                 var cvs = await _context.MenteeCVs
                     .Include(cv => cv.User)
                     .Where(cv => cv.IsActive && _context.Bookings.Any(b =>
@@ -124,7 +119,6 @@ namespace Rafeeq.Controllers
                     .OrderByDescending(cv => cv.UploadDate)
                     .ToListAsync();
 
-                // Map to DTO with additional mentee information
                 var result = cvs.Select(cv => new MenteeCVDto
                 {
                     CVId = cv.CVId,
@@ -133,7 +127,6 @@ namespace Rafeeq.Controllers
                     UploadDate = cv.UploadDate,
                     IsActive = cv.IsActive,
                     UserFullName = cv.User?.FullName ?? "Unknown", // Handle null with default value
-                    // Calculate download URL (relative path that frontend can use)
                     DownloadUrl = $"/uploads/cvs/{System.IO.Path.GetFileName(cv.FilePath)}"
                 }).ToList();
 
@@ -153,22 +146,18 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get current user ID from claims
                 var mentorId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
                 if (mentorId == 0)
                 {
                     return Unauthorized(new { success = false, message = "User not authenticated properly" });
                 }
 
-                // Check if user is a mentor
                 var mentor = await _unitOfWork.UserRepository.GetByIdAsync(mentorId);
                 if (mentor == null || !mentor.IsMentor.GetValueOrDefault())
                 {
                     return Forbid();
                 }
 
-                // Try to find the CV by file path ending with the provided fileName
-                // This handles the case where the actual file includes a GUID prefix
                 var uploadsFolder = Path.Combine("uploads", "cvs");
                 var directoryInfo = new DirectoryInfo(uploadsFolder);
 
@@ -177,7 +166,6 @@ namespace Rafeeq.Controllers
                     return NotFound(new { success = false, message = "CV uploads directory not found" });
                 }
 
-                // Find files in the directory that end with the requested file name
                 var fileInfo = directoryInfo.GetFiles()
                     .FirstOrDefault(f => f.Name.EndsWith(fileName) ||
                                         f.Name == fileName);

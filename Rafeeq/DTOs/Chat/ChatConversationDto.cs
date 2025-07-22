@@ -15,6 +15,6 @@ public class ChatConversationDto
     public DateTime CreatedAt { get; set; }
     public ChatMessageDto LastMessage { get; set; }
     public int UnreadCount { get; set; }
-    public string SessionType { get; set; } // Add this property
-    public string SessionStatus { get; set; } // Add this property
+    public string SessionType { get; set; } 
+    public string SessionStatus { get; set; } 
 }

@@ -47,7 +47,6 @@ namespace Rafeeq.Repositories.Availability
 
         public async Task<bool> HasOverlappingAvailabilityAsync(Models.Availability availability)
         {
-            // Check for overlapping time slots on the same day
             return await _context.Availabilities
                 .AnyAsync(a => a.UserId == availability.UserId
                           && a.DayOfWeek == availability.DayOfWeek

@@ -19,7 +19,7 @@ namespace Rafeeq.Services.UserProfile
         Task<bool> ChangePasswordAsync(int userId, string currentPassword, string newPassword);
 
 
-        //Userprofile
+     
         Task<User?> GetUserByIdAsync(int userId);
         Task<User?> GetUserByEmailAsync(string email);
 

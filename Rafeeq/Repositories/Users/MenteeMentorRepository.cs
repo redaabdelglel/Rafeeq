@@ -1,4 +1,4 @@
-﻿// Repositories/Users/MentorRepository.cs
+﻿
 using Microsoft.EntityFrameworkCore;
 using Rafeeq.DTOs.Availability;
 using Rafeeq.DTOs.Users;
@@ -79,7 +79,7 @@ namespace Rafeeq.Repositories.Users
                 .Include(u => u.Availabilities)
                 .FirstOrDefaultAsync(u => u.UserId == id && u.IsMentor == true && !(u.IsDeleted ?? false));
 
-            // DEBUG: Verify loaded data
+           
             foreach (var a in mentor?.Availabilities)
             {
                 Console.WriteLine($"DB Values - ID: {a.AvailabilityId}, " +
@@ -91,7 +91,7 @@ namespace Rafeeq.Repositories.Users
         }
 
 
-        // Add to MenteeMentorRepository class
+       
         public async Task<User?> GetMentorByIdAsync(int id)
         {
             return await _context.Users
@@ -113,15 +113,14 @@ namespace Rafeeq.Repositories.Users
             var now = DateTime.UtcNow;
             var endDate = now.AddDays(daysAhead);
 
-            // Get mentor with their availability and bookings
             var mentor = await _context.Users
                 .Include(u => u.Availabilities)
-                .Include(u => u.BookingMentors)  // Changed from BookingsAsMentor to match your model
+                .Include(u => u.BookingMentors)  
                 .FirstOrDefaultAsync(u => u.UserId == mentorId && u.IsMentor == true);
 
             if (mentor == null) return result;
 
-            // Process each availability slot
+        
             foreach (var availability in mentor.Availabilities.Where(a =>
                      a.DayOfWeek.HasValue &&
                      a.StartTime.HasValue &&
@@ -136,7 +135,7 @@ namespace Rafeeq.Repositories.Users
                     EndTime = availability.EndTime.Value
                 };
 
-                // Generate available times for each matching day in the date range
+               
                 for (var date = now.Date; date <= endDate; date = date.AddDays(1))
                 {
                     if ((int)date.DayOfWeek == availability.DayOfWeek.Value)
@@ -144,7 +143,7 @@ namespace Rafeeq.Repositories.Users
                         var slotStart = date.Add(availability.StartTime.Value);
                         var slotEnd = date.Add(availability.EndTime.Value);
 
-                        // Check if this time slot is available
+                        
                         if (!IsBooked(mentor.BookingMentors, slotStart, slotEnd) &&
                             slotStart > now.AddMinutes(30))
                         {
@@ -172,11 +171,11 @@ namespace Rafeeq.Repositories.Users
         }
         public async Task<bool> IsTimeSlotAvailableAsync(int mentorId, DateTime start, DateTime end)
         {
-            // Validate input
+         
             if (start >= end)
                 return false;
 
-            // Get mentor with their availability and existing bookings
+           
             var mentor = await _context.Users
                 .Include(u => u.Availabilities)
                 .Include(u => u.BookingMentors)
@@ -185,7 +184,7 @@ namespace Rafeeq.Repositories.Users
             if (mentor == null)
                 return false;
 
-            // Check if mentor has availability for this day/time
+            
             var dayOfWeek = (int)start.DayOfWeek;
             var startTime = start.TimeOfDay;
             var endTime = end.TimeOfDay;
@@ -201,13 +200,13 @@ namespace Rafeeq.Repositories.Users
             if (!hasAvailability)
                 return false;
 
-            // Check for conflicting bookings on this exact date
+           
             var hasConflict = mentor.BookingMentors.Any(b =>
                 !b.IsDeleted.GetValueOrDefault() &&
                 b.Status != "Cancelled" &&
-                b.StartDateTime.HasValue &&  // Check if nullable DateTime has value
-                b.EndDateTime.HasValue &&    // Check if nullable DateTime has value
-                b.StartDateTime.Value.Date == start.Date &&  // Now safe to access .Date
+                b.StartDateTime.HasValue &&  
+                b.EndDateTime.HasValue &&    
+                b.StartDateTime.Value.Date == start.Date &&  
                 b.StartDateTime.Value < end &&
                 b.EndDateTime.Value > start);
 
@@ -251,7 +250,7 @@ namespace Rafeeq.Repositories.Users
                         var slotStart = date.Add(startTime);
                         var slotEnd = date.Add(endTime);
 
-                        // Check if this entire availability window is available
+                      
                         var isBooked = existingBookings.Any(b =>
                             b.StartDateTime < slotEnd &&
                             b.EndDateTime > slotStart);
@@ -295,7 +294,7 @@ namespace Rafeeq.Repositories.Users
             var result = new List<TimeSlotDto>();
             var now = DateTime.UtcNow;
 
-            // Get mentor with all necessary data
+            
             var mentor = await _context.Users
                 .Include(u => u.Availabilities)
                 .Include(u => u.BookingMentors)
@@ -303,14 +302,14 @@ namespace Rafeeq.Repositories.Users
 
             if (mentor == null) return result;
 
-            // Get active bookings
+           
             var existingBookings = mentor.BookingMentors
                 .Where(b => !b.IsDeleted.GetValueOrDefault() &&
                            b.Status != "Cancelled" &&
                            b.EndDateTime > now)
                 .ToList();
 
-            // Process each availability
+           
             foreach (var availability in mentor.Availabilities
                 .Where(a => a.DayOfWeek.HasValue && a.StartTime.HasValue && a.EndTime.HasValue))
             {
@@ -318,7 +317,6 @@ namespace Rafeeq.Repositories.Users
                 var startTime = availability.StartTime.Value;
                 var endTime = availability.EndTime.Value;
 
-                // Generate slots for next 30 days
                 for (int i = 0; i < 30; i++)
                 {
                     var date = now.Date.AddDays(i);
@@ -327,11 +325,11 @@ namespace Rafeeq.Repositories.Users
                     var slotStart = date.Add(startTime);
                     var slotEnd = date.Add(endTime);
 
-                    // Check if completely available
+                    
                     if (!existingBookings.Any(b =>
                         b.StartDateTime < slotEnd &&
                         b.EndDateTime > slotStart) &&
-                        slotStart > now.AddMinutes(30)) // 30 min buffer
+                        slotStart > now.AddMinutes(30)) 
                     {
                         result.Add(new TimeSlotDto
                         {
@@ -344,26 +342,7 @@ namespace Rafeeq.Repositories.Users
 
             return result.OrderBy(s => s.Start).ToList();
         }
-        //public async Task<bool> IsTimeSlotAvailableAsync(int mentorId, DateTime start, DateTime end)
-        //{
-        //    var mentor = await _context.Users
-        //        .Include(u => u.Availabilities)
-        //        .Include(u => u.BookingMentors)
-        //        .FirstOrDefaultAsync(u => u.UserId == mentorId && u.IsMentor == true);
-
-        //    if (mentor == null) return false;
-
-        //    // Check availability for the day and time
-        //    var hasAvailability = mentor.Availabilities.Any(a =>
-        //        a.DayOfWeek == (int)start.DayOfWeek &&
-        //        a.StartTime <= start.TimeOfDay &&
-        //        a.EndTime >= end.TimeOfDay);
-
-        //    if (!hasAvailability) return false;
-
-        //    // Check for booking conflicts
-        //    return !IsBooked(mentor.BookingMentors, start, end);
-        //}
+       
 
     }
 }

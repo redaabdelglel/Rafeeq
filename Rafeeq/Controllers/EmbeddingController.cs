@@ -30,7 +30,6 @@ namespace Rafeeq.Controllers
             {
                 _logger.LogInformation("🚀 Starting mentor embedding generation for ID: {MentorId}", request?.MentorId);
 
-                // 1. Validate request
                 if (request == null)
                 {
                     _logger.LogWarning("❌ Request is null");
@@ -45,7 +44,6 @@ namespace Rafeeq.Controllers
 
                 _logger.LogInformation("✅ Request validation passed for mentor ID: {MentorId}", request.MentorId);
 
-                // 2. Call service
                 _logger.LogInformation("🔄 Calling embedding service...");
                 var result = await _embeddingService.GenerateMentorEmbeddingAsync(request.MentorId);
 
@@ -88,7 +86,6 @@ namespace Rafeeq.Controllers
             {
                 _logger.LogInformation("🔍 Starting semantic search with query: {Query}", request?.Query);
 
-                // 1. Validate request
                 if (request == null)
                 {
                     _logger.LogWarning("❌ Search request is null");
@@ -109,11 +106,9 @@ namespace Rafeeq.Controllers
 
                 _logger.LogInformation("✅ Search request validation passed. Query length: {Length}", request.Query.Length);
 
-                // 2. Log search parameters
                 _logger.LogInformation("🔍 Search parameters: MaxRate={MaxRate}, MinRating={MinRating}, Skills={Skills}",
                     request.MaxHourlyRate, request.MinRating, string.Join(",", request.Skills ?? new List<string>()));
 
-                // 3. Call service
                 _logger.LogInformation("🔄 Calling semantic search service...");
                 var result = await _embeddingService.SemanticMentorSearchAsync(request);
 

@@ -15,9 +15,6 @@ namespace Rafeeq.Repositories.Notifications
             _context = context;
         }
 
-        /// <summary>
-        /// Get all notifications for a specific user
-        /// </summary>
         public async Task<IEnumerable<Notification>> GetUserNotificationsAsync(int userId)
         {
             return await _context.Notifications
@@ -26,9 +23,7 @@ namespace Rafeeq.Repositories.Notifications
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Mark all notifications as read for a specific user
-        /// </summary>
+        
         public async Task<int> MarkAllNotificationsAsReadAsync(int userId)
         {
             var notifications = await _context.Notifications
@@ -49,18 +44,14 @@ namespace Rafeeq.Repositories.Notifications
             return notifications.Count;
         }
 
-        /// <summary>
-        /// Get unread notification count for a user
-        /// </summary>
+        
         public async Task<int> GetUnreadNotificationCountAsync(int userId)
         {
             return await _context.Notifications
                 .CountAsync(n => n.UserId == userId && n.IsRead == false);
         }
 
-        /// <summary>
-        /// Add a new notification
-        /// </summary>
+       
         public async Task<Notification> AddNotificationAsync(Notification notification)
         {
             notification.CreatedAt = DateTime.UtcNow;

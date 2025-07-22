@@ -20,7 +20,7 @@ namespace Rafeeq.Repositories.Chat
         {
             return await _context.ChatMessages
                 .Include(m => m.Sender)
-                .Include(m => m.ChatAttachments) // <-- This ensures attachments are loaded
+                .Include(m => m.ChatAttachments) 
                 .Where(m => m.BookingId == bookingId)
                 .OrderBy(m => m.SentAt)
                 .ToListAsync();
@@ -62,13 +62,11 @@ namespace Rafeeq.Repositories.Chat
         // Get unread messages count for a user
         public async Task<int> GetUnreadMessagesCountAsync(int userId)
         {
-            // Get all bookings for this user (both as mentor and mentee)
             var bookings = await _context.Bookings
                 .Where(b => (b.MentorId == userId || b.MenteeId == userId) && b.IsDeleted != true)
                 .Select(b => b.BookingId)
                 .ToListAsync();
 
-            // Count unread messages from these bookings where user is not the sender
             return await _context.ChatMessages
                 .Where(m => bookings.Contains(m.BookingId.Value) &&
                        m.SenderId != userId &&
@@ -114,7 +112,7 @@ namespace Rafeeq.Repositories.Chat
                 .Include(m => m.ReadStatuses)
                 .Where(m => m.ConversationId == conversationId)
                 .OrderByDescending(m => m.SentAt)
-                .Take(15) // Limit to the most recent 15 messages
+                .Take(15) 
                 .ToListAsync();
         }
 
@@ -128,7 +126,6 @@ namespace Rafeeq.Repositories.Chat
         // Mark all messages as read in a conversation
         public async Task<int> MarkAllMessagesAsReadAsync(int conversationId, int userId)
         {
-            // Get all unread messages sent by other users
             var unreadMessages = await _context.ChatMessages
                 .Where(m => m.ConversationId == conversationId && m.SenderId != userId)
                 .Where(m => !m.ReadStatuses.Any(rs => rs.UserId == userId))
@@ -136,10 +133,9 @@ namespace Rafeeq.Repositories.Chat
 
             if (unreadMessages.Count == 0)
             {
-                return 0; // No messages to mark as read
+                return 0; 
             }
 
-            // Create read statuses for all unread messages
             foreach (var message in unreadMessages)
             {
                 _context.MessageReadStatuses.Add(new MessageReadStatus
@@ -153,11 +149,10 @@ namespace Rafeeq.Repositories.Chat
             await _context.SaveChangesAsync();
             return unreadMessages.Count;
         }
-        // Delete a message by ID
+        
         // Delete a message by ID
         public async Task<bool> DeleteMessageAsync(int messageId)
         {
-            // ✅ FIXED: Use the execution strategy to handle transactions properly
             var strategy = _context.Database.CreateExecutionStrategy();
 
             return await strategy.ExecuteAsync(async () =>
@@ -165,38 +160,32 @@ namespace Rafeeq.Repositories.Chat
                 using var transaction = await _context.Database.BeginTransactionAsync();
                 try
                 {
-                    // Get the message first to check if it exists
                     var message = await _context.ChatMessages
                         .Include(m => m.ChatAttachments)
                         .Include(m => m.ReadStatuses)
-                        .Include(m => m.Reactions) // Include reactions if they exist
+                        .Include(m => m.Reactions) 
                         .FirstOrDefaultAsync(m => m.MessageId == messageId);
 
                     if (message == null)
                         return false;
 
-                    // STEP 1: Remove message reactions first (if any)
                     if (message.Reactions != null && message.Reactions.Any())
                     {
                         _context.MessageReactions.RemoveRange(message.Reactions);
                     }
 
-                    // STEP 2: Remove message read statuses
                     if (message.ReadStatuses != null && message.ReadStatuses.Any())
                     {
                         _context.MessageReadStatuses.RemoveRange(message.ReadStatuses);
                     }
 
-                    // STEP 3: Remove attachments
                     if (message.ChatAttachments != null && message.ChatAttachments.Any())
                     {
                         _context.ChatAttachments.RemoveRange(message.ChatAttachments);
                     }
 
-                    // STEP 4: Remove the message itself
                     _context.ChatMessages.Remove(message);
 
-                    // Save all changes
                     await _context.SaveChangesAsync();
                     await transaction.CommitAsync();
 
@@ -205,10 +194,9 @@ namespace Rafeeq.Repositories.Chat
                 catch (Exception ex)
                 {
                     await transaction.RollbackAsync();
-                    // Log the specific error for debugging
                     Console.WriteLine($"Error deleting message {messageId}: {ex.Message}");
                     Console.WriteLine($"Inner exception: {ex.InnerException?.Message}");
-                    throw; // Re-throw to let the service handle it
+                    throw; 
                 }
             });
         }
@@ -240,7 +228,6 @@ namespace Rafeeq.Repositories.Chat
         // Add a reaction to a message
         public async Task<MessageReaction> AddMessageReactionAsync(MessageReaction reaction)
         {
-            // Check if this reaction already exists
             var existingReaction = await _context.MessageReactions
                 .FirstOrDefaultAsync(r =>
                     r.MessageId == reaction.MessageId &&
@@ -249,11 +236,9 @@ namespace Rafeeq.Repositories.Chat
 
             if (existingReaction != null)
             {
-                // Reaction already exists, just return it
                 return existingReaction;
             }
 
-            // Add the new reaction
             await _context.MessageReactions.AddAsync(reaction);
             await _context.SaveChangesAsync();
             return reaction;
@@ -328,7 +313,6 @@ namespace Rafeeq.Repositories.Chat
                 .Take(pageSize)
                 .ToListAsync();
 
-            // Return both the messages and the total count
             return (messages.OrderBy(m => m.SentAt), totalCount);
         }
         

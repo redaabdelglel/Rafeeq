@@ -12,13 +12,13 @@ namespace Rafeeq.Controllers
     [ApiController]
     public class AdminLogin : ControllerBase
     {
-        private readonly RafeeqContext _context; // Change type from object to RafeeqContext
+        private readonly RafeeqContext _context; 
         private readonly IJwtService _jwtService;
 
         public AdminLogin(RafeeqContext context, IJwtService jwtService)
         {
-            _context = context ?? throw new ArgumentNullException(nameof(context)); // Add null check
-            _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService)); // Add null check
+            _context = context ?? throw new ArgumentNullException(nameof(context)); 
+            _jwtService = jwtService ?? throw new ArgumentNullException(nameof(jwtService));
         }
 
         [AllowAnonymous]
@@ -47,7 +47,7 @@ namespace Rafeeq.Controllers
             Console.WriteLine($"Found user in DB: {admin.FullName} with stored password: {admin.PasswordHash}");
 
             
-            //bool isPasswordCorrect = dto.Password == admin.PasswordHash;
+          
             bool isPasswordCorrect = BCrypt.Net.BCrypt.Verify(dto.Password, admin.PasswordHash);
 
 

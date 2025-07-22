@@ -65,27 +65,22 @@ namespace Rafeeq.Controllers
                 return NotFound("Booking not found");
             }
 
-            // Booking must exist
             if (booking == null)
                 return NotFound("Booking not found.");
 
-            // Check if the session is completed
             if (!string.Equals(booking.Status, "Completed", StringComparison.OrdinalIgnoreCase))
                 return BadRequest("Cannot review. Session is not completed.");
 
-            // Reviewer must be mentee in this booking
             if (reviewDto.ReviewerId != booking.MenteeId)
                 return BadRequest("Only the mentee who attended the session can review the mentor.");
 
-            // Reviewed user must be the mentor in this booking
             if (reviewDto.ReviewedUserId != booking.MentorId)
                 return BadRequest("Reviewed user must be the mentor of the session.");
 
-            // Prevent duplicate review for same booking
             if (reviewDto.BookingId.HasValue)
             {
                 var existingReview = await _unitOfWork.ReviewRepository
-                    .GetByBookingIdAsync(reviewDto.BookingId.Value); // .Value extracts the int from int?
+                    .GetByBookingIdAsync(reviewDto.BookingId.Value); 
 
                 if (existingReview != null)
                 {
@@ -109,18 +104,12 @@ namespace Rafeeq.Controllers
         }
 
         [HttpGet("mentor/me")]
-        [Authorize(Roles = "Mentor,Admin")] // Only mentors (and optionally admins) can access
+        [Authorize(Roles = "Mentor,Admin")] 
         public async Task<IActionResult> GetMyReviews()
         {
-            // Get current user ID from claims
             var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier);
             if (userIdClaim == null || !int.TryParse(userIdClaim.Value, out int mentorId))
                 return Unauthorized("User not authenticated.");
-
-            // Optionally, check if user is a mentor (if not enforced by role)
-            // var user = await _unitOfWork.UserRepository.GetByIdAsync(mentorId);
-            // if (user == null || user.IsMentor != true)
-            //     return Forbid("Only mentors can access this endpoint.");
 
             var reviews = await _unitOfWork.ReviewRepository.GetReviewsForMentorAsync(mentorId);
 

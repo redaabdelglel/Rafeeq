@@ -54,7 +54,6 @@ namespace Rafeeq.Services.Payments
         var service = new PaymentIntentService();
         var paymentIntent = await service.GetAsync(paymentIntentId);
 
-        // Normal verification logic for production
         if (paymentIntent.Status == "succeeded")
         {
             return true;
@@ -115,10 +114,9 @@ namespace Rafeeq.Services.Payments
             return amount * (_stripeConfig.PlatformCommissionPercentage / 100);
         }
 
-        // Helper method to convert decimal to Stripe's long format (cents)
+       
         private long ConvertToStripeAmount(decimal amount, string currency = "usd")
         {
-            // Stripe uses smallest currency unit (cents for USD)
             return (long)(amount * 100);
         }
     }

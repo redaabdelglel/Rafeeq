@@ -3,7 +3,7 @@ using Rafeeq.DTOs.Notifications;
 using Rafeeq.Models;
 using Rafeeq.Repositories.Notifications;
 using Rafeeq.UnitOfWork;
-using Rafeeq.Services.Chat; // ✅ ADD THIS
+using Rafeeq.Services.Chat; 
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -14,21 +14,19 @@ namespace Rafeeq.Services.Notifications
     {
         private readonly UnitOfWorkManager _unitOfWork;
         private readonly IMapper _mapper;
-        private readonly SignalRService _signalRService; // ✅ ADD THIS
+        private readonly SignalRService _signalRService;
 
         public NotificationService(
             UnitOfWorkManager unitOfWork,
             IMapper mapper,
-            SignalRService signalRService) // ✅ ADD THIS
+            SignalRService signalRService) 
         {
             _unitOfWork = unitOfWork;
             _mapper = mapper;
-            _signalRService = signalRService; // ✅ ADD THIS
+            _signalRService = signalRService; 
         }
 
-        /// <summary>
-        /// Get notifications for the current user
-        /// </summary>
+      
         public async Task<(bool Success, string Message, IEnumerable<NotificationDto> Notifications)> GetUserNotificationsAsync(int userId)
         {
             try
@@ -44,16 +42,14 @@ namespace Rafeeq.Services.Notifications
             }
         }
 
-        /// <summary>
-        /// Mark all notifications as read for the current user
-        /// </summary>
+        
         public async Task<(bool Success, string Message, int Count)> MarkAllAsReadAsync(int userId)
         {
             try
             {
                 var count = await _unitOfWork.NotificationRepository.MarkAllNotificationsAsReadAsync(userId);
 
-                // ✅ NEW: Notify via SignalR that all notifications are read
+              
                 if (count > 0)
                 {
                     await _signalRService.NotifyAllNotificationsRead(userId);
@@ -68,9 +64,7 @@ namespace Rafeeq.Services.Notifications
             }
         }
 
-        /// <summary>
-        /// Create a new notification with real-time delivery
-        /// </summary>
+        
         public async Task<bool> CreateNotificationAsync(int userId, string message, string type, int? relatedEntityId = null)
         {
             try
@@ -87,11 +81,11 @@ namespace Rafeeq.Services.Notifications
 
                 var savedNotification = await _unitOfWork.NotificationRepository.AddNotificationAsync(notification);
 
-                // ✅ NEW: Send real-time notification via SignalR
+               
                 var notificationDto = _mapper.Map<NotificationDto>(savedNotification);
                 await _signalRService.SendNotificationToUser(userId, notificationDto);
 
-                // ✅ NEW: Update unread count
+              
                 var unreadCount = await _unitOfWork.NotificationRepository.GetUnreadNotificationCountAsync(userId);
                 await _signalRService.UpdateUnreadNotificationCount(userId, unreadCount);
 
@@ -103,15 +97,12 @@ namespace Rafeeq.Services.Notifications
             }
         }
 
-        // ✅ NEW METHODS for different notification types
-        /// <summary>
-        /// Send booking notification to both mentor and mentee
-        /// </summary>
+       
         public async Task<bool> CreateBookingNotificationAsync(int bookingId, int mentorId, int menteeId, string message, string type)
         {
             try
             {
-                // Create notifications for both users
+               
                 var mentorNotification = await CreateNotificationAsync(mentorId, message, type, bookingId);
                 var menteeNotification = await CreateNotificationAsync(menteeId, message, type, bookingId);
 
@@ -123,17 +114,15 @@ namespace Rafeeq.Services.Notifications
             }
         }
 
-        /// <summary>
-        /// Send chat notification when user receives a new message
-        /// </summary>
+      
         public async Task<bool> CreateChatNotificationAsync(int receiverId, int bookingId, string senderName, string messagePreview)
         {
             var message = $"New message from {senderName}: {messagePreview}";
 
-            // Create database notification
+           
             var success = await CreateNotificationAsync(receiverId, message, "chat", bookingId);
 
-            // Send specific chat notification format
+            
             if (success)
             {
                 await _signalRService.NotifyNewChatMessage(receiverId, bookingId, senderName, messagePreview);
@@ -142,9 +131,7 @@ namespace Rafeeq.Services.Notifications
             return success;
         }
 
-        /// <summary>
-        /// Send system notification to all users
-        /// </summary>
+       
         public async Task<bool> CreateSystemNotificationAsync(string message)
         {
             try

@@ -1,4 +1,4 @@
-﻿// Controllers/MenteeController.cs
+﻿
 using Microsoft.AspNetCore.Mvc;
 using Rafeeq.DTOs.Mentee;
 using Rafeeq.UnitOfWork;

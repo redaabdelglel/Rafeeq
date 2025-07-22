@@ -63,19 +63,7 @@ namespace Rafeeq.Repositories.admin
         {
             return await _context.MentorSkills.ToListAsync();
         }
-        // get all chat messages
-        //public async Task<IEnumerable<ChatMessage>> GetAllChatMessagesAsync()
-        //{
-        //    return await _context.ChatMessages.ToListAsync();
-        //}
-        //// get all chat attachments
-        //public async Task<IEnumerable<ChatAttachment>> GetAllChatAttachmentsAsync()
-        //{
-        //    return await _context.ChatAttachments.ToListAsync();
-        //}
-
-
-        // toogle user block status
+        
         public async Task ToggleUserBlockStatusAsync(int userId)
         {
             var user = await _context.Users.FindAsync(userId);

@@ -16,7 +16,7 @@ namespace Rafeeq.Models
         public string ConfigValue { get; set; } = string.Empty;
 
         [StringLength(50)]
-        public string? ConfigType { get; set; } // 'embedding', 'whisper', 'tts'
+        public string? ConfigType { get; set; } 
 
         public bool IsActive { get; set; } = true;
 

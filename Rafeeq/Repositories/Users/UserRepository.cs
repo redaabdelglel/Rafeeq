@@ -28,7 +28,7 @@ namespace Rafeeq.Repositories.Users
 
         public async Task<User?> GetUserByExternalIdAndTypeAsync(string externalId, string externalType)
         {
-            //return await _context.Users.Include(d=> d.Role).ToListAsync();
+           
             return await Context.Users
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.ExternalId == externalId && u.ExternalType == externalType);

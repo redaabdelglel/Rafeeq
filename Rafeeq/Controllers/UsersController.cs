@@ -15,14 +15,7 @@ namespace Rafeeq.Controllers
     [Route("api/[controller]")]
     public class UsersController : ControllerBase
     {
-        //private readonly UnitOfWorkManager _unitOfWork;
-        //private readonly IMapper _mapper;
-
-        //public UsersController(UnitOfWorkManager unitOfWork, IMapper mapper)
-        //{
-        //    _unitOfWork = unitOfWork;
-        //    _mapper = mapper;
-        //}
+        
 
         private readonly UnitOfWorkManager _unitOfWork;
         private readonly IMapper _mapper;
@@ -37,26 +30,7 @@ namespace Rafeeq.Controllers
             _logger = logger;
         }
 
-        //[HttpGet]
-        //public async Task<ActionResult<IEnumerable<UserDto>>> GetAllUsers()
-        //{
-        //    //var users = await _unitOfWork.UserRepository.GetAllAsync();
-        //    //var userDtos = _mapper.Map<IEnumerable<UserDto>>(users);
-        //    //return Ok(userDtos);
-        //}
-
-        //[HttpGet("{id}")]
-        //public async Task<ActionResult<UserDto>> GetUser(int id)
-        //{
-        //    //var user = await _unitOfWork.UserRepository.GetByIdAsync(id);
-        //    if (user == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    var userDto = _mapper.Map<UserDto>(user);
-        //    return Ok(userDto);
-        //}
+       
 
         // PUT: api/users/hourly-rate
         [HttpPut("hourly-rate")]
@@ -65,7 +39,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get the current user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
                 if (userId == 0)
@@ -101,7 +74,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get the current user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
                 if (userId == 0)
@@ -136,7 +108,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get the current user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
                 if (userId == 0)
@@ -166,7 +137,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get the current user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
                 if (userId == 0)
@@ -186,7 +156,6 @@ namespace Rafeeq.Controllers
                     return BadRequest(new { success = false, message = "Failed to update profile." });
                 }
 
-                // Get updated profile to return in response
                 var updatedProfile = await _userService.GetUserProfileAsync(userId);
 
                 return Ok(new { success = true, message = "Profile updated successfully", data = updatedProfile });
@@ -203,7 +172,6 @@ namespace Rafeeq.Controllers
         {
             try
             {
-                // Get the current user ID from claims
                 var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? "0");
 
                 if (userId == 0)
@@ -223,7 +191,6 @@ namespace Rafeeq.Controllers
                     return BadRequest(new { success = false, message = "Failed to upload profile picture." });
                 }
 
-                // Get updated profile to return the new profile picture URL
                 var updatedProfile = await _userService.GetUserProfileAsync(userId);
 
                 return Ok(new

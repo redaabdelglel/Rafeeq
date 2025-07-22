@@ -38,8 +38,7 @@ namespace Rafeeq.Repositories.AI
 
         public async Task<IEnumerable<MentorEmbedding>> GetEmbeddingsWithSimilarityAsync(byte[] queryEmbedding, float threshold = 0.7f)
         {
-            // For now, return all embeddings - we'll calculate similarity in service
-            // In production, you might want to use specialized vector database
+           
             return await Context.MentorEmbeddings.Include(e => e.User)
                 .ThenInclude(u => u.MentorSkills)
                 .ThenInclude(ms => ms.Skill)

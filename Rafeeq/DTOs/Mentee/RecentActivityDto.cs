@@ -2,7 +2,7 @@
 {
     public class RecentActivityDto
     {
-        public string ActivityType { get; set; } // "session", "review", "message", etc.
+        public string ActivityType { get; set; } 
         public string Text { get; set; }
         public DateTime ActivityDate { get; set; }
     }

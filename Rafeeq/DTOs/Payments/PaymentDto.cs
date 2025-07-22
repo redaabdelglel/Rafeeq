@@ -11,7 +11,7 @@ namespace Rafeeq.DTOs.Payments
         public string TransactionId { get; set; }
         public DateTime PaymentDate { get; set; }
 
-        // Additional information for display
+        
         public string MentorName { get; set; }
         public string MenteeName { get; set; }
         public string SessionType { get; set; }

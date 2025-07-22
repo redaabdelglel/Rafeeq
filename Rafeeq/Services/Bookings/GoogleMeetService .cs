@@ -47,7 +47,6 @@ namespace Rafeeq.Services.Bookings
             {
                 GoogleCredential credential;
 
-                // Try environment variable first (for production)
                 var credentialsJson = Environment.GetEnvironmentVariable("GOOGLE_CREDENTIALS_JSON");
                 if (!string.IsNullOrEmpty(credentialsJson))
                 {
@@ -61,7 +60,6 @@ namespace Rafeeq.Services.Bookings
                 }
                 else
                 {
-                    // Fallback: Try local file (for development)
                     _logger.LogInformation("Environment variable not found, trying local file");
 
                     string credentialsPath = Path.Combine(_environment.ContentRootPath, _settings.CredentialsFilePath);
@@ -113,7 +111,6 @@ namespace Rafeeq.Services.Bookings
                     }
                 }
 
-                // Create service
                 _logger.LogInformation("Creating Calendar service...");
                 var service = new CalendarService(new BaseClientService.Initializer()
                 {
@@ -122,7 +119,6 @@ namespace Rafeeq.Services.Bookings
                 });
                 _logger.LogInformation("Successfully created Calendar service");
 
-                // Create event with proper conference data - FIXED VERSION
                 _logger.LogInformation("Creating event with conference data...");
                 var @event = new Event
                 {
@@ -142,7 +138,7 @@ namespace Rafeeq.Services.Bookings
                     {
                         CreateRequest = new CreateConferenceRequest
                         {
-                            RequestId = Guid.NewGuid().ToString("N"), // Use "N" format for clean GUID
+                            RequestId = Guid.NewGuid().ToString("N"), 
                             ConferenceSolutionKey = new ConferenceSolutionKey
                             {
                                 Type = "hangoutsMeet"
@@ -157,19 +153,17 @@ namespace Rafeeq.Services.Bookings
 
                 _logger.LogInformation("Inserting event into calendar {CalendarId}", _settings.CalendarId);
                 var request = service.Events.Insert(@event, _settings.CalendarId);
-                request.ConferenceDataVersion = 1;  // Important for Meet link generation
+                request.ConferenceDataVersion = 1;  
                 request.SendUpdates = EventsResource.InsertRequest.SendUpdatesEnum.All;
 
                 _logger.LogInformation("Executing event insert request...");
                 var createdEvent = await request.ExecuteAsync();
                 _logger.LogInformation("Event created successfully with ID: {EventId}", createdEvent.Id);
 
-                // Log the full response to debug
                 _logger.LogInformation("Event response - HangoutLink: {HangoutLink}", createdEvent.HangoutLink ?? "null");
                 _logger.LogInformation("Event response - ConferenceData: {ConferenceData}",
                     createdEvent.ConferenceData?.EntryPoints?.Count.ToString() ?? "null");
 
-                // Check for Meet link in various places
                 if (!string.IsNullOrEmpty(createdEvent.HangoutLink))
                 {
                     _logger.LogInformation("Meet link found in HangoutLink: {Link}", createdEvent.HangoutLink);
@@ -211,7 +205,6 @@ namespace Rafeeq.Services.Bookings
                     }
                 }
 
-                // Return a more specific error message
                 return $"https://meet.google.com/error-exception-{Guid.NewGuid().ToString().Substring(0, 8)}";
             }
         }
@@ -224,7 +217,6 @@ namespace Rafeeq.Services.Bookings
 
                 GoogleCredential credential;
 
-                // Try environment variable first
                 var credentialsJson = Environment.GetEnvironmentVariable("GOOGLE_CREDENTIALS_JSON");
                 if (!string.IsNullOrEmpty(credentialsJson))
                 {
@@ -236,7 +228,6 @@ namespace Rafeeq.Services.Bookings
                 }
                 else
                 {
-                    // Fallback: Try local file
                     string credentialsPath = Path.Combine(_environment.ContentRootPath, _settings.CredentialsFilePath);
 
                     if (!File.Exists(credentialsPath))

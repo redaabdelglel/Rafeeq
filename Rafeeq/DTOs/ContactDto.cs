@@ -1,4 +1,4 @@
-﻿// In Rafeeq/DTOs/Contact/ContactDto.cs
+﻿
 namespace Rafeeq.DTOs.Contact
 {
     public class CreateContactDto

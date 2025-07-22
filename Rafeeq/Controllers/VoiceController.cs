@@ -57,25 +57,19 @@ namespace Rafeeq.Controllers
             if (request.AudioFile == null || request.AudioFile.Length == 0)
                 return BadRequest(new { success = false, message = "No audio file provided" });
 
-            // Save file using FileUploadHelper
             var audioUrl = await _fileUploadHelper.UploadFileAsync(request.AudioFile, "voice");
             var relativePath = audioUrl.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString());
             var savePath = Path.Combine(_env.WebRootPath ?? _env.ContentRootPath, relativePath);
 
-            // Transcribe using Whisper
             var (transcript, _) = await TranscribeWithWhisperAsync(savePath);
 
-            // Calculate audio duration
             var duration = GetAudioDurationSeconds(savePath);
 
-            // Get current user
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
 
-            // Find or create conversation
             var conversation = await _unitOfWork.ChatRepository.GetConversationByBookingIdAsync(request.BookingId);
             if (conversation == null)
             {
-                // Get booking info to set mentor/mentee
                 var booking = await _unitOfWork.MenteeBookingRepository.GetBookingDetailsAsync(request.BookingId);
                 if (booking == null)
                     return BadRequest(new { success = false, message = "Booking not found" });
@@ -92,7 +86,6 @@ namespace Rafeeq.Controllers
                 conversation = await _unitOfWork.ChatRepository.CreateConversationAsync(conversation);
             }
 
-            // Create ChatMessage
             var message = new ChatMessage
             {
                 BookingId = request.BookingId,
@@ -121,7 +114,6 @@ namespace Rafeeq.Controllers
 
             await _unitOfWork.SaveAsync();
 
-            // Map to DTO and notify via SignalR
             var messageWithAttachment = await _unitOfWork.ChatRepository.GetMessageByIdAsync(message.MessageId);
             var messageDto = _mapper.Map<ChatMessageDto>(messageWithAttachment);
             await _signalRService.NotifyNewMessage(request.BookingId, messageDto);
@@ -149,14 +141,12 @@ namespace Rafeeq.Controllers
         
 
 
-        // Save temp file using FileUploadHelper
         var tempUrl = await _fileUploadHelper.UploadFileAsync(audioFile, "temp-voice");
             var tempPath = Path.Combine(_env.WebRootPath ?? _env.ContentRootPath, tempUrl.TrimStart('/').Replace("/", Path.DirectorySeparatorChar.ToString()));
 
             var (transcript, _) = await TranscribeWithWhisperAsync(tempPath);
             var duration = GetAudioDurationSeconds(tempPath);
 
-            // Clean up temp file
             System.IO.File.Delete(tempPath);
 
             return Ok(new { success = true, transcript, duration });
@@ -164,7 +154,6 @@ namespace Rafeeq.Controllers
 
         private async Task<(string transcript, int durationSeconds)> TranscribeWithWhisperAsync(string filePath)
         {
-            // Get OpenAI API key from database
             var config = await _aiConfigRepo.GetByKeyAsync("openai_api_key");
             if (config == null || string.IsNullOrWhiteSpace(config.ConfigValue))
                 return ("[No API key configured]", 0);
@@ -191,7 +180,6 @@ namespace Rafeeq.Controllers
 
             using var doc = JsonDocument.Parse(responseString);
             var transcript = doc.RootElement.GetProperty("text").GetString() ?? "";
-            // Whisper API does not return duration, so we return 0 here.
             return (transcript, 0);
         }
 

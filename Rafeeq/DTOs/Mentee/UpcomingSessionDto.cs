@@ -1,4 +1,4 @@
-﻿// DTOs/Mentee/UpcomingSessionDto.cs
+﻿
 namespace Rafeeq.DTOs.Mentee
 {
     public class UpcomingSessionDto

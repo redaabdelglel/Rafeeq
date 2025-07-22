@@ -15,7 +15,6 @@ namespace Rafeeq.Repositories.Chat
             _context = context;
         }
 
-        // Add a new attachment
         public async Task<ChatAttachment> AddAttachmentAsync(ChatAttachment attachment)
         {
             await _context.ChatAttachments.AddAsync(attachment);
@@ -23,7 +22,6 @@ namespace Rafeeq.Repositories.Chat
             return attachment;
         }
 
-        // Get attachments for a specific message
         public async Task<IEnumerable<ChatAttachment>> GetAttachmentsForMessageAsync(int messageId)
         {
             return await _context.ChatAttachments
@@ -31,29 +29,24 @@ namespace Rafeeq.Repositories.Chat
                 .ToListAsync();
         }
 
-        // Get a specific attachment by ID
         public async Task<ChatAttachment?> GetAttachmentByIdAsync(int attachmentId)
         {
             return await _context.ChatAttachments.FindAsync(attachmentId);
         }
 
-        // Check if user is authorized to access attachment
         public async Task<bool> IsUserAuthorizedForAttachmentAsync(int attachmentId, int userId)
         {
-            // Try to get authorization via the conversation first (new schema)
             var attachmentWithConversation = await _context.ChatAttachments
                 .Include(a => a.Message)
                     .ThenInclude(m => m.Conversation)
                 .FirstOrDefaultAsync(a => a.AttachmentId == attachmentId);
 
-            // If conversation exists, check authorization through it
             if (attachmentWithConversation?.Message?.Conversation != null)
             {
                 return attachmentWithConversation.Message.Conversation.MentorId == userId ||
                        attachmentWithConversation.Message.Conversation.MenteeId == userId;
             }
 
-            // Fallback to the old method (through BookingId) for backward compatibility
             var attachment = await _context.ChatAttachments
                 .Include(a => a.Message)
                 .FirstOrDefaultAsync(a => a.AttachmentId == attachmentId);

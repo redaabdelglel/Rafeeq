@@ -9,6 +9,6 @@ namespace Rafeeq.DTOs.Chat
 
         [Required]
         [StringLength(10, MinimumLength = 1)]
-        public string ReactionType { get; set; } // Emoji or string code like "like", "heart", etc.
+        public string ReactionType { get; set; } 
     }
 }

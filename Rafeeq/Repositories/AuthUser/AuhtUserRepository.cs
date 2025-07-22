@@ -25,10 +25,6 @@ namespace Rafeeq.Repositories.AuthUser
         return await Context.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.UserId == userId);
     }
 
-    // update user
-    //public void Update(User user)
-    //{
-    //    _context.Users.Update(user);
-    //}
+   
 }
 }
