@@ -63,14 +63,14 @@ namespace Rafeeq.Configurations
             // User Services
             services.AddScoped<UserService>();
             services.AddScoped<IUserService, UserService>();
-            services.AddScoped<MentorService>();
+           
 
             // Core Feature Services
             services.AddScoped<ISkillService, SkillService>();
             services.AddScoped<IContactService, ContactService>();
             services.AddScoped<AvailabilityService>();
             services.AddScoped<BookingService>();
-            services.AddScoped<MeetingService>();
+            
             services.AddScoped<GoogleMeetService>();
             services.AddScoped<PaymentService>();
             services.AddScoped<StripeService>();
